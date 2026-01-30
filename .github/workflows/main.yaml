@@ -23,7 +23,7 @@ jobs:
       matrix:
         include:
           - { targets: [linux-64], os: ubuntu-latest }
-          - { targets: [osx-64], os: macos-13 }
+          - { targets: [osx-64], os: macos-15-intel }
           - { targets: [osx-arm64], os: macos-latest }
     steps:
       - name: ⬇️ Git Checkout
