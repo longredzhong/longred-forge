@@ -134,7 +134,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: package-${{ matrix.target-platform }}
+          name: package-${{ matrix.target-platform }}-${{ github.run_id }}
           path: output/**/*.conda
           if-no-files-found: error
           overwrite: true
