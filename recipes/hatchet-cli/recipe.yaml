@@ -5,18 +5,19 @@ package:
   name: hatchet-cli
   version: ${{ version }}
 
-# Note: sha256 checksums are omitted for convenience in this personal forge.
-# For production use, actual checksums should be specified for security.
 source:
   - if: linux and x86_64
     then:
       - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{ version }}_Linux_x86_64.tar.gz
+        sha256: SHA256_LINUX_X86_64
   - if: osx and x86_64
     then:
       - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{ version }}_Darwin_x86_64.tar.gz
+        sha256: SHA256_DARWIN_X86_64
   - if: osx and arm64
     then:
       - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{ version }}_Darwin_arm64.tar.gz
+        sha256: SHA256_DARWIN_ARM64
 
 build:
   number: 0

@@ -58,10 +58,31 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
       
-      - name: Update recipe version
+      - name: Update recipe version and sha256
         run: |
           NEW_VERSION="${{ needs.check-new-release.outputs.latest_version }}"
+          
+          # Download each platform's archive and calculate sha256
+          echo "Downloading and calculating sha256 for Linux x86_64..."
+          LINUX_URL="https://github.com/hatchet-dev/hatchet/releases/download/v${NEW_VERSION}/hatchet_${NEW_VERSION}_Linux_x86_64.tar.gz"
+          LINUX_SHA256=$(curl -sL "$LINUX_URL" | sha256sum | awk '{print $1}')
+          echo "Linux x86_64 SHA256: $LINUX_SHA256"
+          
+          echo "Downloading and calculating sha256 for Darwin x86_64..."
+          DARWIN_X86_URL="https://github.com/hatchet-dev/hatchet/releases/download/v${NEW_VERSION}/hatchet_${NEW_VERSION}_Darwin_x86_64.tar.gz"
+          DARWIN_X86_SHA256=$(curl -sL "$DARWIN_X86_URL" | sha256sum | awk '{print $1}')
+          echo "Darwin x86_64 SHA256: $DARWIN_X86_SHA256"
+          
+          echo "Downloading and calculating sha256 for Darwin arm64..."
+          DARWIN_ARM_URL="https://github.com/hatchet-dev/hatchet/releases/download/v${NEW_VERSION}/hatchet_${NEW_VERSION}_Darwin_arm64.tar.gz"
+          DARWIN_ARM_SHA256=$(curl -sL "$DARWIN_ARM_URL" | sha256sum | awk '{print $1}')
+          echo "Darwin arm64 SHA256: $DARWIN_ARM_SHA256"
+          
+          # Update recipe.yaml with new version and sha256 values
           sed -i "s/version: \".*\"/version: \"$NEW_VERSION\"/" recipes/hatchet-cli/recipe.yaml
+          sed -i "s/sha256: SHA256_LINUX_X86_64/sha256: $LINUX_SHA256/" recipes/hatchet-cli/recipe.yaml
+          sed -i "s/sha256: SHA256_DARWIN_X86_64/sha256: $DARWIN_X86_SHA256/" recipes/hatchet-cli/recipe.yaml
+          sed -i "s/sha256: SHA256_DARWIN_ARM64/sha256: $DARWIN_ARM_SHA256/" recipes/hatchet-cli/recipe.yaml
           
       - name: Commit updated recipe
         run: |
