@@ -61,10 +61,15 @@ ${yaml.stringify(recipeData)}`;
 
       // Upload if requested
       if (uploadFlag) {
-        const prefixToken = Deno.env.get("PREFIX_TOKEN");
+        const prefixToken =
+          Deno.env.get("PREFIX_API_KEY") || Deno.env.get("PREFIX_TOKEN");
         if (!prefixToken) {
-          console.warn("⚠️  PREFIX_TOKEN not found in environment");
-          console.warn("   Set PREFIX_TOKEN in .env file or environment");
+          console.warn(
+            "⚠️  PREFIX_API_KEY/PREFIX_TOKEN not found in environment",
+          );
+          console.warn(
+            "   Set PREFIX_API_KEY or PREFIX_TOKEN in .env file or environment",
+          );
           return;
         }
 
@@ -83,33 +88,38 @@ ${yaml.stringify(recipeData)}`;
 
         if (files.length > 0) {
           const artifact = files[0];
-          
+
           // Get token from environment (should be set by load())
-          const token = Deno.env.get("PREFIX_TOKEN");
+          const token =
+            Deno.env.get("PREFIX_API_KEY") || Deno.env.get("PREFIX_TOKEN");
           if (!token) {
-            console.error("✗ PREFIX_TOKEN was validated but not found when uploading");
+            console.error("✗ PREFIX_API_KEY/PREFIX_TOKEN not found");
             return;
           }
-          
+
+          console.log(`✓ API key found: ${token.substring(0, 5)}...`);
+
           // Execute upload with explicit environment variable
           // Use new Deno.Command to have better control over environment
           const uploadCmd = new Deno.Command("rattler-build", {
             args: ["upload", "prefix", "-c", channel, artifact],
             env: {
               ...Deno.env.toObject(),
-              "PREFIX_TOKEN": token,
+              PREFIX_API_KEY: token,
             },
             stdout: "inherit",
             stderr: "inherit",
           });
-          
+
           const uploadProcess = uploadCmd.spawn();
           const uploadStatus = await uploadProcess.status;
-          
+
           if (!uploadStatus.success) {
-            throw new Error(`Upload failed with exit code ${uploadStatus.code}`);
+            throw new Error(
+              `Upload failed with exit code ${uploadStatus.code}`,
+            );
           }
-          
+
           console.log(`✓ Uploaded ${path.basename(artifact)}`);
 
           // Append to GitHub Actions summary if available
@@ -162,7 +172,7 @@ await new Command()
   .action(async ({ recipePath, targetPlatforms, channel, upload, build }) => {
     // Load environment variables from .env file
     await load({ export: true });
-    
+
     const platforms = targetPlatforms as string[];
 
     if (recipePath) {
