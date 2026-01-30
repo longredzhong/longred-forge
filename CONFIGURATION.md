@@ -10,9 +10,9 @@ If you want to create your own personal forge based on this project, follow thes
 2. Navigate to "Channels" and create a new channel (e.g., `your-username-forge`)
 3. Note your channel name for later use
 
-### 2. Configure OIDC Authentication (Recommended)
+### 2. Configure OIDC Authentication
 
-OIDC (OpenID Connect) allows GitHub Actions to authenticate with prefix.dev without storing API keys.
+OIDC (OpenID Connect) allows GitHub Actions to authenticate with prefix.dev without storing API keys. This is the recommended and only authentication method used in this repository.
 
 1. In your prefix.dev channel settings, go to "Trusted Publishers"
 2. Add a new trusted publisher with:
@@ -21,22 +21,12 @@ OIDC (OpenID Connect) allows GitHub Actions to authenticate with prefix.dev with
    - **Workflow**: `.github/workflows/build-hatchet-cli.yml`
    - **Environment**: (leave empty or specify if you use environments)
 
-### 3. Alternative: API Key Authentication
-
-If you prefer using an API key:
-
-1. Generate an API key in your prefix.dev account settings
-2. Add it as a repository secret in GitHub:
-   - Go to your repository Settings → Secrets and variables → Actions
-   - Add a new secret named `PREFIX_API_KEY`
-   - Paste your prefix.dev API key as the value
-
-### 4. Update Workflow Configuration
+### 3. Update Workflow Configuration
 
 Edit `.github/workflows/build-hatchet-cli.yml` and replace:
 - `longred-forge` with your channel name in the publish step
 
-### 5. Test the Workflow
+### 4. Test the Workflow
 
 1. Push changes to the `main` branch or manually trigger the workflow
 2. Check the Actions tab to see the build progress
@@ -90,7 +80,9 @@ package:
 
 source:
   url: https://example.com/package-${{ version }}.tar.gz
-  sha256: <checksum>
+  # For production, replace 'skip' with actual SHA256 checksum
+  # Generate with: curl -sL <url> | sha256sum
+  sha256: skip
 
 build:
   number: 0

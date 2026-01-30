@@ -35,13 +35,13 @@ jobs:
           CURRENT_VERSION=$(grep 'version:' recipes/hatchet-cli/recipe.yaml | head -1 | awk '{print $2}' | tr -d '"')
           echo "Current version: $CURRENT_VERSION"
           
-          # Compare versions
-          if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ]; then
-            echo "New version available: $LATEST_VERSION"
+          # Compare versions or check if manual trigger/push event
+          if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "push" ]; then
+            echo "Build triggered: new version ($LATEST_VERSION) or manual/push event"
             echo "should_build=true" >> $GITHUB_OUTPUT
             echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
           else
-            echo "Already at latest version"
+            echo "Already at latest version and no manual trigger"
             echo "should_build=false" >> $GITHUB_OUTPUT
             echo "latest_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           fi
@@ -73,7 +73,11 @@ jobs:
 
   build-package:
     needs: [check-new-release, update-recipe]
-    if: needs.check-new-release.outputs.should_build == 'true' || github.event_name == 'workflow_dispatch'
+    # Build if should_build is true or if update-recipe was skipped (meaning already up to date but manual trigger)
+    if: |
+      always() && 
+      needs.check-new-release.outputs.should_build == 'true' &&
+      (needs.update-recipe.result == 'success' || needs.update-recipe.result == 'skipped')
     strategy:
       matrix:
         include:
@@ -88,10 +92,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
-          fetch-depth: 0
       
-      - name: Pull latest changes
-        run: git pull origin ${{ github.ref_name }} || true
+      - name: Pull latest changes if recipe was updated
+        if: needs.update-recipe.result == 'success'
+        run: |
+          git fetch origin ${{ github.ref_name }}
+          git reset --hard origin/${{ github.ref_name }}
       
       - name: Build conda package
         uses: prefix-dev/rattler-build-action@v0.2.19
@@ -121,15 +127,16 @@ jobs:
       
       - name: Install rattler-build
         run: |
-          curl -fsSL https://github.com/prefix-dev/rattler-build/releases/latest/download/rattler-build-$(uname -m)-unknown-linux-musl.tar.bz2 | tar -xj -C /usr/local/bin
+          # Pin to a specific version for reproducibility
+          RATTLER_BUILD_VERSION="v0.20.0"
+          curl -fsSL https://github.com/prefix-dev/rattler-build/releases/download/${RATTLER_BUILD_VERSION}/rattler-build-$(uname -m)-unknown-linux-musl.tar.bz2 | tar -xj -C /usr/local/bin
       
       - name: Publish to prefix.dev
         shell: bash
-        env:
-          PREFIX_API_KEY: ${{ secrets.PREFIX_API_KEY }}
         run: |
           shopt -s nullglob
           for pkg in output/**/*.conda; do
             echo "Publishing $pkg"
+            # Using OIDC authentication (no API key needed)
             rattler-build upload prefix -c longred-forge "$pkg"
           done

@@ -5,6 +5,8 @@ package:
   name: hatchet-cli
   version: ${{ version }}
 
+# Note: sha256 is set to 'skip' for convenience in this personal forge.
+# For production use, actual checksums should be specified for security.
 source:
   - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{ version }}_Linux_x86_64.tar.gz  # [linux and x86_64]
     sha256: skip  # [linux and x86_64]
@@ -31,7 +33,6 @@ tests:
 about:
   homepage: https://hatchet.run
   license: MIT
-  license_file: LICENSE
   summary: The Hatchet CLI for managing workflows and background tasks
   description: |
     Hatchet is an open-source platform for running background tasks and durable workflows at scale.
