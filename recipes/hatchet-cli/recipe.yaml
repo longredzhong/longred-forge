@@ -5,22 +5,25 @@ package:
   name: hatchet-cli
   version: ${{ version }}
 
-# Note: sha256 is set to 'skip' for convenience in this personal forge.
+# Note: sha256 checksums are omitted for convenience in this personal forge.
 # For production use, actual checksums should be specified for security.
 source:
-  - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{ version }}_Linux_x86_64.tar.gz  # [linux and x86_64]
-    sha256: skip  # [linux and x86_64]
-  - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{ version }}_Darwin_x86_64.tar.gz  # [osx and x86_64]
-    sha256: skip  # [osx and x86_64]
-  - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{ version }}_Darwin_arm64.tar.gz  # [osx and arm64]
-    sha256: skip  # [osx and arm64]
+  - if: linux and x86_64
+    then:
+      - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{ version }}_Linux_x86_64.tar.gz
+  - if: osx and x86_64
+    then:
+      - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{ version }}_Darwin_x86_64.tar.gz
+  - if: osx and arm64
+    then:
+      - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{ version }}_Darwin_arm64.tar.gz
 
 build:
   number: 0
   script:
-    - mkdir -p $PREFIX/bin  # [unix]
-    - cp hatchet $PREFIX/bin/  # [unix]
-    - chmod +x $PREFIX/bin/hatchet  # [unix]
+    - mkdir -p $PREFIX/bin # [unix]
+    - cp hatchet $PREFIX/bin/ # [unix]
+    - chmod +x $PREFIX/bin/hatchet # [unix]
 
 requirements:
   build:
