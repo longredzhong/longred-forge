@@ -50,8 +50,13 @@ jobs:
     needs: check-new-release
     if: needs.check-new-release.outputs.should_build == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
       
       - name: Update recipe version
         run: |
@@ -63,7 +68,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add recipes/hatchet-cli/recipe.yaml
-          git commit -m "chore: update hatchet-cli to v${{ needs.check-new-release.outputs.latest_version }}" || echo "No changes to commit"
+          git diff --cached --quiet || git commit -m "chore: update hatchet-cli to v${{ needs.check-new-release.outputs.latest_version }}"
           git push || echo "No changes to push"
 
   build-package:
@@ -81,6 +86,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+      
+      - name: Pull latest changes
+        run: git pull origin ${{ github.ref_name }} || true
       
       - name: Build conda package
         uses: prefix-dev/rattler-build-action@v0.2.19
