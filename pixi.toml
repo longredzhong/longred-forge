@@ -1,13 +1,17 @@
 [workspace]
 name = "longred-forge"
 version = "0.1.0"
-description = "Personal conda package repository"
-channels = ["conda-forge"]
+description = "Longred personal conda package repository"
+authors = ["Longred <longredzhong@outlook.com>"]
+channels = ["conda-forge", "https://repo.prefix.dev/brads-forge"]
 platforms = ["linux-64", "osx-64", "osx-arm64"]
 
 [tasks]
-build = "rattler-build build --recipe recipes/hatchet-cli"
-test = "rattler-build test --package-file output/*.conda"
+clean = "deno task clean"
+build = "deno task build"
+build-test = "deno task build --no-upload"
+delete = "deno task delete"
 
 [dependencies]
-rattler-build = ">=0.20.0"
+deno = ">=2.6.1,<4.0"
+rattler-build = ">=0.54.0,<0.55"

@@ -1,0 +1,47 @@
+name: Build & Publish
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  schedule:
+    - cron: "28 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ join(matrix.targets) }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      id-token: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PREFIX_TOKEN: ${{ secrets.PREFIX_TOKEN }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { targets: [linux-64], os: ubuntu-latest }
+          - { targets: [osx-64], os: macos-13 }
+          - { targets: [osx-arm64], os: macos-latest }
+    steps:
+      - name: ⬇️ Git Checkout
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Install pixi env
+        uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          pixi-version: v0.61.0
+          activate-environment: true
+
+      - name: 🧑‍🍳 Build & Publish Recipes
+        run: deno task build --target-platforms ${{ join(matrix.targets, ' ') }}
+        continue-on-error: true
+
+      - name: 📝 Add to Summary
+        if: always()
+        run: |
+          if [ -f "$GITHUB_STEP_SUMMARY" ]; then
+            cat "$GITHUB_STEP_SUMMARY"
+          fi
