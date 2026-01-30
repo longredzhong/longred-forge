@@ -17,12 +17,13 @@ This repository automatically builds and publishes conda packages to [prefix.dev
 The Hatchet CLI for managing workflows and background tasks. Hatchet is an open-source platform for running background tasks and durable workflows at scale.
 
 **Installation:**
+
 ```bash
 # Using pixi
-pixi global install -c conda-forge -c longred-forge hatchet-cli
+pixi global install -c conda-forge -c https://prefix.dev/longred-forge hatchet-cli
 
 # Using mamba/conda
-mamba install -c conda-forge -c longred-forge hatchet-cli
+mamba install -c conda-forge -c https://prefix.dev/longred-forge hatchet-cli
 ```
 
 **Upstream:** [hatchet-dev/hatchet](https://github.com/hatchet-dev/hatchet)
@@ -37,6 +38,7 @@ mamba install -c conda-forge -c longred-forge hatchet-cli
 ## 🛠️ Technical Details
 
 This repository uses:
+
 - **rattler-build**: Fast, modern conda package builder
 - **GitHub Actions**: Automated CI/CD pipeline
 - **prefix.dev**: Package hosting and distribution
@@ -50,40 +52,8 @@ longred-forge/
 │       └── recipe.yaml          # Package recipe
 ├── .github/
 │   └── workflows/
-│       └── publish.yml           # CI/CD workflow
+│       └── main.yml           # CI/CD workflow
 └── README.md
-```
-
-## 🔧 Adding New Packages
-
-To add a new package:
-
-1. Create a new recipe directory under `recipes/`
-2. Add a `recipe.yaml` file following the [rattler-build format](https://rattler-build.prefix.dev/)
-3. Create a corresponding GitHub Actions workflow in `.github/workflows/`
-
-Example recipe structure:
-```yaml
-context:
-  version: "1.0.0"
-
-package:
-  name: my-package
-  version: ${{ version }}
-
-source:
-  url: https://github.com/owner/repo/releases/download/v${{ version }}/package.tar.gz
-
-build:
-  number: 0
-  script:
-    - mkdir -p $PREFIX/bin
-    - cp binary $PREFIX/bin/
-
-about:
-  homepage: https://example.com
-  license: MIT
-  summary: Package description
 ```
 
 ## 📝 License
