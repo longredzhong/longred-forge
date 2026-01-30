@@ -4,6 +4,12 @@ Personal conda package repository built with [rattler-build](https://github.com/
 
 This repository automatically builds and publishes conda packages to [prefix.dev](https://prefix.dev/channels/longred-forge), making them easily installable via conda/mamba.
 
+## 🚀 Quick Start
+
+**New to longred-forge?** Check out the [Quick Start Guide](QUICKSTART.md) for installation and usage instructions.
+
+**Want to create your own forge?** See the [Configuration Guide](CONFIGURATION.md) to set up your own channel.
+
 ## 📦 Available Packages
 
 ### hatchet-cli
