@@ -1,4 +1,4 @@
-name: Build and Publish Hatchet CLI
+name: Build and Publish Packages
 
 on:
   # Run on push to main branch

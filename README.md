@@ -50,7 +50,7 @@ longred-forge/
 │       └── recipe.yaml          # Package recipe
 ├── .github/
 │   └── workflows/
-│       └── build-hatchet-cli.yml # CI/CD workflow
+│       └── publish.yml           # CI/CD workflow
 └── README.md
 ```
 

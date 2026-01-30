@@ -84,11 +84,11 @@ cd YOUR-FORK-NAME
    - Go to channel settings → Trusted Publishers
    - Add GitHub Actions as a trusted publisher
    - Repository: `YOUR-USERNAME/YOUR-FORK-NAME`
-   - Workflow: `.github/workflows/build-hatchet-cli.yml`
+   - Workflow: `.github/workflows/publish.yml`
 
 ### 3. Update Configuration
 
-Edit `.github/workflows/build-hatchet-cli.yml`:
+Edit `.github/workflows/publish.yml`:
 
 ```yaml
 # Find this line in the publish-package job:
@@ -171,10 +171,10 @@ about:
 
 ### 2. Create a Workflow
 
-Copy and modify `.github/workflows/build-hatchet-cli.yml`:
+Copy and modify `.github/workflows/publish.yml`:
 
 ```bash
-cp .github/workflows/build-hatchet-cli.yml .github/workflows/build-new-package.yml
+cp .github/workflows/publish.yml .github/workflows/build-new-package.yml
 ```
 
 Update:

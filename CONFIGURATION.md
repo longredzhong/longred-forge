@@ -18,12 +18,12 @@ OIDC (OpenID Connect) allows GitHub Actions to authenticate with prefix.dev with
 2. Add a new trusted publisher with:
    - **Provider**: GitHub Actions
    - **Repository**: your-username/your-repo-name
-   - **Workflow**: `.github/workflows/build-hatchet-cli.yml`
+   - **Workflow**: `.github/workflows/publish.yml`
    - **Environment**: (leave empty or specify if you use environments)
 
 ### 3. Update Workflow Configuration
 
-Edit `.github/workflows/build-hatchet-cli.yml` and replace:
+Edit `.github/workflows/publish.yml` and replace:
 - `longred-forge` with your channel name in the publish step
 
 ### 4. Test the Workflow
@@ -108,7 +108,7 @@ about:
 
 ### 2. Create Workflow
 
-Copy and modify `.github/workflows/build-hatchet-cli.yml`:
+Copy and modify `.github/workflows/publish.yml`:
 - Update the workflow name
 - Update paths to your recipe
 - Adjust the release checking logic if needed
