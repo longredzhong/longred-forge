@@ -137,6 +137,7 @@ jobs:
           name: package-${{ matrix.target-platform }}
           path: output/**/*.conda
           if-no-files-found: error
+          overwrite: true
 
   publish-package:
     needs: build-package
