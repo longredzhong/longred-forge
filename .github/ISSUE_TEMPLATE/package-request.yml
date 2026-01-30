@@ -1,0 +1,71 @@
+name: Package Request
+description: Request a new package to be added to longred-forge
+title: "[Package Request] "
+labels: ["package-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new package! Please provide the following information.
+  
+  - type: input
+    id: package-name
+    attributes:
+      label: Package Name
+      description: What is the name of the package?
+      placeholder: e.g., my-awesome-tool
+    validations:
+      required: true
+  
+  - type: input
+    id: upstream-repo
+    attributes:
+      label: Upstream Repository
+      description: Link to the GitHub repository
+      placeholder: e.g., https://github.com/owner/repo
+    validations:
+      required: true
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What does this package do? Why should it be added?
+      placeholder: Brief description of the package and its use case
+    validations:
+      required: true
+  
+  - type: input
+    id: license
+    attributes:
+      label: License
+      description: What license does the package use?
+      placeholder: e.g., MIT, Apache-2.0, GPL-3.0
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: platforms
+    attributes:
+      label: Platforms
+      description: Which platforms does the package support?
+      multiple: true
+      options:
+        - Linux (x86_64)
+        - macOS (Intel)
+        - macOS (Apple Silicon)
+        - Windows
+    validations:
+      required: true
+  
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: Requirements
+      options:
+        - label: The package has regular releases on GitHub
+          required: true
+        - label: The package is open source
+          required: true
+        - label: I have checked that this package is not already available in conda-forge
+          required: true

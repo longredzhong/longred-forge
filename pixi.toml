@@ -1,0 +1,13 @@
+[project]
+name = "longred-forge"
+version = "0.1.0"
+description = "Personal conda package repository"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64"]
+
+[tasks]
+build = "rattler-build build --recipe recipes/hatchet-cli"
+test = "rattler-build test --package-file output/*.conda"
+
+[dependencies]
+rattler-build = ">=0.20.0"

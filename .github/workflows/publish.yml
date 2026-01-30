@@ -1,0 +1,142 @@
+name: Build and Publish Packages
+
+on:
+  # Run on push to main branch
+  push:
+    branches:
+      - main
+  # Run on schedule - daily at 00:00 UTC
+  schedule:
+    - cron: '0 0 * * *'
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  check-new-release:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+      latest_version: ${{ steps.check.outputs.latest_version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for new Hatchet release
+        id: check
+        run: |
+          # Get latest release version from GitHub
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/hatchet-dev/hatchet/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+          echo "Latest version: $LATEST_VERSION"
+          
+          # Get current version from recipe
+          CURRENT_VERSION=$(grep 'version:' recipes/hatchet-cli/recipe.yaml | head -1 | awk '{print $2}' | tr -d '"')
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Compare versions or check if manual trigger/push event
+          if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "push" ]; then
+            echo "Build triggered: new version ($LATEST_VERSION) or manual/push event"
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "Already at latest version and no manual trigger"
+            echo "should_build=false" >> $GITHUB_OUTPUT
+            echo "latest_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          fi
+
+  update-recipe:
+    needs: check-new-release
+    if: needs.check-new-release.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Update recipe version
+        run: |
+          NEW_VERSION="${{ needs.check-new-release.outputs.latest_version }}"
+          sed -i "s/version: \".*\"/version: \"$NEW_VERSION\"/" recipes/hatchet-cli/recipe.yaml
+          
+      - name: Commit updated recipe
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add recipes/hatchet-cli/recipe.yaml
+          git diff --cached --quiet || git commit -m "chore: update hatchet-cli to v${{ needs.check-new-release.outputs.latest_version }}"
+          git push || echo "No changes to push"
+
+  build-package:
+    needs: [check-new-release, update-recipe]
+    # Build if should_build is true or if update-recipe was skipped (meaning already up to date but manual trigger)
+    if: |
+      always() && 
+      needs.check-new-release.outputs.should_build == 'true' &&
+      (needs.update-recipe.result == 'success' || needs.update-recipe.result == 'skipped')
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target-platform: linux-64
+          - os: macos-latest
+            target-platform: osx-64
+          - os: macos-14  # M1
+            target-platform: osx-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      
+      - name: Pull latest changes if recipe was updated
+        if: needs.update-recipe.result == 'success'
+        run: |
+          git fetch origin ${{ github.ref_name }}
+          git reset --hard origin/${{ github.ref_name }}
+      
+      - name: Build conda package
+        uses: prefix-dev/rattler-build-action@v0.2.19
+        with:
+          recipe-path: recipes/hatchet-cli
+          build-args: --target-platform ${{ matrix.target-platform }}
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.target-platform }}
+          path: output/**/*.conda
+          if-no-files-found: error
+
+  publish-package:
+    needs: build-package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: output
+          pattern: package-*
+          merge-multiple: true
+      
+      - name: Install rattler-build
+        run: |
+          # Pin to a specific version for reproducibility
+          RATTLER_BUILD_VERSION="v0.20.0"
+          curl -fsSL https://github.com/prefix-dev/rattler-build/releases/download/${RATTLER_BUILD_VERSION}/rattler-build-$(uname -m)-unknown-linux-musl.tar.bz2 | tar -xj -C /usr/local/bin
+      
+      - name: Publish to prefix.dev
+        shell: bash
+        run: |
+          shopt -s nullglob
+          for pkg in output/**/*.conda; do
+            echo "Publishing $pkg"
+            # Using OIDC authentication (no API key needed)
+            rattler-build upload prefix -c longred-forge "$pkg"
+          done
