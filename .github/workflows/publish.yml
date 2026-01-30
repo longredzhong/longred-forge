@@ -80,9 +80,28 @@ jobs:
           
           # Update recipe.yaml with new version and sha256 values
           sed -i "s/version: \".*\"/version: \"$NEW_VERSION\"/" recipes/hatchet-cli/recipe.yaml
-          sed -i "s/sha256: SHA256_LINUX_X86_64/sha256: $LINUX_SHA256/" recipes/hatchet-cli/recipe.yaml
-          sed -i "s/sha256: SHA256_DARWIN_X86_64/sha256: $DARWIN_X86_SHA256/" recipes/hatchet-cli/recipe.yaml
-          sed -i "s/sha256: SHA256_DARWIN_ARM64/sha256: $DARWIN_ARM_SHA256/" recipes/hatchet-cli/recipe.yaml
+          
+          # Add or update sha256 for each platform
+          # Linux x86_64
+          if grep -q "Linux_x86_64.*sha256:" recipes/hatchet-cli/recipe.yaml; then
+            sed -i "/Linux_x86_64\.tar\.gz/,/sha256:/ s/sha256: .*/sha256: $LINUX_SHA256/" recipes/hatchet-cli/recipe.yaml
+          else
+            sed -i "/Linux_x86_64\.tar\.gz/a\        sha256: $LINUX_SHA256" recipes/hatchet-cli/recipe.yaml
+          fi
+          
+          # Darwin x86_64
+          if grep -q "Darwin_x86_64.*sha256:" recipes/hatchet-cli/recipe.yaml; then
+            sed -i "/Darwin_x86_64\.tar\.gz/,/sha256:/ s/sha256: .*/sha256: $DARWIN_X86_SHA256/" recipes/hatchet-cli/recipe.yaml
+          else
+            sed -i "/Darwin_x86_64\.tar\.gz/a\        sha256: $DARWIN_X86_SHA256" recipes/hatchet-cli/recipe.yaml
+          fi
+          
+          # Darwin arm64
+          if grep -q "Darwin_arm64.*sha256:" recipes/hatchet-cli/recipe.yaml; then
+            sed -i "/Darwin_arm64\.tar\.gz/,/sha256:/ s/sha256: .*/sha256: $DARWIN_ARM_SHA256/" recipes/hatchet-cli/recipe.yaml
+          else
+            sed -i "/Darwin_arm64\.tar\.gz/a\        sha256: $DARWIN_ARM_SHA256" recipes/hatchet-cli/recipe.yaml
+          fi
           
       - name: Commit updated recipe
         run: |

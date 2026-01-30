@@ -23,6 +23,8 @@ build:
   number: 0
   script:
     - mkdir -p $PREFIX/bin # [unix]
+    # Remove code signature on macOS before copying to avoid install_name_tool conflicts
+    - codesign --remove-signature hatchet || true # [osx]
     - cp hatchet $PREFIX/bin/ # [unix]
     - chmod +x $PREFIX/bin/hatchet # [unix]
 
