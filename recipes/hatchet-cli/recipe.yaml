@@ -3,7 +3,7 @@ context:
   version: 0.77.37
 package:
   name: hatchet-cli
-  version: '${{ version }}'
+  version: "${{ version }}"
 source:
   - if: linux and x86_64
     then:
@@ -28,7 +28,7 @@ build:
   dynamic_linking:
     binary_relocation: false
     rpath_allowlist:
-      - '**/*'
+      - "**/*"
   script:
     - mkdir -p $PREFIX/bin
     - cp hatchet $PREFIX/bin/
@@ -40,7 +40,7 @@ tests:
   - script:
       - hatchet --version
 about:
-  homepage: 'https://hatchet.run'
+  homepage: "https://hatchet.run"
   license: MIT
   summary: The Hatchet CLI for managing workflows and background tasks
   description: >
@@ -49,8 +49,8 @@ about:
 
     The CLI allows you to manage workers, workflows, and operate local or remote
     Hatchet environments.
-  repository: 'https://github.com/hatchet-dev/hatchet'
-  documentation: 'https://docs.hatchet.run'
+  repository: "https://github.com/hatchet-dev/hatchet"
+  documentation: "https://docs.hatchet.run"
 extra:
   recipe-maintainers:
     - longredzhong

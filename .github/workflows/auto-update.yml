@@ -2,7 +2,7 @@ name: Auto Update Recipes
 
 on:
   schedule:
-    - cron: '0 2 * * *'
+    - cron: "0 2 * * *"
   workflow_dispatch:
 
 jobs:
@@ -15,8 +15,6 @@ jobs:
         include:
           - name: hatchet-cli
             recipePath: recipes/hatchet-cli/recipe.yaml
-            owner: hatchet-dev
-            repo: hatchet
           # Add more entries here for other recipes, e.g.:
           # - name: some-tool
           #   recipePath: recipes/some-tool/recipe.yaml
@@ -31,12 +29,13 @@ jobs:
       - name: ⚙️ Install pixi env
         uses: prefix-dev/setup-pixi@v0.9.3
         with:
-          pixi-version: v0.61.0
+          pixi-version: v0.62.2
           activate-environment: true
 
-      - name: Run updater for ${{ matrix.name }} (apply)
+      - name: Run updater for ${{ matrix.name }} (apply) via pixi
         run: |
-          deno run -qA ./.tasks/update.ts --recipe ${{ matrix.recipePath }} --owner ${{ matrix.owner }} --repo ${{ matrix.repo }} --apply
+          # Use pixi to run the Python updater inside the managed environment
+          pixi run python scripts/update.py --apply --recipe ${{ matrix.recipePath }}
 
       - name: Commit & push to main for ${{ matrix.name }}
         env:

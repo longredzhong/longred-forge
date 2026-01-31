@@ -39,3 +39,5 @@ wheels/
 # Environment
 .env
 .envrc
+
+**/generated/*
