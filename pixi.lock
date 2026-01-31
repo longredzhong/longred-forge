@@ -3,7 +3,6 @@ environments:
   default:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
-    - url: https://repo.prefix.dev/brads-forge/
     indexes:
     - https://pypi.org/simple
     options:
@@ -14,7 +13,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-2_gnu.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-hda65f42_8.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.1.4-hbd8a1cb_0.conda
-      - conda: https://repo.prefix.dev/brads-forge/linux-64/deno-2.6.7-h81b34b9_4.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/icu-78.2-h33c6efd_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ld_impl_linux-64-2.45-default_hbd61a6d_105.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.7.3-hecca717_0.conda
@@ -59,7 +57,6 @@ environments:
       osx-64:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/bzip2-1.0.8-h500dc9f_8.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.1.4-hbd8a1cb_0.conda
-      - conda: https://repo.prefix.dev/brads-forge/osx-64/deno-2.6.7-he0f4bc8_4.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libexpat-2.7.3-heffb93a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libffi-3.5.2-hd1f9c09_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/liblzma-5.8.2-h11316ed_0.conda
@@ -95,7 +92,6 @@ environments:
       osx-arm64:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/bzip2-1.0.8-hd037594_8.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.1.4-hbd8a1cb_0.conda
-      - conda: https://repo.prefix.dev/brads-forge/osx-arm64/deno-2.6.7-he8ea13f_4.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/icu-78.2-h38cb7af_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libexpat-2.7.3-haf25636_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libffi-3.5.2-hcf2aa1b_0.conda
@@ -298,21 +294,6 @@ packages:
   - check-sdist ; extra == 'pep8test'
   - click>=8.0.1 ; extra == 'pep8test'
   requires_python: '>=3.8,!=3.9.0,!=3.9.1'
-- conda: https://repo.prefix.dev/brads-forge/linux-64/deno-2.6.7-h81b34b9_4.conda
-  sha256: 56cdd1294f5ee7c66ad704d426481c65aaaaa8579e63c9f565ba16723e8f4988
-  license: MIT
-  size: 40675407
-  timestamp: 1769748945603
-- conda: https://repo.prefix.dev/brads-forge/osx-64/deno-2.6.7-he0f4bc8_4.conda
-  sha256: bd9b6057c5df528e060cc318881431264632b8e12112450dcfcceb522ef03b8c
-  license: MIT
-  size: 38399546
-  timestamp: 1769749001321
-- conda: https://repo.prefix.dev/brads-forge/osx-arm64/deno-2.6.7-he8ea13f_4.conda
-  sha256: 4297cc728ed285ba5a63bf85fc1ab765c70f8c3b48ea556158697e6b7cdf7a57
-  license: MIT
-  size: 37211900
-  timestamp: 1769748957052
 - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
   name: h11
   version: 0.16.0
