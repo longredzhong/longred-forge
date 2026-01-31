@@ -28,10 +28,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v1
+      - name: ⚙️ Install pixi env
+        uses: prefix-dev/setup-pixi@v0.9.3
         with:
-          deno-version: v1
+          pixi-version: v0.61.0
+          activate-environment: true
 
       - name: Run updater for ${{ matrix.name }} (apply)
         run: |
