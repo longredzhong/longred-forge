@@ -1,0 +1,60 @@
+name: Auto Update Recipes
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        include:
+          - name: hatchet-cli
+            recipePath: recipes/hatchet-cli/recipe.yaml
+            owner: hatchet-dev
+            repo: hatchet
+          # Add more entries here for other recipes, e.g.:
+          # - name: some-tool
+          #   recipePath: recipes/some-tool/recipe.yaml
+          #   owner: upstream-owner
+          #   repo: upstream-repo
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1
+
+      - name: Run updater for ${{ matrix.name }} (apply)
+        run: |
+          deno run -qA ./.tasks/update.ts --recipe ${{ matrix.recipePath }} --owner ${{ matrix.owner }} --repo ${{ matrix.repo }} --apply
+
+      - name: Commit & push to main for ${{ matrix.name }}
+        env:
+          RECIPE_PATH: ${{ matrix.recipePath }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+          # show changes for debugging
+          git status --porcelain
+          git add "$RECIPE_PATH" || true
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: auto-update ${{ matrix.name }} recipe"
+            # Push to main. If branch protection prevents a push with GITHUB_TOKEN,
+            # provide a Personal Access Token in secrets.PERSONAL_TOKEN.
+            if [ -n "${{ secrets.PERSONAL_TOKEN }}" ]; then
+              git push "https://x-access-token:${{ secrets.PERSONAL_TOKEN }}@github.com/${{ github.repository }}" HEAD:main
+            else
+              git push origin HEAD:main
+            fi
+          fi
