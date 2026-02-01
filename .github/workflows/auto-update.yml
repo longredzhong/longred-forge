@@ -15,6 +15,8 @@ jobs:
         include:
           - name: hatchet-cli
             recipePath: recipes/hatchet-cli/recipe.yaml
+          - name: copilot-cli
+            recipePath: recipes/copilot-cli/recipe.yaml
           # Add more entries here for other recipes, e.g.:
           # - name: some-tool
           #   recipePath: recipes/some-tool/recipe.yaml
