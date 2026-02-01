@@ -21,10 +21,6 @@ source:
     then:
       - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-win32-x64.zip
         sha256: 02fc89afbd608c70c98e5c0e2f3db8bec5139d8f103e3f42c1a83dd7a204185c
-  - if: win and arm64
-    then:
-      - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-win32-arm64.zip
-        sha256: 77e08d9c2bf576348f7e05062eee2911af3fd7fe414d55b01f61688cc1b2b679
 build:
   number: 0
   dynamic_linking:
