@@ -27,16 +27,51 @@ build:
     binary_relocation: false
     rpath_allowlist:
       - "**/*"
-  script:
-    - if: unix
-      then:
-        - mkdir -p $PREFIX/bin
-        - cp copilot $PREFIX/bin/
-        - chmod +x $PREFIX/bin/copilot
-    - if: win
-      then:
-        - mkdir %PREFIX%\Scripts
-        - copy copilot.exe %PREFIX%\Scripts\
+  script: |
+    python -c "
+    import os
+    import shutil
+    import glob
+    import sys
+
+    prefix = os.environ.get('PREFIX')
+    if not prefix:
+        raise RuntimeError('PREFIX environment variable not set')
+
+    # Determine platform and set appropriate binary path
+    if sys.platform.startswith('linux') or sys.platform == 'darwin':
+        bin_dir = os.path.join(prefix, 'bin')
+        binary_name = 'copilot'
+    else:  # Windows
+        bin_dir = os.path.join(prefix, 'Scripts')
+        binary_name = 'copilot.exe'
+
+    # Create bin directory
+    os.makedirs(bin_dir, exist_ok=True)
+
+    # Find and copy the binary
+    source_patterns = [binary_name, f'./{binary_name}', os.path.join('.', binary_name)]
+    source_file = None
+
+    for pattern in source_patterns:
+        if os.path.isfile(pattern):
+            source_file = pattern
+            break
+
+    if not source_file:
+        raise RuntimeError(f'Binary {binary_name} not found in current directory')
+
+    dest_file = os.path.join(bin_dir, binary_name)
+    shutil.copy2(source_file, dest_file)
+
+    # Make executable on Unix systems
+    if sys.platform.startswith('linux') or sys.platform == 'darwin':
+        import stat
+        st = os.stat(dest_file)
+        os.chmod(dest_file, st.st_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+    print(f'Successfully installed {binary_name} to {dest_file}')
+    "
 requirements:
   build: null
   run: null
