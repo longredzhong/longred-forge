@@ -16,23 +16,34 @@ This repository automatically builds and publishes conda packages to [prefix.dev
 
 The Hatchet CLI for managing workflows and background tasks. Hatchet is an open-source platform for running background tasks and durable workflows at scale.
 
+**Upstream:** [hatchet-dev/hatchet](https://github.com/hatchet-dev/hatchet)
+
+### copilot-cli
+
+GitHub Copilot CLI for interacting with Copilot from your terminal.
+
+**Upstream:** [github/copilot-cli](https://github.com/github/copilot-cli)
+
 **Installation:**
 
 ```bash
-# Using pixi
-pixi global install -c conda-forge -c https://prefix.dev/longred-forge hatchet-cli
+# Use the pixi CLI to install globally
+pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli
+
+# Or add to a pixi project
+pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli
 
 # Using mamba/conda
-mamba install -c conda-forge -c https://prefix.dev/longred-forge hatchet-cli
+mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli
+miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli
+conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli
 ```
-
-**Upstream:** [hatchet-dev/hatchet](https://github.com/hatchet-dev/hatchet)
 
 ## 🚀 How It Works
 
 1. **Automated Release Tracking**: GitHub Actions runs daily to check for new releases from upstream projects
 2. **Recipe Updates**: When a new version is detected, the recipe is automatically updated
-3. **Multi-Platform Builds**: Packages are built for Linux (x86_64), macOS (Intel and Apple Silicon)
+3. **Multi-Platform Builds**: Packages are built for Linux (x86_64), macOS (Intel and Apple Silicon), and Windows (x86_64)
 4. **Publishing**: Built packages are automatically uploaded to the `longred-forge` channel on prefix.dev
 
 ## 🛠️ Technical Details
@@ -48,11 +59,17 @@ This repository uses:
 ```
 longred-forge/
 ├── recipes/
-│   └── hatchet-cli/
-│       └── recipe.yaml          # Package recipe
+│   ├── hatchet-cli/
+│   │   └── recipe.yaml        # Package recipe
+│   └── copilot-cli/
+│       └── recipe.yaml        # Package recipe
+├── scripts/
+│   ├── build.py                # Local build helper
+│   └── update.py               # Release tracking helper
 ├── .github/
 │   └── workflows/
-│       └── main.yml           # CI/CD workflow
+│       └── main.yaml           # CI/CD workflow
+├── pixi.toml                   # Dev environment config
 └── README.md
 ```
 
