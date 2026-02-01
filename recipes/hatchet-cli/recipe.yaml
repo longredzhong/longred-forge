@@ -23,16 +23,20 @@ source:
           https://github.com/hatchet-dev/hatchet/releases/download/v${{ version
           }}/hatchet_${{ version }}_Darwin_arm64.tar.gz
         sha256: ce7f7370b33187a04bf2ef32d3638af325680b07d3ad8e2d0c8b9c8d8ffa649a
+  - if: win and x86_64
+    then:
+      - url: >-
+          https://github.com/hatchet-dev/hatchet/releases/download/v${{ version
+          }}/hatchet_${{ version }}_Windows_x86_64.zip
+        sha256: 5f0941cb25f5cbbf88190a42e0c34a758c3a5a4090f1c418f4370b7170c4795f
 build:
   number: 0
   dynamic_linking:
     binary_relocation: false
     rpath_allowlist:
       - "**/*"
-  script:
-    - mkdir -p $PREFIX/bin
-    - cp hatchet $PREFIX/bin/
-    - chmod +x $PREFIX/bin/hatchet
+  script: |
+    python -c "import os, shutil, stat, sys; prefix = os.environ.get('PREFIX'); [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, 'bin') if (sys.platform.startswith('linux') or sys.platform == 'darwin') else os.path.join(prefix, 'Scripts'); binary_name = 'hatchet' if (sys.platform.startswith('linux') or sys.platform == 'darwin') else 'hatchet.exe'; os.makedirs(bin_dir, exist_ok=True); source_patterns = [binary_name, f'./{binary_name}', os.path.join('.', binary_name)]; source_file = next((p for p in source_patterns if os.path.isfile(p)), None); [exit(1) if not source_file else None]; dest_file = os.path.join(bin_dir, binary_name); shutil.copy2(source_file, dest_file); (lambda: os.chmod(dest_file, os.stat(dest_file).st_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) if (sys.platform.startswith('linux') or sys.platform == 'darwin') else None)()"
 requirements:
   build: null
   run: null
