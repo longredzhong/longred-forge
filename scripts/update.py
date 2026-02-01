@@ -53,12 +53,32 @@ def digest_from_checksum_txt(filename: str, txt: str) -> Optional[str]:
 
 def asset_name_for(if_cond: str, version_tag: str) -> Optional[str]:
     v = version_tag.lstrip("v")
+    # Support multiple naming patterns for different tools
+    # Hatchet pattern: hatchet_<version>_<OS>_<ARCH>.tar.gz
     if "linux" in if_cond and "x86_64" in if_cond:
         return f"hatchet_{v}_Linux_x86_64.tar.gz"
     if "osx" in if_cond and "x86_64" in if_cond:
         return f"hatchet_{v}_Darwin_x86_64.tar.gz"
     if "osx" in if_cond and "arm64" in if_cond:
         return f"hatchet_{v}_Darwin_arm64.tar.gz"
+    return None
+
+
+def asset_name_from_recipe_pattern(recipe_url: str, if_cond: str) -> Optional[str]:
+    """Extract asset name pattern from recipe source URL."""
+    if not recipe_url:
+        return None
+    # Extract pattern like copilot-linux-x64.tar.gz
+    # Replace version and architecture variables
+    import re
+    # Try to match version placeholder and architecture markers
+    url_pattern = recipe_url.replace("${{ version }}", "").strip()
+    if "{" in url_pattern:  # Skip if unresolved variables
+        return None
+    # Extract just the filename
+    m = re.search(r'/([^/]+\.(?:tar\.gz|zip))$', url_pattern)
+    if m:
+        return m.group(1)
     return None
 
 
@@ -200,8 +220,14 @@ def main():
                     continue
                 if not item.get("url"):
                     continue
+                # Try hardcoded patterns first (for hatchet), then try URL-based pattern
                 expected = asset_name_for(if_cond, tag)
                 if not expected:
+                    # Try to infer from recipe URL pattern
+                    recipe_url = item.get("url")
+                    expected = asset_name_from_recipe_pattern(recipe_url, if_cond)
+                if not expected:
+                    print(f"Could not determine asset name for condition: {if_cond}")
                     continue
                 asset = find_asset(assets, expected)
                 if not asset:

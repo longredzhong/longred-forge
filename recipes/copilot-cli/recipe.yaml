@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+context:
+  version: 0.0.400
+package:
+  name: copilot-cli
+  version: ${{ version }}
+source:
+  - if: linux and x86_64
+    then:
+      - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-linux-x64.tar.gz
+        sha256: e97afcbaad69d03f2d68ec8f4294a9a9b14b34b578e49785fff3deb0c0eab1bf
+  - if: osx and x86_64
+    then:
+      - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-darwin-x64.tar.gz
+        sha256: 21ac2624a3f4e00efab8bf6f21f5e9f73647e132a17cffe2c9e57c2090119245
+  - if: osx and arm64
+    then:
+      - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-darwin-arm64.tar.gz
+        sha256: 899e6509092ab92c8c6d099fdc17dda11050947f1052219d47569115c5d865c0
+  - if: win and x86_64
+    then:
+      - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-win32-x64.zip
+        sha256: 02fc89afbd608c70c98e5c0e2f3db8bec5139d8f103e3f42c1a83dd7a204185c
+  - if: win and arm64
+    then:
+      - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-win32-arm64.zip
+        sha256: 77e08d9c2bf576348f7e05062eee2911af3fd7fe414d55b01f61688cc1b2b679
+build:
+  number: 0
+  dynamic_linking:
+    binary_relocation: false
+    rpath_allowlist:
+      - "**/*"
+  script:
+    - if: unix
+      then:
+        - mkdir -p $PREFIX/bin
+        - cp copilot $PREFIX/bin/
+        - chmod +x $PREFIX/bin/copilot
+    - if: win
+      then:
+        - mkdir %PREFIX%\Scripts
+        - copy copilot.exe %PREFIX%\Scripts\
+requirements:
+  build: null
+  run: null
+tests:
+  - script:
+      - copilot --version
+about:
+  homepage: https://github.com/github/copilot-cli
+  license: MIT
+  summary: GitHub Copilot CLI - Command-line interface for GitHub Copilot
+  description:
+    "GitHub Copilot CLI is a command-line interface for GitHub Copilot
+    that provides access to Copilot's capabilities from your terminal.
+
+    "
