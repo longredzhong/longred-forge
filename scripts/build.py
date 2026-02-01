@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
+import httpx  # type: ignore
 import yaml  # type: ignore
 
 # Fix Windows encoding issue - ensure UTF-8 output
@@ -65,7 +66,43 @@ def write_generated_recipe(recipe_path: Path, generated_dir: Path):
     return data
 
 
-def build_recipe(recipe_yaml_path: Path, target_platform: str, channel: str, upload_flag: bool, build_flag: bool):
+def package_exists_in_channel(channel: str, target_platform: str, name: str, version: str) -> bool:
+    if not channel or not target_platform or not name or not version:
+        return False
+
+    base_url = os.environ.get("PREFIX_DEV_REPO_BASE", "https://prefix.dev").rstrip("/")
+    repodata_url = f"{base_url}/channels/{channel}/{target_platform}/repodata.json"
+
+    try:
+        resp = httpx.get(repodata_url, timeout=15.0)
+        if resp.status_code != 200:
+            print(f"⚠️  Could not fetch repodata ({resp.status_code}): {repodata_url}")
+            return False
+
+        data = resp.json()
+        for section in ("packages", "packages.conda"):
+            entries = data.get(section, {})
+            if not isinstance(entries, dict):
+                continue
+            for record in entries.values():
+                if not isinstance(record, dict):
+                    continue
+                if record.get("name") == name and str(record.get("version")) == version:
+                    return True
+    except Exception as e:
+        print(f"⚠️  Failed to check prefix.dev repodata: {e}")
+
+    return False
+
+
+def build_recipe(
+    recipe_yaml_path: Path,
+    target_platform: str,
+    channel: str,
+    upload_flag: bool,
+    build_flag: bool,
+    skip_existing: bool,
+):
     recipe_dir = recipe_yaml_path.parent
     recipe_name = recipe_dir.name
     print(f"::group::{recipe_name}-{target_platform}")
@@ -84,6 +121,13 @@ def build_recipe(recipe_yaml_path: Path, target_platform: str, channel: str, upl
         out_text = header + yaml.safe_dump(recipe_content, sort_keys=False)
         recipe_yaml_out.write_text(out_text)
         print(f"Written {recipe_yaml_out}")
+
+        if build_flag and skip_existing:
+            if package_exists_in_channel(channel, target_platform, recipe_name, version):
+                print(
+                    f"✓ {recipe_name} {version} already exists on {channel}/{target_platform}; skipping build"
+                )
+                return
 
         if build_flag:
             # run rattler-build
@@ -134,6 +178,12 @@ def main():
     parser.add_argument("--target-platforms", nargs="*", default=None)
     parser.add_argument("--no-upload", action="store_true")
     parser.add_argument("--no-build", dest="no_build", action="store_true")
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        default=os.environ.get("SKIP_EXISTING", "0") == "1",
+        help="Skip build if package version already exists on prefix.dev",
+    )
     args = parser.parse_args()
 
     # load .env if present
@@ -145,7 +195,14 @@ def main():
     recipes = find_recipes(args.recipe_path)
     for recipe in recipes:
         for target in platforms:
-            build_recipe(recipe, target, args.channel, not args.no_upload, not args.no_build)
+            build_recipe(
+                recipe,
+                target,
+                args.channel,
+                not args.no_upload,
+                not args.no_build,
+                args.skip_existing,
+            )
 
 
 if __name__ == "__main__":

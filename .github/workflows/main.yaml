@@ -37,7 +37,7 @@ jobs:
           activate-environment: true
 
       - name: 🧑‍🍳 Build & Publish Recipes
-        run: pixi run python scripts/build.py --target-platforms ${{ join(matrix.targets, ' ') }}
+        run: pixi run python scripts/build.py --skip-existing --target-platforms ${{ join(matrix.targets, ' ') }}
         continue-on-error: true
 
       - name: 📝 Add to Summary
