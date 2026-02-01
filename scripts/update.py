@@ -11,7 +11,7 @@ import sys
 from typing import Any, Dict, List, Optional
 
 import httpx
-import yaml
+import yaml  # type: ignore
 
 
 def parse_args():
@@ -64,7 +64,7 @@ def asset_name_for(if_cond: str, version_tag: str) -> Optional[str]:
     return None
 
 
-def asset_name_from_recipe_pattern(recipe_url: str, if_cond: str) -> Optional[str]:
+def asset_name_from_recipe_pattern(recipe_url: Optional[str], if_cond: str) -> Optional[str]:
     """Extract asset name pattern from recipe source URL."""
     if not recipe_url:
         return None
@@ -98,25 +98,32 @@ def compute_sha_for_asset(asset: Dict[str, Any], headers: Dict[str, str]) -> str
             return m.group(1).strip()
 
     # Look for checksum asset
-    asset_name = asset.get("name")
+    asset_name: Optional[str] = asset.get("name")
+    if not asset_name:
+        raise RuntimeError("asset has no name")
     # try common checksum suffixes
     possible_suffixes = [".sha256", ".sha256sum", ".sha256.txt", ".sha256sums"]
-    release_assets = asset.get("_release_assets_cache") or []
+    release_assets: List[Dict[str, Any]] = asset.get("_release_assets_cache") or []
     for s in possible_suffixes:
         candidate = next((x for x in release_assets if x.get("name") == asset_name + s), None)
         if candidate:
-            txt = httpx.get(candidate.get("browser_download_url"), headers=headers).text
-            got = digest_from_checksum_txt(asset_name, txt)
-            if got:
-                return got
+            candidate_url: Optional[str] = candidate.get("browser_download_url")
+            if candidate_url:
+                txt = httpx.get(candidate_url, headers=headers).text
+                got = digest_from_checksum_txt(asset_name, txt)
+                if got:
+                    return got
 
     # Try to find any checksum file in the release assets that contains the filename
     for cand in release_assets:
-        if cand.get("name") and ("sha" in cand.get("name").lower() or "checksum" in cand.get("name").lower()):
-            txt = httpx.get(cand.get("browser_download_url"), headers=headers).text
-            got = digest_from_checksum_txt(asset_name, txt)
-            if got:
-                return got
+        cand_name: Optional[str] = cand.get("name")
+        if cand_name and ("sha" in cand_name.lower() or "checksum" in cand_name.lower()):
+            cand_url: Optional[str] = cand.get("browser_download_url")
+            if cand_url:
+                txt = httpx.get(cand_url, headers=headers).text
+                got = digest_from_checksum_txt(asset_name, txt)
+                if got:
+                    return got
 
     # Last resort: download asset and compute
     url = asset.get("browser_download_url")
@@ -224,7 +231,7 @@ def main():
                 expected = asset_name_for(if_cond, tag)
                 if not expected:
                     # Try to infer from recipe URL pattern
-                    recipe_url = item.get("url")
+                    recipe_url: Optional[str] = item.get("url")
                     expected = asset_name_from_recipe_pattern(recipe_url, if_cond)
                 if not expected:
                     print(f"Could not determine asset name for condition: {if_cond}")

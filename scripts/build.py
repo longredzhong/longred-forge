@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-import yaml
+import yaml  # type: ignore
 
 
 def load_dotenv(path: Path):
