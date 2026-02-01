@@ -2,7 +2,7 @@
 context:
   version: 1.1.48
 package:
-  name: opencode-cli
+  name: opencode
   version: ${{ version }}
 source:
   - if: linux and x86_64
@@ -38,7 +38,7 @@ tests:
 about:
   homepage: https://opencode.ai
   license: Apache-2.0
-  summary: OpenCode CLI - AI coding agent for your terminal
+  summary: OpenCode - AI coding agent for your terminal
   description: |
     OpenCode is an open-source AI coding agent that helps you write, edit, and debug code
     directly from your terminal. It provides intelligent code completion, refactoring
