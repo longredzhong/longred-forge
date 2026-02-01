@@ -17,6 +17,8 @@ jobs:
             recipePath: recipes/hatchet-cli/recipe.yaml
           - name: copilot-cli
             recipePath: recipes/copilot-cli/recipe.yaml
+          - name: opencode
+            recipePath: recipes/opencode/recipe.yaml
           # Add more entries here for other recipes, e.g.:
           # - name: some-tool
           #   recipePath: recipes/some-tool/recipe.yaml

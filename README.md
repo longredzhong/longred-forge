@@ -24,19 +24,25 @@ GitHub Copilot CLI for interacting with Copilot from your terminal.
 
 **Upstream:** [github/copilot-cli](https://github.com/github/copilot-cli)
 
+### opencode
+
+OpenCode is an open-source AI coding agent that helps you write, edit, and debug code directly from your terminal.
+
+**Upstream:** [anomalyco/opencode](https://github.com/anomalyco/opencode)
+
 **Installation:**
 
 ```bash
 # Use the pixi CLI to install globally
-pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli
+pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode
 
 # Or add to a pixi project
-pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli
+pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode
 
 # Using mamba/conda
-mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli
-miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli
-conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli
+mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode
+miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode
+conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode
 ```
 
 ## 🚀 How It Works
@@ -61,7 +67,9 @@ longred-forge/
 ├── recipes/
 │   ├── hatchet-cli/
 │   │   └── recipe.yaml        # Package recipe
-│   └── copilot-cli/
+│   ├── copilot-cli/
+│   │   └── recipe.yaml        # Package recipe
+│   └── opencode/
 │       └── recipe.yaml        # Package recipe
 ├── scripts/
 │   ├── build.py                # Local build helper
