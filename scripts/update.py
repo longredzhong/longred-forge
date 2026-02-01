@@ -13,6 +13,11 @@ from typing import Any, Dict, List, Optional
 import httpx
 import yaml  # type: ignore
 
+# Fix Windows encoding issue - ensure UTF-8 output
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+
 
 def parse_args():
     p = argparse.ArgumentParser()

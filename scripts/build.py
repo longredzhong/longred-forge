@@ -18,6 +18,11 @@ from typing import List, Optional
 
 import yaml  # type: ignore
 
+# Fix Windows encoding issue - ensure UTF-8 output
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+
 
 def load_dotenv(path: Path):
     if not path.exists():
