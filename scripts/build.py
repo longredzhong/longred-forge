@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Build recipes using rattler-build (Python replacement for .tasks/build.ts).
+"""Build recipes using rattler-build.
 
 Usage examples:
   python scripts/build.py --target-platforms linux-64
   python scripts/build.py --recipe-path recipes/hatchet-cli/recipe.yaml --target-platforms linux-64 --no-upload
+
+The script uses rattler-build's --skip-existing option to avoid rebuilding packages
+that already exist in the target channel.
 """
+
 import argparse
-import glob
 import os
-import re
 import shlex
 import shutil
 import subprocess
@@ -16,12 +18,12 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-import httpx  # type: ignore
 import yaml  # type: ignore
 
 # Fix Windows encoding issue - ensure UTF-8 output
 if sys.platform == "win32":
     import io
+
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 
@@ -48,50 +50,25 @@ def run(cmd: List[str], env=None, cwd: Optional[Path] = None, check=True):
 
 
 def find_recipes(recipe_path: Optional[str]) -> List[Path]:
+    """Find recipe.yaml files in the recipes directory.
+    
+    Only looks for recipe.yaml files directly inside recipe folders (recipes/*/recipe.yaml),
+    excluding generated subdirectories to avoid duplicate builds.
+    """
     if recipe_path:
         return [Path(recipe_path)]
-    recipes = list(Path("recipes").rglob("recipe.yaml"))
-    return recipes
+    # Only match recipes/<recipe-name>/recipe.yaml, not generated subdirectories
+    recipes = list(Path("recipes").glob("*/recipe.yaml"))
+    return sorted(recipes)
 
 
-def write_generated_recipe(recipe_path: Path, generated_dir: Path):
-    txt = recipe_path.read_text()
-    data = yaml.safe_load(txt)
-    generated_dir.mkdir(parents=True, exist_ok=True)
-    out_path = generated_dir / "recipe.yaml"
-    header = "# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json\n"
-    out_text = header + yaml.safe_dump(data, sort_keys=False)
-    out_path.write_text(out_text)
-    print(f"Written {out_path}")
-    return data
-
-
-def package_exists_in_channel(channel: str, target_platform: str, name: str, version: str) -> bool:
-    if not channel or not target_platform or not name or not version:
-        return False
-
-    base_url = os.environ.get("PREFIX_DEV_REPO_BASE", "https://prefix.dev").rstrip("/")
-    repodata_url = f"{base_url}/channels/{channel}/{target_platform}/repodata.json"
-
-    try:
-        resp = httpx.get(repodata_url, timeout=15.0)
-        if resp.status_code != 200:
-            print(f"⚠️  Could not fetch repodata ({resp.status_code}): {repodata_url}")
-            return False
-
-        data = resp.json()
-        for section in ("packages", "packages.conda"):
-            entries = data.get(section, {})
-            if not isinstance(entries, dict):
-                continue
-            for record in entries.values():
-                if not isinstance(record, dict):
-                    continue
-                if record.get("name") == name and str(record.get("version")) == version:
-                    return True
-    except Exception as e:
-        print(f"⚠️  Failed to check prefix.dev repodata: {e}")
-
+def package_exists_locally(target_platform: str, name: str, version: str) -> bool:
+    """Check if package file already exists locally in output directory."""
+    pattern = f"output/{target_platform}/{name}-{version}-*_*.conda"
+    files = list(Path(".").glob(pattern))
+    if files:
+        print(f"✓ {files[0].name} already built locally")
+        return True
     return False
 
 
@@ -109,6 +86,7 @@ def build_recipe(
     try:
         recipe_content = yaml.safe_load(recipe_yaml_path.read_text())
         version = str(recipe_content.get("context", {}).get("version"))
+        package_name = str(recipe_content.get("package", {}).get("name") or recipe_name)
         generated_recipe_dir = recipe_dir / f"generated/{target_platform}"
         # clear dir
         if generated_recipe_dir.exists():
@@ -122,16 +100,34 @@ def build_recipe(
         recipe_yaml_out.write_text(out_text)
         print(f"Written {recipe_yaml_out}")
 
-        if build_flag and skip_existing:
-            if package_exists_in_channel(channel, target_platform, recipe_name, version):
-                print(
-                    f"✓ {recipe_name} {version} already exists on {channel}/{target_platform}; skipping build"
-                )
+        if build_flag:
+            # Check local cache first before invoking rattler-build
+            if skip_existing and package_exists_locally(target_platform, package_name, version):
+                print(f"✓ {package_name} {version} already exists locally; skipping build")
+                print("::endgroup::")
                 return
 
-        if build_flag:
-            # run rattler-build
-            cmd = ["rattler-build", "build", "-r", str(recipe_yaml_out), "--target-platform", target_platform, "--test", "native", "-c", "conda-forge"]
+            # Build the channel URL for prefix.dev
+            channel_url = f"https://repo.prefix.dev/{channel}"
+
+            # Run rattler-build with --skip-existing all to check remote channel
+            # Add the target channel for remote existence check
+            cmd = [
+                "rattler-build",
+                "build",
+                "-r",
+                str(recipe_yaml_out),
+                "--target-platform",
+                target_platform,
+                "--test",
+                "native",
+                "-c",
+                channel_url,  # Add target channel first for skip-existing check
+                "-c",
+                "conda-forge",
+                "--skip-existing",
+                "all" if skip_existing else "none",
+            ]
             run(cmd)
             print(f"✓ Built for {target_platform}")
 
@@ -139,13 +135,16 @@ def build_recipe(
                 prefix_token = os.environ.get("PREFIX_API_KEY") or os.environ.get("PREFIX_TOKEN")
                 if not prefix_token:
                     print("⚠️  PREFIX_API_KEY/PREFIX_TOKEN not found in environment; skipping upload")
+                    print("::endgroup::")
                     return
 
-                # find artifact
-                pattern = f"output/{target_platform}/{recipe_name}-{version}-*_0.conda"
+                # find artifact - match any build number
+                pattern = f"output/{target_platform}/{package_name}-{version}-*_*.conda"
                 files = list(Path(".").glob(pattern))
                 if not files:
-                    print("No artifacts found to upload")
+                    # Package might have been skipped due to --skip-existing all
+                    print(f"✓ No new artifacts to upload (package may already exist in {channel})")
+                    print("::endgroup::")
                     return
                 artifact = str(files[0])
 
@@ -154,7 +153,7 @@ def build_recipe(
 
                 print(f"✓ API key found: {prefix_token[:5]}...")
 
-                upload_cmd = ["rattler-build", "upload", "prefix", "-c", channel, artifact]
+                upload_cmd = ["rattler-build", "upload", "prefix", "-c", channel, "--skip-existing", artifact]
                 run(upload_cmd, env=env)
                 print(f"✓ Uploaded {Path(artifact).name}")
 
