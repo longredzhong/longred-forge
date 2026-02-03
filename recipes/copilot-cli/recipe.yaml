@@ -37,6 +37,8 @@ tests:
       - copilot --version
 about:
   homepage: https://github.com/github/copilot-cli
+  repository: https://github.com/github/copilot-cli
+  documentation: https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli
   license: MIT
   summary: GitHub Copilot CLI - Command-line interface for GitHub Copilot
   description:
