@@ -30,19 +30,25 @@ OpenCode is an open-source AI coding agent that helps you write, edit, and debug
 
 **Upstream:** [anomalyco/opencode](https://github.com/anomalyco/opencode)
 
+### radar
+
+Modern Kubernetes visibility - Local-first, no account, no cloud dependency. Provides topology, event timeline, service traffic, resource browsing, Helm management, and GitOps support.
+
+**Upstream:** [skyhook-io/radar](https://github.com/skyhook-io/radar)
+
 **Installation:**
 
 ```bash
 # Use the pixi CLI to install globally
-pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode
+pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar
 
 # Or add to a pixi project
-pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode
+pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar
 
 # Using mamba/conda
-mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode
-miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode
-conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode
+mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar
+miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar
+conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar
 ```
 
 ## 🚀 How It Works
