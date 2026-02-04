@@ -21,7 +21,7 @@ if sys.platform == "win32":
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--recipe", default="recipes/hatchet-cli/recipe.yaml")
+    p.add_argument("--recipe", default=None, help="Path to a recipe file. If omitted, all recipes under 'recipes/' will be processed.")
     p.add_argument("--owner", default=None)
     p.add_argument("--repo", default=None)
     p.add_argument("--apply", action="store_true")
@@ -56,29 +56,31 @@ def digest_from_checksum_txt(filename: str, txt: str) -> Optional[str]:
     return None
 
 
-def asset_name_for(if_cond: str, version_tag: str) -> Optional[str]:
+def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -> Optional[str]:
     v = version_tag.lstrip("v")
     # Support multiple naming patterns for different tools
-    # Hatchet pattern: hatchet_<version>_<OS>_<ARCH>.tar.gz
-    if "linux" in if_cond and "x86_64" in if_cond:
-        return f"hatchet_{v}_Linux_x86_64.tar.gz"
-    if "osx" in if_cond and "x86_64" in if_cond:
-        return f"hatchet_{v}_Darwin_x86_64.tar.gz"
-    if "osx" in if_cond and "arm64" in if_cond:
-        return f"hatchet_{v}_Darwin_arm64.tar.gz"
+    # Currently only a special-case for Hatchet is implemented.
+    if repo and repo.lower() == "hatchet":
+        # Hatchet pattern: hatchet_<version>_<OS>_<ARCH>.tar.gz
+        if "linux" in if_cond and "x86_64" in if_cond:
+            return f"hatchet_{v}_Linux_x86_64.tar.gz"
+        if "osx" in if_cond and "x86_64" in if_cond:
+            return f"hatchet_{v}_Darwin_x86_64.tar.gz"
+        if "osx" in if_cond and "arm64" in if_cond:
+            return f"hatchet_{v}_Darwin_arm64.tar.gz"
     return None
 
 
-def asset_name_from_recipe_pattern(recipe_url: Optional[str], if_cond: str) -> Optional[str]:
-    """Extract asset name pattern from recipe source URL."""
+def asset_name_from_recipe_pattern(recipe_url: Optional[str], if_cond: str, version: Optional[str]) -> Optional[str]:
+    """Extract asset name pattern from recipe source URL, substituting the version placeholder."""
     if not recipe_url:
         return None
-    # Extract pattern like copilot-linux-x64.tar.gz
-    # Replace version and architecture variables
+    # Extract pattern like copilot-linux-x64.tar.gz or radar_v${{ version }}_linux_amd64.tar.gz
     import re
-    # Try to match version placeholder and architecture markers
-    url_pattern = recipe_url.replace("${{ version }}", "").strip()
-    if "{" in url_pattern:  # Skip if unresolved variables
+    # Substitute version placeholder with provided version (if available)
+    url_pattern = recipe_url.replace("${{ version }}", str(version) if version is not None else "")
+    url_pattern = url_pattern.strip()
+    if "{" in url_pattern:  # Skip if unresolved other variables remain
         return None
     # Extract just the filename
     m = re.search(r'/([^/]+\.(?:tar\.gz|zip))$', url_pattern)
@@ -139,52 +141,40 @@ def compute_sha_for_asset(asset: Dict[str, Any], headers: Dict[str, str]) -> str
     return sha256_hex_bytes(r.content)
 
 
-def main():
-    args = parse_args()
-    apply = args.apply
-    dry = args.dry_run or not apply
+def parse_owner_repo_from_url(url: str):
+    """Parse owner/repo from common repository URL forms."""
+    if not url:
+        return None
+    url = url.strip()
+    m = re.match(r"git@github.com:(?P<owner>[^/]+)/(?P<repo>[^/.]+)(?:\.git)?", url)
+    if m:
+        return m.group("owner"), m.group("repo")
+    m = re.match(r"https?://github.com/(?P<owner>[^/]+)/(?P<repo>[^/]+)(?:\.git)?", url)
+    if m:
+        return m.group("owner"), m.group("repo")
+    try:
+        from urllib.parse import urlparse
 
-    recipe_path = args.recipe
-    owner = args.owner
-    repo = args.repo
+        p = urlparse(url)
+        parts = [seg for seg in p.path.split("/") if seg]
+        if len(parts) >= 2:
+            repo_name = parts[1]
+            if repo_name.endswith(".git"):
+                repo_name = repo_name[:-4]
+            return parts[0], repo_name
+    except Exception:
+        pass
+    return None
 
-    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN") or os.environ.get("GITHUB_API_TOKEN")
-    headers = {}
-    if token:
-        headers["Authorization"] = f"token {token}"
 
-    print(f"Reading recipe: {os.path.abspath(recipe_path)}")
+def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[str], headers: Dict[str, str], token: Optional[str], apply: bool, dry: bool) -> None:
+    """Update a single recipe file in-place (or show preview if dry)."""
+    print(f"Processing recipe: {recipe_path}")
     with open(recipe_path, "r", encoding="utf-8") as f:
         raw = f.read()
     doc = yaml.safe_load(raw)
 
-    # Try to extract owner/repo from recipe about.repository if present
-    def parse_owner_repo_from_url(url: str):
-        if not url:
-            return None
-        # handle git@github.com:owner/repo.git, https://github.com/owner/repo(.git)
-        url = url.strip()
-        m = re.match(r"git@github.com:(?P<owner>[^/]+)/(?P<repo>[^/.]+)(?:\.git)?", url)
-        if m:
-            return m.group("owner"), m.group("repo")
-        m = re.match(r"https?://github.com/(?P<owner>[^/]+)/(?P<repo>[^/]+)(?:\.git)?", url)
-        if m:
-            return m.group("owner"), m.group("repo")
-        # fallback: try to parse path
-        try:
-            from urllib.parse import urlparse
-
-            p = urlparse(url)
-            parts = [seg for seg in p.path.split("/") if seg]
-            if len(parts) >= 2:
-                repo_name = parts[1]
-                if repo_name.endswith(".git"):
-                    repo_name = repo_name[:-4]
-                return parts[0], repo_name
-        except Exception:
-            pass
-        return None
-
+    # Determine owner/repo from recipe if not provided
     repo_url = None
     about = doc.get("about") or {}
     if isinstance(about, dict):
@@ -197,14 +187,14 @@ def main():
         repo = repo_from_recipe
 
     if not owner or not repo:
-        print("Owner/repo not set and not found in recipe. Provide --owner and --repo or ensure about.repository in recipe.")
-        sys.exit(1)
+        print("Owner/repo not set and not found in recipe. Skipping this recipe.")
+        return
 
     release = get_latest_release(owner, repo, token)
     tag = release.get("tag_name")
     if not tag:
-        print("No tag_name found in release")
-        sys.exit(1)
+        print("No tag_name found in release; skipping")
+        return
     version = tag.lstrip("v")
     print(f"Latest upstream release: {tag}")
 
@@ -232,12 +222,12 @@ def main():
                     continue
                 if not item.get("url"):
                     continue
-                # Try hardcoded patterns first (for hatchet), then try URL-based pattern
-                expected = asset_name_for(if_cond, tag)
+                # Try hardcoded patterns first (for known repos like hatchet), then try URL-based pattern
+                expected = asset_name_for(if_cond, tag, repo)
                 if not expected:
                     # Try to infer from recipe URL pattern
                     recipe_url: Optional[str] = item.get("url")
-                    expected = asset_name_from_recipe_pattern(recipe_url, if_cond)
+                    expected = asset_name_from_recipe_pattern(recipe_url, if_cond, version)
                 if not expected:
                     print(f"Could not determine asset name for condition: {if_cond}")
                     continue
@@ -259,12 +249,48 @@ def main():
         print("--- Updated recipe preview ---")
         print(out)
         print("--- end preview ---")
-        print("(dry-run) not writing changes")
+        print("(dry-run) not writing changes for this recipe")
         return
 
     with open(recipe_path, "w", encoding="utf-8") as f:
         f.write(out)
     print(f"Wrote updated recipe with version {version}")
+
+
+def main():
+    args = parse_args()
+    apply = args.apply
+    dry = args.dry_run or not apply
+
+    recipe_path = args.recipe
+    owner = args.owner
+    repo = args.repo
+
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN") or os.environ.get("GITHUB_API_TOKEN")
+    headers = {}
+    if token:
+        headers["Authorization"] = f"token {token}"
+
+    if recipe_path:
+        # Single recipe
+        print(f"Reading recipe: {os.path.abspath(recipe_path)}")
+        update_single_recipe(recipe_path, owner, repo, headers, token, apply, dry)
+        return
+
+    # No recipe specified: update all recipes under recipes/*/recipe.yaml
+    import glob
+
+    pattern = os.path.join("recipes", "*", "recipe.yaml")
+    files = glob.glob(pattern)
+    if not files:
+        print("No recipes found to process")
+        return
+
+    for fp in sorted(files):
+        try:
+            update_single_recipe(fp, owner, repo, headers, token, apply, dry)
+        except Exception as e:
+            print(f"Failed to update {fp}: {e}")
 
 
 if __name__ == "__main__":

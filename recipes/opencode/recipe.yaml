@@ -1,50 +1,65 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 1.1.48
+  version: 1.1.50
 package:
   name: opencode
   version: ${{ version }}
 source:
-  - if: linux and x86_64
-    then:
-      - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-linux-x64.tar.gz
-        sha256: 7524880c32215434e08fc2ea1a5acabe3491745c8a8752236830d07fc81e80bc
-  - if: osx and x86_64
-    then:
-      - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-darwin-x64.zip
-        sha256: 6309fdbbd9144e4b337d5376c3942480d525b4c71818653e3c18bb2e0335c4bf
-  - if: osx and arm64
-    then:
-      - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-darwin-arm64.zip
-        sha256: a84141379dd0c7a2b111bf96db6e8bcf6dc4382bcf58534813239dd362182aa5
-  - if: win and x86_64
-    then:
-      - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-windows-x64.zip
-        sha256: 9021714286a9e224b5306f35991d88d1f7ba6c909ec42d876e767d388745f9d6
+- if: linux and x86_64
+  then:
+  - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-linux-x64.tar.gz
+    sha256: a76f02bba43447be50bde62ef14a1b6b3add6738cde428fb7b9a7bf5606bc435
+- if: osx and x86_64
+  then:
+  - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-darwin-x64.zip
+    sha256: 8d9481bf0ab3b2e339f9d2336ba6fcf9607bacf54132e338615dadfafa06ae28
+- if: osx and arm64
+  then:
+  - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-darwin-arm64.zip
+    sha256: 08cfa3a1dc10b320e8cacf0efed50a2ae97d28a595e7687ba900d9329327c7da
+- if: win and x86_64
+  then:
+  - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-windows-x64.zip
+    sha256: 376186607e7ec5458b477016f23dd89ed40ca8816b8abcda4651f542abab142a
 build:
   number: 0
   dynamic_linking:
     binary_relocation: false
     rpath_allowlist:
-      - "**/*"
-  script: |
-    python -c "import os, shutil, stat, sys; prefix = os.environ.get('PREFIX'); [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, 'bin') if (sys.platform.startswith('linux') or sys.platform == 'darwin') else os.path.join(prefix, 'Scripts'); binary_name = 'opencode' if (sys.platform.startswith('linux') or sys.platform == 'darwin') else 'opencode.exe'; os.makedirs(bin_dir, exist_ok=True); source_patterns = [binary_name, f'./{binary_name}', os.path.join('.', binary_name)]; source_file = next((p for p in source_patterns if os.path.isfile(p)), None); [exit(1) if not source_file else None]; dest_file = os.path.join(bin_dir, binary_name); shutil.copy2(source_file, dest_file); (lambda: os.chmod(dest_file, os.stat(dest_file).st_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) if (sys.platform.startswith('linux') or sys.platform == 'darwin') else None)()"
+    - '**/*'
+  script: 'python -c "import os, shutil, stat, sys; prefix = os.environ.get(''PREFIX'');
+    [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, ''bin'') if
+    (sys.platform.startswith(''linux'') or sys.platform == ''darwin'') else os.path.join(prefix,
+    ''Scripts''); binary_name = ''opencode'' if (sys.platform.startswith(''linux'')
+    or sys.platform == ''darwin'') else ''opencode.exe''; os.makedirs(bin_dir, exist_ok=True);
+    source_patterns = [binary_name, f''./{binary_name}'', os.path.join(''.'', binary_name)];
+    source_file = next((p for p in source_patterns if os.path.isfile(p)), None); [exit(1)
+    if not source_file else None]; dest_file = os.path.join(bin_dir, binary_name);
+    shutil.copy2(source_file, dest_file); (lambda: os.chmod(dest_file, os.stat(dest_file).st_mode
+    | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) if (sys.platform.startswith(''linux'')
+    or sys.platform == ''darwin'') else None)()"
+
+    '
 requirements:
   build: null
   run: null
 tests:
-  - script:
-      - opencode --version
+- script:
+  - opencode --version
 about:
   homepage: https://opencode.ai
   license: Apache-2.0
   summary: OpenCode - AI coding agent for your terminal
-  description: |
-    OpenCode is an open-source AI coding agent that helps you write, edit, and debug code
+  description: 'OpenCode is an open-source AI coding agent that helps you write, edit,
+    and debug code
+
     directly from your terminal. It provides intelligent code completion, refactoring
+
     suggestions, and automated coding assistance powered by advanced AI models.
+
+    '
   repository: https://github.com/anomalyco/opencode
   documentation: https://opencode.ai/docs
 extra:
   recipe-maintainers:
-    - longredzhong
+  - longredzhong

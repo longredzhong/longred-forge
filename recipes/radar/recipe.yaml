@@ -1,54 +1,79 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.7.7
+  version: 0.8.0
 package:
   name: radar
   version: ${{ version }}
 source:
-  - if: linux and x86_64
-    then:
-      - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{ version }}_linux_amd64.tar.gz
-        sha256: 3b469e8beebb9b27a9c82e6e9456bffe838fbe871c93900779f7aa3ed1abfd74
-  - if: osx and x86_64
-    then:
-      - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{ version }}_darwin_amd64.tar.gz
-        sha256: 9a7629c2412a77f0dc6cda9fc2b15de4d3a707ae5d535cc0f4696bf4959540c9
-  - if: osx and arm64
-    then:
-      - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{ version }}_darwin_arm64.tar.gz
-        sha256: 8e189863007a95e7cc4d729ba134db1d5673dd0c8d82f8135df268b12e6b1c8a
-  - if: win and x86_64
-    then:
-      - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{ version }}_windows_amd64.zip
-        sha256: 37d25e03c6c366e3310290573a7efa0c1379295b625f3232447dad8e39c078a4
+- if: linux and x86_64
+  then:
+  - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
+      version }}_linux_amd64.tar.gz
+    sha256: 430aa15d056794ffe29ef11ab382c838e7f1f4dd0a3d0ce0e27d3b94749f0fe1
+- if: osx and x86_64
+  then:
+  - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
+      version }}_darwin_amd64.tar.gz
+    sha256: 2f8add4dc7148704f9b25d5c471c321b7206f1d7c53e2845ecb69e87feb0b805
+- if: osx and arm64
+  then:
+  - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
+      version }}_darwin_arm64.tar.gz
+    sha256: 2d16e0f52b23036012d2784b916d6cbdb94e073df1d25cd5177a45247302db6c
+- if: win and x86_64
+  then:
+  - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
+      version }}_windows_amd64.zip
+    sha256: b7affece36ec125a42a289dfa56f39e496c3e6ad3ef5ab70e86343efd7e38c12
 build:
   number: 0
   dynamic_linking:
     binary_relocation: false
     rpath_allowlist:
-      - "**/*"
-  script: |
-    python -c "import os, shutil, stat, sys; prefix = os.environ.get('PREFIX'); [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, 'bin') if (sys.platform.startswith('linux') or sys.platform == 'darwin') else os.path.join(prefix, 'Scripts'); binary_name = 'kubectl-radar' if (sys.platform.startswith('linux') or sys.platform == 'darwin') else 'kubectl-radar.exe'; os.makedirs(bin_dir, exist_ok=True); source_patterns = [binary_name, f'./{binary_name}', os.path.join('.', binary_name)]; source_file = next((p for p in source_patterns if os.path.isfile(p)), None); [exit(1) if not source_file else None]; dest_file = os.path.join(bin_dir, binary_name); shutil.copy2(source_file, dest_file); (lambda: os.chmod(dest_file, os.stat(dest_file).st_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) if (sys.platform.startswith('linux') or sys.platform == 'darwin') else None)()"
+    - '**/*'
+  script: 'python -c "import os, shutil, stat, sys; prefix = os.environ.get(''PREFIX'');
+    [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, ''bin'') if
+    (sys.platform.startswith(''linux'') or sys.platform == ''darwin'') else os.path.join(prefix,
+    ''Scripts''); binary_name = ''kubectl-radar'' if (sys.platform.startswith(''linux'')
+    or sys.platform == ''darwin'') else ''kubectl-radar.exe''; os.makedirs(bin_dir,
+    exist_ok=True); source_patterns = [binary_name, f''./{binary_name}'', os.path.join(''.'',
+    binary_name)]; source_file = next((p for p in source_patterns if os.path.isfile(p)),
+    None); [exit(1) if not source_file else None]; dest_file = os.path.join(bin_dir,
+    binary_name); shutil.copy2(source_file, dest_file); (lambda: os.chmod(dest_file,
+    os.stat(dest_file).st_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    if (sys.platform.startswith(''linux'') or sys.platform == ''darwin'') else None)()"
+
+    '
 requirements:
   build: null
   run: null
 tests:
-  - script:
-      - kubectl-radar --version
+- script:
+  - kubectl-radar --version
 about:
   homepage: https://github.com/skyhook-io/radar
   repository: https://github.com/skyhook-io/radar
   documentation: https://github.com/skyhook-io/radar/blob/main/docs
   license: Apache-2.0
   summary: Modern Kubernetes visibility - Local-first, no account, no cloud dependency
-  description: |
-    Radar provides modern Kubernetes visibility with topology, event timeline, and service traffic.
-    
-    It features resource browsing, Helm management, and GitOps support for FluxCD and ArgoCD.
-    
-    Zero install on your cluster - runs on your laptop, talks to the K8s API directly. Single binary
-    with no dependencies, no agents, no CRDs. Blazing fast with smart caching, progressive loading,
-    and parallelization. Works in airgapped environments with no external network calls.
+  description: 'Radar provides modern Kubernetes visibility with topology, event timeline,
+    and service traffic.
+
+
+    It features resource browsing, Helm management, and GitOps support for FluxCD
+    and ArgoCD.
+
+
+    Zero install on your cluster - runs on your laptop, talks to the K8s API directly.
+    Single binary
+
+    with no dependencies, no agents, no CRDs. Blazing fast with smart caching, progressive
+    loading,
+
+    and parallelization. Works in airgapped environments with no external network
+    calls.
+
+    '
 extra:
   recipe-maintainers:
-    - longredzhong
+  - longredzhong
