@@ -1,60 +1,68 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.77.37
+  version: 0.78.4
 package:
   name: hatchet-cli
-  version: "${{ version }}"
+  version: ${{ version }}
 source:
-  - if: linux and x86_64
-    then:
-      - url: >-
-          https://github.com/hatchet-dev/hatchet/releases/download/v${{ version
-          }}/hatchet_${{ version }}_Linux_x86_64.tar.gz
-        sha256: 8b8c58ef607b9a0dc7c6c33f988346f866f8b60e06c89b2b5ae8717a4ad12362
-  - if: osx and x86_64
-    then:
-      - url: >-
-          https://github.com/hatchet-dev/hatchet/releases/download/v${{ version
-          }}/hatchet_${{ version }}_Darwin_x86_64.tar.gz
-        sha256: 29abc103979057b551d3101c914d3b980d74541b0042795f812842dc6280c665
-  - if: osx and arm64
-    then:
-      - url: >-
-          https://github.com/hatchet-dev/hatchet/releases/download/v${{ version
-          }}/hatchet_${{ version }}_Darwin_arm64.tar.gz
-        sha256: ce7f7370b33187a04bf2ef32d3638af325680b07d3ad8e2d0c8b9c8d8ffa649a
-  - if: win and x86_64
-    then:
-      - url: >-
-          https://github.com/hatchet-dev/hatchet/releases/download/v${{ version
-          }}/hatchet_${{ version }}_Windows_x86_64.zip
-        sha256: 5f0941cb25f5cbbf88190a42e0c34a758c3a5a4090f1c418f4370b7170c4795f
+- if: linux and x86_64
+  then:
+  - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
+      version }}_Linux_x86_64.tar.gz
+    sha256: 18accfb3d1cad59024dc883b698156985f737705a2491713d74ce8d6ac732a48
+- if: osx and x86_64
+  then:
+  - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
+      version }}_Darwin_x86_64.tar.gz
+    sha256: 8494aeaa39674b408f1c621c07f29acb7714f7aba29fd2c558a1acef6d7d6fc0
+- if: osx and arm64
+  then:
+  - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
+      version }}_Darwin_arm64.tar.gz
+    sha256: ab0e6ecef40e603e6e11f238c7de29fb8143c326208fbe870cf56b300feb0604
+- if: win and x86_64
+  then:
+  - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
+      version }}_Windows_x86_64.zip
+    sha256: 5f0941cb25f5cbbf88190a42e0c34a758c3a5a4090f1c418f4370b7170c4795f
 build:
   number: 0
   dynamic_linking:
     binary_relocation: false
     rpath_allowlist:
-      - "**/*"
-  script: |
-    python -c "import os, shutil, stat, sys; prefix = os.environ.get('PREFIX'); [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, 'bin') if (sys.platform.startswith('linux') or sys.platform == 'darwin') else os.path.join(prefix, 'Scripts'); binary_name = 'hatchet' if (sys.platform.startswith('linux') or sys.platform == 'darwin') else 'hatchet.exe'; os.makedirs(bin_dir, exist_ok=True); source_patterns = [binary_name, f'./{binary_name}', os.path.join('.', binary_name)]; source_file = next((p for p in source_patterns if os.path.isfile(p)), None); [exit(1) if not source_file else None]; dest_file = os.path.join(bin_dir, binary_name); shutil.copy2(source_file, dest_file); (lambda: os.chmod(dest_file, os.stat(dest_file).st_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) if (sys.platform.startswith('linux') or sys.platform == 'darwin') else None)()"
+    - '**/*'
+  script: 'python -c "import os, shutil, stat, sys; prefix = os.environ.get(''PREFIX'');
+    [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, ''bin'') if
+    (sys.platform.startswith(''linux'') or sys.platform == ''darwin'') else os.path.join(prefix,
+    ''Scripts''); binary_name = ''hatchet'' if (sys.platform.startswith(''linux'')
+    or sys.platform == ''darwin'') else ''hatchet.exe''; os.makedirs(bin_dir, exist_ok=True);
+    source_patterns = [binary_name, f''./{binary_name}'', os.path.join(''.'', binary_name)];
+    source_file = next((p for p in source_patterns if os.path.isfile(p)), None); [exit(1)
+    if not source_file else None]; dest_file = os.path.join(bin_dir, binary_name);
+    shutil.copy2(source_file, dest_file); (lambda: os.chmod(dest_file, os.stat(dest_file).st_mode
+    | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) if (sys.platform.startswith(''linux'')
+    or sys.platform == ''darwin'') else None)()"
+
+    '
 requirements:
   build: null
   run: null
 tests:
-  - script:
-      - hatchet --version
+- script:
+  - hatchet --version
 about:
-  homepage: "https://hatchet.run"
+  homepage: https://hatchet.run
   license: MIT
   summary: The Hatchet CLI for managing workflows and background tasks
-  description: >
-    Hatchet is an open-source platform for running background tasks and durable
-    workflows at scale.
+  description: 'Hatchet is an open-source platform for running background tasks and
+    durable workflows at scale.
 
-    The CLI allows you to manage workers, workflows, and operate local or remote
-    Hatchet environments.
-  repository: "https://github.com/hatchet-dev/hatchet"
-  documentation: "https://docs.hatchet.run"
+    The CLI allows you to manage workers, workflows, and operate local or remote Hatchet
+    environments.
+
+    '
+  repository: https://github.com/hatchet-dev/hatchet
+  documentation: https://docs.hatchet.run
 extra:
   recipe-maintainers:
-    - longredzhong
+  - longredzhong
