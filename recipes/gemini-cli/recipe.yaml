@@ -10,16 +10,13 @@ source:
 build:
   number: 0
   noarch: generic
-  script: |
-    python -c "import os, shutil; \
-    prefix = os.environ.get('PREFIX'); \
-    bin_dir = os.path.join(prefix, 'bin'); \
-    os.makedirs(bin_dir, exist_ok=True); \
-    shutil.copy2('gemini.js', os.path.join(bin_dir, 'gemini.js')); \
-    wrapper = os.path.join(bin_dir, 'gemini'); \
-    with open(wrapper, 'w') as f: \
-        f.write('#!/bin/sh\\nexec node \"$(dirname \"$0\")/gemini.js\" \"$@\"\\n'); \
-    os.chmod(wrapper, 0o755)"
+  script: 'python -c "import os, shutil; prefix = os.environ.get(''PREFIX''); bin_dir
+    = os.path.join(prefix, ''bin''); os.makedirs(bin_dir, exist_ok=True); shutil.copy2(''gemini.js'',
+    os.path.join(bin_dir, ''gemini.js'')); wrapper = os.path.join(bin_dir, ''gemini'');
+    f = open(wrapper, ''w''); f.write(''#!/bin/sh\\nexec node \\\"$(dirname \\\"$0\\\")/gemini.js\\\"
+    \\\"$@\\\"\\n''); f.close(); os.chmod(wrapper, 0o755)"
+
+    '
 requirements:
   run:
   - nodejs >=18
