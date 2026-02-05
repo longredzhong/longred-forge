@@ -36,19 +36,25 @@ Modern Kubernetes visibility - Local-first, no account, no cloud dependency. Pro
 
 **Upstream:** [skyhook-io/radar](https://github.com/skyhook-io/radar)
 
+### shaka-packager
+
+A media packaging and development framework for VOD and Live DASH and HLS applications. Supports Common Encryption for Widevine and other DRM systems.
+
+**Upstream:** [shaka-project/shaka-packager](https://github.com/shaka-project/shaka-packager)
+
 **Installation:**
 
 ```bash
 # Use the pixi CLI to install globally
-pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar
+pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager
 
 # Or add to a pixi project
-pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar
+pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager
 
 # Using mamba/conda
-mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar
-miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar
-conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar
+mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager
+miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager
+conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager
 ```
 
 ## 🚀 How It Works
@@ -75,7 +81,11 @@ longred-forge/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── copilot-cli/
 │   │   └── recipe.yaml        # Package recipe
-│   └── opencode/
+│   ├── opencode/
+│   │   └── recipe.yaml        # Package recipe
+│   ├── radar/
+│   │   └── recipe.yaml        # Package recipe
+│   └── shaka-packager/
 │       └── recipe.yaml        # Package recipe
 ├── scripts/
 │   ├── build.py                # Local build helper

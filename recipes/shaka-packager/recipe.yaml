@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+context:
+  version: 3.4.2
+package:
+  name: shaka-packager
+  version: ${{ version }}
+source:
+- if: linux and x86_64
+  then:
+  - url: https://github.com/shaka-project/shaka-packager/releases/download/v${{ version }}/packager-linux-x64
+    sha256: 7bdefe5a25fe84535c6c1a425f4c3c6b65fa85c441c2aeba01254b3c0f4b1956
+- if: linux and arm64
+  then:
+  - url: https://github.com/shaka-project/shaka-packager/releases/download/v${{ version }}/packager-linux-arm64
+    sha256: 170ee824cc30a8ed7c7c22346c46bd614aa5532a4af16d9f3c8cfaed6eda268e
+- if: osx and x86_64
+  then:
+  - url: https://github.com/shaka-project/shaka-packager/releases/download/v${{ version }}/packager-osx-x64
+    sha256: cd70359fe9dadca88cce4a7ec32d93184d13f3439cf0f43fd95156dd8b8135df
+- if: osx and arm64
+  then:
+  - url: https://github.com/shaka-project/shaka-packager/releases/download/v${{ version }}/packager-osx-arm64
+    sha256: d97cc27e2b003dd56937c54eb08f0c3f61637ad976a2d98b8bf2adaf041cb1c2
+- if: win and x86_64
+  then:
+  - url: https://github.com/shaka-project/shaka-packager/releases/download/v${{ version }}/packager-win-x64.exe
+    sha256: 18c91e9cf18037b1a1b8ceca738f0829c476fe38e20f733aa7ebba3cfe43765b
+build:
+  number: 0
+  dynamic_linking:
+    binary_relocation: false
+    rpath_allowlist:
+    - '**/*'
+  script: 'python -c "import os, shutil, stat, sys; prefix = os.environ.get(''PREFIX'');
+    [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, ''bin'') if
+    (sys.platform.startswith(''linux'') or sys.platform == ''darwin'') else os.path.join(prefix,
+    ''Scripts''); binary_name = ''packager'' if (sys.platform.startswith(''linux'')
+    or sys.platform == ''darwin'') else ''packager.exe''; os.makedirs(bin_dir, exist_ok=True);
+    source_patterns = [binary_name, f''packager-linux-x64'', f''packager-linux-arm64'',
+    f''packager-osx-x64'', f''packager-osx-arm64'', f''packager-win-x64.exe'', f''./{binary_name}'',
+    os.path.join(''.'', binary_name)]; source_file = next((p for p in source_patterns
+    if os.path.isfile(p)), None); [exit(1) if not source_file else None]; dest_file
+    = os.path.join(bin_dir, binary_name); shutil.copy2(source_file, dest_file); (lambda:
+    os.chmod(dest_file, os.stat(dest_file).st_mode | stat.S_IEXEC | stat.S_IXUSR
+    | stat.S_IXGRP | stat.S_IXOTH) if (sys.platform.startswith(''linux'') or sys.platform
+    == ''darwin'') else None)()"
+
+    '
+requirements:
+  build: null
+  run: null
+tests:
+- script:
+  - packager --version
+about:
+  homepage: https://shaka-project.github.io/shaka-packager/html/
+  license: BSD-3-Clause
+  summary: A media packaging and development framework for VOD and Live DASH and HLS applications
+  description: 'Shaka Packager is a media packaging SDK for DASH and HLS packaging
+    and encryption, supporting Common Encryption for Widevine and other DRM systems.
+
+    It provides both a command-line tool and a C++ library for media packaging operations.
+
+    '
+  repository: https://github.com/shaka-project/shaka-packager
+  documentation: https://shaka-project.github.io/shaka-packager/html/
+extra:
+  recipe-maintainers:
+  - longredzhong
