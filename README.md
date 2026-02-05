@@ -6,7 +6,13 @@ This repository automatically builds and publishes conda packages to [prefix.dev
 
 ## 🚀 Quick Start
 
-**New to longred-forge?** Check out the [Quick Start Guide](QUICKSTART.md) for installation and usage instructions.
+To install packages from the `longred-forge` channel, use the following command:
+
+```bash
+conda install -c https://prefix.dev/longred-forge <package-name>
+mamba install -c https://prefix.dev/longred-forge <package-name>
+pixi add -c https://prefix.dev/longred-forge <package-name>
+```
 
 **Want to create your own forge?** See the [Configuration Guide](CONFIGURATION.md) to set up your own channel.
 
@@ -48,25 +54,19 @@ Google Gemini CLI provides command-line access to Google's Gemini AI models. Int
 
 **Upstream:** [google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli)
 
-### codex
-
-OpenAI Codex CLI is an AI-powered coding assistant that brings intelligent code completion, refactoring suggestions, and automated coding help to your terminal using advanced language models.
-
-**Upstream:** [openai/codex](https://github.com/openai/codex)
-
 **Installation:**
 
 ```bash
 # Use the pixi CLI to install globally
-pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli codex
+pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli
 
 # Or add to a pixi project
-pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli codex
+pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli
 
 # Using mamba/conda
-mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli codex
-miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli codex
-conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli codex
+mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli
+miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli
+conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli
 ```
 
 ## 🚀 How It Works
@@ -101,8 +101,7 @@ longred-forge/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── gemini-cli/
 │   │   └── recipe.yaml        # Package recipe
-│   └── codex/
-│       └── recipe.yaml        # Package recipe
+│   └── 
 ├── scripts/
 │   ├── build.py                # Local build helper
 │   └── update.py               # Release tracking helper
