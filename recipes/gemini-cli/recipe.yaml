@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+context:
+  version: 0.27.0
+package:
+  name: gemini-cli
+  version: ${{ version }}
+source:
+- url: https://github.com/google-gemini/gemini-cli/releases/download/v${{ version }}/gemini.js
+  sha256: ce27a47dc557b35b7bfcca9e11a5d4612e69d421a9a31784eaacda3938105341
+build:
+  number: 0
+  noarch: generic
+  script: 'python -c "import os, shutil; prefix = os.environ.get(''PREFIX''); bin_dir
+    = os.path.join(prefix, ''bin''); os.makedirs(bin_dir, exist_ok=True); shutil.copy2(''gemini.js'',
+    os.path.join(bin_dir, ''gemini.js'')); wrapper = os.path.join(bin_dir, ''gemini'');
+    f = open(wrapper, ''w''); f.write(''#!/bin/sh\\nexec node \\\"$(dirname \\\"$0\\\")/gemini.js\\\"
+    \\\"$@\\\"\\n''); f.close(); os.chmod(wrapper, 0o755)"
+
+    '
+requirements:
+  run:
+  - nodejs >=18
+tests:
+- script:
+  - gemini --version
+about:
+  homepage: https://google-gemini.github.io/gemini-cli/
+  repository: https://github.com/google-gemini/gemini-cli
+  documentation: https://google-gemini.github.io/gemini-cli/docs/
+  license: MIT
+  summary: Google Gemini CLI - Command-line interface for Google Gemini
+  description: |
+    Gemini CLI is a command-line interface for Google Gemini that provides access 
+    to Gemini's AI capabilities from your terminal. It enables you to interact with 
+    Google's Gemini models for various tasks including code generation, chat, and more.
+extra:
+  recipe-maintainers:
+  - longredzhong

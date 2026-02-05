@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+context:
+  version: 0.97.0
+package:
+  name: codex
+  version: ${{ version }}
+source:
+- if: linux and x86_64
+  then:
+  - url: https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-x86_64-unknown-linux-gnu.tar.gz
+    sha256: 6636a29f0e3a05609eb0f4d0f8e7a55ddb7eec16a16840b732daa3fb3f20b09d
+- if: osx and x86_64
+  then:
+  - url: https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-x86_64-apple-darwin.tar.gz
+    sha256: 1c800968b14b9f620b26a20fb063bcfda3b227f93f8b9a36ca2dc29bbc05290d
+- if: osx and arm64
+  then:
+  - url: https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-aarch64-apple-darwin.tar.gz
+    sha256: 3f421d884360a504817654eabfa9b10e8467d1b2e75bbd36599298adef355006
+- if: win and x86_64
+  then:
+  - url: https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-x86_64-pc-windows-msvc.exe.zip
+    sha256: fb7330ffb74f10401efb9c3c0482ef89b1d5aeb4f96a8ed0849216a6cecb7de0
+build:
+  number: 0
+  dynamic_linking:
+    binary_relocation: false
+    rpath_allowlist:
+    - '**/*'
+  script: 'python -c "import os, shutil, stat, sys, glob; prefix = os.environ.get(''PREFIX'');
+    [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, ''bin'') if
+    (sys.platform.startswith(''linux'') or sys.platform == ''darwin'') else os.path.join(prefix,
+    ''Scripts''); os.makedirs(bin_dir, exist_ok=True); 
+    
+    # Handle Windows
+    (lambda: [shutil.copy2(exe, os.path.join(bin_dir, os.path.basename(exe))) for exe
+    in glob.glob(''*.exe'')] if sys.platform == ''win32'' else None)(); 
+    
+    # Handle Unix (Linux/macOS) - find binary file matching codex-*
+    (lambda: (binary := next((f for f in os.listdir(''.'') if f.startswith(''codex-'')
+    and os.path.isfile(f)), None), shutil.copy2(binary, os.path.join(bin_dir, ''codex''))
+    if binary else exit(1), os.chmod(os.path.join(bin_dir, ''codex''), os.stat(os.path.join(bin_dir,
+    ''codex'')).st_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
+    if sys.platform.startswith(''linux'') or sys.platform == ''darwin'' else None)()"
+
+    '
+requirements:
+  build: null
+  run: null
+tests:
+- script:
+  - codex --version
+about:
+  homepage: https://developers.openai.com/codex/cli
+  repository: https://github.com/openai/codex
+  documentation: https://developers.openai.com/codex/cli
+  license: MIT
+  summary: OpenAI Codex CLI - AI-powered coding assistant
+  description: |
+    OpenAI Codex CLI is a command-line interface for OpenAI's Codex, providing 
+    AI-powered coding assistance directly from your terminal. It offers intelligent 
+    code completion, refactoring suggestions, and automated coding help using 
+    advanced language models.
+extra:
+  recipe-maintainers:
+  - longredzhong

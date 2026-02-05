@@ -42,19 +42,31 @@ A media packaging and development framework for VOD and Live DASH and HLS applic
 
 **Upstream:** [shaka-project/shaka-packager](https://github.com/shaka-project/shaka-packager)
 
+### gemini-cli
+
+Google Gemini CLI provides command-line access to Google's Gemini AI models. Interact with Gemini for code generation, chat, and various AI-powered tasks directly from your terminal.
+
+**Upstream:** [google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli)
+
+### codex
+
+OpenAI Codex CLI is an AI-powered coding assistant that brings intelligent code completion, refactoring suggestions, and automated coding help to your terminal using advanced language models.
+
+**Upstream:** [openai/codex](https://github.com/openai/codex)
+
 **Installation:**
 
 ```bash
 # Use the pixi CLI to install globally
-pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager
+pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli codex
 
 # Or add to a pixi project
-pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager
+pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli codex
 
 # Using mamba/conda
-mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager
-miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager
-conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager
+mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli codex
+miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli codex
+conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager gemini-cli codex
 ```
 
 ## 🚀 How It Works
@@ -85,7 +97,11 @@ longred-forge/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── radar/
 │   │   └── recipe.yaml        # Package recipe
-│   └── shaka-packager/
+│   ├── shaka-packager/
+│   │   └── recipe.yaml        # Package recipe
+│   ├── gemini-cli/
+│   │   └── recipe.yaml        # Package recipe
+│   └── codex/
 │       └── recipe.yaml        # Package recipe
 ├── scripts/
 │   ├── build.py                # Local build helper
