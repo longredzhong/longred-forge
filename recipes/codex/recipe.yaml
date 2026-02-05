@@ -51,7 +51,7 @@ tests:
 - script:
   - codex --version
 about:
-  homepage: https://developers.openai.com/codex
+  homepage: https://developers.openai.com/codex/cli
   repository: https://github.com/openai/codex
   documentation: https://developers.openai.com/codex/cli
   license: MIT

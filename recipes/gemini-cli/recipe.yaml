@@ -24,9 +24,9 @@ tests:
 - script:
   - gemini --version
 about:
-  homepage: https://geminicli.com
+  homepage: https://google-gemini.github.io/gemini-cli/
   repository: https://github.com/google-gemini/gemini-cli
-  documentation: https://geminicli.com/docs
+  documentation: https://google-gemini.github.io/gemini-cli/docs/
   license: MIT
   summary: Google Gemini CLI - Command-line interface for Google Gemini
   description: |
