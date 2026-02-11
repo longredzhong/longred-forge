@@ -87,6 +87,15 @@ def build_recipe(
         recipe_content = yaml.safe_load(recipe_yaml_path.read_text())
         version = str(recipe_content.get("context", {}).get("version"))
         package_name = str(recipe_content.get("package", {}).get("name") or recipe_name)
+        
+        # Check if recipe is noarch - only build on linux-64 to avoid duplicate builds
+        build_config = recipe_content.get("build", {})
+        is_noarch = build_config.get("noarch") is not None
+        if is_noarch and not target_platform.startswith("linux"):
+            print(f"ℹ️  Skipping noarch package on {target_platform} (will be built on linux-64)")
+            print("::endgroup::")
+            return
+        
         generated_recipe_dir = recipe_dir / f"generated/{target_platform}"
         # clear dir
         if generated_recipe_dir.exists():
