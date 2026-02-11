@@ -148,7 +148,9 @@ def build_recipe(
                     return
 
                 # find artifact - match any build number
-                pattern = f"output/{target_platform}/{package_name}-{version}-*_*.conda"
+                # For noarch packages, look in output/noarch/ instead of output/{target_platform}/
+                search_platform = "noarch" if is_noarch else target_platform
+                pattern = f"output/{search_platform}/{package_name}-{version}-*_*.conda"
                 files = list(Path(".").glob(pattern))
                 if not files:
                     # Package might have been skipped due to --skip-existing all
