@@ -2,7 +2,8 @@ name: Auto Update Recipes
 
 on:
   schedule:
-    - cron: "0 2 * * *"
+    # Run every hour at minute 10, every 3 hours
+    - cron: "10 */3 * * *"
   workflow_dispatch:
 
 jobs:
@@ -10,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write  # Required to trigger workflows
+      actions: write # Required to trigger workflows
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,7 +61,7 @@ jobs:
               console.log('Using PAT - workflow will be auto-triggered by push');
               return;
             }
-            
+
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
