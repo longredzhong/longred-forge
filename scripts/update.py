@@ -215,22 +215,51 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
         for src in doc["source"]:
             if not isinstance(src, dict):
                 continue
-            if_cond = src.get("if", "")
-            then_list = src.get("then") or []
-            for item in then_list:
+            
+            # Handle two types of source structures:
+            # 1. Simple: source has url/sha256 directly
+            # 2. Conditional: source has if/then structure
+            
+            items_to_process: List[Dict[str, Any]] = []
+            if_cond = ""
+            
+            if "then" in src:
+                # Conditional structure with if/then
+                if_cond = src.get("if", "")
+                then_list = src.get("then") or []
+                items_to_process = then_list
+            elif "url" in src:
+                # Simple structure with url directly
+                items_to_process = [src]
+            
+            for item in items_to_process:
                 if not isinstance(item, dict):
                     continue
                 if not item.get("url"):
                     continue
+                
+                # For simple single-file downloads (like gemini.js), extract filename from URL
+                recipe_url: Optional[str] = item.get("url")
+                if not recipe_url:
+                    continue
+                
                 # Try hardcoded patterns first (for known repos like hatchet), then try URL-based pattern
                 expected = asset_name_for(if_cond, tag, repo)
                 if not expected:
                     # Try to infer from recipe URL pattern
-                    recipe_url: Optional[str] = item.get("url")
                     expected = asset_name_from_recipe_pattern(recipe_url, if_cond, version)
+                
+                # For simple URLs, extract the filename directly
+                if not expected and not if_cond:
+                    import re
+                    m = re.search(r'/([^/]+)$', recipe_url)
+                    if m:
+                        expected = m.group(1)
+                
                 if not expected:
-                    print(f"Could not determine asset name for condition: {if_cond}")
+                    print(f"Could not determine asset name for url: {recipe_url}")
                     continue
+                
                 asset = find_asset(assets, expected)
                 if not asset:
                     print(f"No matching asset found for {expected}")

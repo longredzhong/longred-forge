@@ -7,7 +7,7 @@ package:
 source:
 - url: https://github.com/google-gemini/gemini-cli/releases/download/v${{ version
     }}/gemini.js
-  sha256: ce27a47dc557b35b7bfcca9e11a5d4612e69d421a9a31784eaacda3938105341
+  sha256: 436078ca49e0bd2f4d37100ceb44c7803d8ca16f0a1328c0c9076cf5328695e9
 build:
   number: 0
   noarch: generic
