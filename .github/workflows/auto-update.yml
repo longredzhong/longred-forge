@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write # Required to trigger workflows
+      actions: write # Required to trigger workflows (workflow_dispatch)
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,9 +29,6 @@ jobs:
 
       - name: Commit & push recipe changes
         id: commit
-        env:
-          # Use PAT to trigger downstream workflows. If not available, falls back to GITHUB_TOKEN (won't trigger workflows)
-          GIT_TOKEN: ${{ secrets.PERSONAL_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
@@ -44,24 +41,19 @@ jobs:
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             git commit -m "chore: auto-update recipes"
-            # Push using PAT to trigger Build & Publish workflow
-            git push "https://x-access-token:${GIT_TOKEN}@github.com/${{ github.repository }}" HEAD:main
+            # Push the commit back to main.
+            # Note: pushes made with GITHUB_TOKEN do NOT trigger other workflows via `on: push`,
+            # so we will trigger Build & Publish via workflow_dispatch in the next step.
+            git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" HEAD:main
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Trigger Build & Publish workflow
         if: steps.commit.outputs.changed == 'true'
-        env:
-          HAS_PAT: ${{ secrets.PERSONAL_TOKEN != '' }}
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            // Only manually trigger if not using PAT (PAT push will auto-trigger)
-            if (process.env.HAS_PAT === 'true') {
-              console.log('Using PAT - workflow will be auto-triggered by push');
-              return;
-            }
-
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
