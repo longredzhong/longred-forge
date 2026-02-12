@@ -72,6 +72,17 @@ def package_exists_locally(target_platform: str, name: str, version: str) -> boo
     return False
 
 
+def find_local_artifacts(target_platform: str, name: str, version: str) -> List[Path]:
+    """Find local build artifacts for a given package/version and platform.
+
+    Returns a list sorted by mtime descending (newest first).
+    """
+    pattern = f"output/{target_platform}/{name}-{version}-*_*.conda"
+    files = list(Path(".").glob(pattern))
+    files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return files
+
+
 def build_recipe(
     recipe_yaml_path: Path,
     target_platform: str,
@@ -110,11 +121,18 @@ def build_recipe(
         print(f"Written {recipe_yaml_out}")
 
         if build_flag:
-            # Check local cache first before invoking rattler-build
-            if skip_existing and package_exists_locally(target_platform, package_name, version):
+            # Check local cache first before invoking rattler-build.
+            # For noarch packages, the artifact lives in output/noarch/.
+            local_platform = "noarch" if is_noarch else target_platform
+            local_files = find_local_artifacts(local_platform, package_name, version)
+            if skip_existing and local_files:
+                print(f"✓ {local_files[0].name} already built locally")
                 print(f"✓ {package_name} {version} already exists locally; skipping build")
-                print("::endgroup::")
-                return
+                # Important: if upload is enabled, still attempt upload of existing artifact.
+                # This fixes the case where build happened previously but upload was skipped/failed.
+                if not upload_flag:
+                    print("::endgroup::")
+                    return
 
             # Build the channel URL for prefix.dev
             channel_url = f"https://repo.prefix.dev/{channel}"
@@ -140,38 +158,39 @@ def build_recipe(
             run(cmd)
             print(f"✓ Built for {target_platform}")
 
-            if upload_flag:
-                prefix_token = os.environ.get("PREFIX_API_KEY") or os.environ.get("PREFIX_TOKEN")
-                if not prefix_token:
-                    print("⚠️  PREFIX_API_KEY/PREFIX_TOKEN not found in environment; skipping upload")
-                    print("::endgroup::")
-                    return
+        if upload_flag:
+            prefix_token = os.environ.get("PREFIX_API_KEY") or os.environ.get("PREFIX_TOKEN")
+            if not prefix_token:
+                print("⚠️  PREFIX_API_KEY/PREFIX_TOKEN not found in environment; skipping upload")
+                print("::endgroup::")
+                return
 
-                # find artifact - match any build number
-                # For noarch packages, look in output/noarch/ instead of output/{target_platform}/
-                search_platform = "noarch" if is_noarch else target_platform
-                pattern = f"output/{search_platform}/{package_name}-{version}-*_*.conda"
-                files = list(Path(".").glob(pattern))
-                if not files:
-                    # Package might have been skipped due to --skip-existing all
-                    print(f"✓ No new artifacts to upload (package may already exist in {channel})")
-                    print("::endgroup::")
-                    return
-                artifact = str(files[0])
+            # Find artifact - match any build number.
+            # For noarch packages, look in output/noarch/ instead of output/{target_platform}/.
+            search_platform = "noarch" if is_noarch else target_platform
+            files = find_local_artifacts(search_platform, package_name, version)
+            if not files:
+                # Package might have been skipped due to --skip-existing all (remote already has it),
+                # or build was disabled.
+                print(f"✓ No local artifacts to upload (package may already exist in {channel})")
+                print("::endgroup::")
+                return
 
-                env = os.environ.copy()
-                env["PREFIX_API_KEY"] = prefix_token
+            artifact = str(files[0])
 
-                print(f"✓ API key found: {prefix_token[:5]}...")
+            env = os.environ.copy()
+            env["PREFIX_API_KEY"] = prefix_token
 
-                upload_cmd = ["rattler-build", "upload", "prefix", "-c", channel, "--skip-existing", artifact]
-                run(upload_cmd, env=env)
-                print(f"✓ Uploaded {Path(artifact).name}")
+            print(f"✓ API key found: {prefix_token[:5]}...")
 
-                gha_summary = os.environ.get("GITHUB_STEP_SUMMARY")
-                if gha_summary:
-                    with open(gha_summary, "a") as f:
-                        f.write(f"- :rocket: `{target_platform}/{Path(artifact).name}`: **published**\n")
+            upload_cmd = ["rattler-build", "upload", "prefix", "-c", channel, "--skip-existing", artifact]
+            run(upload_cmd, env=env)
+            print(f"✓ Uploaded {Path(artifact).name}")
+
+            gha_summary = os.environ.get("GITHUB_STEP_SUMMARY")
+            if gha_summary:
+                with open(gha_summary, "a") as f:
+                    f.write(f"- :rocket: `{search_platform}/{Path(artifact).name}`: **published**\n")
 
     except Exception as e:
         print(f"::error title={recipe_yaml_path}::recipe failed to cook")

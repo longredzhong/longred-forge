@@ -19,6 +19,11 @@ if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 
+# Network defaults: keep CI runs from hanging indefinitely.
+DEFAULT_HTTP_TIMEOUT = 30.0
+ASSET_DOWNLOAD_TIMEOUT = 120.0
+
+
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--recipe", default=None, help="Path to a recipe file. If omitted, all recipes under 'recipes/' will be processed.")
@@ -34,7 +39,11 @@ def get_latest_release(owner: str, repo: str, token: Optional[str]) -> Dict[str,
     headers = {}
     if token:
         headers["Authorization"] = f"token {token}"
-    r = httpx.get(url, headers=headers)
+    # GitHub API best-practice headers
+    headers.setdefault("Accept", "application/vnd.github+json")
+    headers.setdefault("X-GitHub-Api-Version", "2022-11-28")
+    headers.setdefault("User-Agent", "longred-forge-recipe-updater")
+    r = httpx.get(url, headers=headers, timeout=DEFAULT_HTTP_TIMEOUT)
     r.raise_for_status()
     return r.json()
 
@@ -116,7 +125,7 @@ def compute_sha_for_asset(asset: Dict[str, Any], headers: Dict[str, str]) -> str
         if candidate:
             candidate_url: Optional[str] = candidate.get("browser_download_url")
             if candidate_url:
-                txt = httpx.get(candidate_url, headers=headers).text
+                txt = httpx.get(candidate_url, headers=headers, timeout=DEFAULT_HTTP_TIMEOUT).text
                 got = digest_from_checksum_txt(asset_name, txt)
                 if got:
                     return got
@@ -127,7 +136,7 @@ def compute_sha_for_asset(asset: Dict[str, Any], headers: Dict[str, str]) -> str
         if cand_name and ("sha" in cand_name.lower() or "checksum" in cand_name.lower()):
             cand_url: Optional[str] = cand.get("browser_download_url")
             if cand_url:
-                txt = httpx.get(cand_url, headers=headers).text
+                txt = httpx.get(cand_url, headers=headers, timeout=DEFAULT_HTTP_TIMEOUT).text
                 got = digest_from_checksum_txt(asset_name, txt)
                 if got:
                     return got
@@ -136,7 +145,7 @@ def compute_sha_for_asset(asset: Dict[str, Any], headers: Dict[str, str]) -> str
     url = asset.get("browser_download_url")
     if not url:
         raise RuntimeError("asset has no download url")
-    r = httpx.get(url, headers=headers)
+    r = httpx.get(url, headers=headers, timeout=ASSET_DOWNLOAD_TIMEOUT)
     r.raise_for_status()
     return sha256_hex_bytes(r.content)
 
