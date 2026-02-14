@@ -140,8 +140,10 @@ You can manually trigger a build:
 
 The workflow builds packages for:
 - Linux x86_64
+- Linux aarch64 (ARM64)
 - macOS Intel (x86_64)
 - macOS Apple Silicon (arm64)
+- Windows x86_64
 
 ## Troubleshooting
 

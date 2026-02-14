@@ -23,6 +23,7 @@ jobs:
       matrix:
         include:
           - { targets: [linux-64], os: ubuntu-latest }
+          - { targets: [linux-aarch64], os: ubuntu-24.04-arm }
           - { targets: [osx-64], os: macos-15-intel }
           - { targets: [osx-arm64], os: macos-latest }
           - { targets: [win-64], os: windows-latest }

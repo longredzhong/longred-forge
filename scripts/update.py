@@ -73,6 +73,8 @@ def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -
         # Hatchet pattern: hatchet_<version>_<OS>_<ARCH>.tar.gz
         if "linux" in if_cond and "x86_64" in if_cond:
             return f"hatchet_{v}_Linux_x86_64.tar.gz"
+        if "linux" in if_cond and "arm64" in if_cond:
+            return f"hatchet_{v}_Linux_arm64.tar.gz"
         if "osx" in if_cond and "x86_64" in if_cond:
             return f"hatchet_{v}_Darwin_x86_64.tar.gz"
         if "osx" in if_cond and "arm64" in if_cond:
