@@ -68,7 +68,7 @@ def digest_from_checksum_txt(filename: str, txt: str) -> Optional[str]:
 def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -> Optional[str]:
     v = version_tag.lstrip("v")
     # Support multiple naming patterns for different tools
-    # Currently only a special-case for Hatchet is implemented.
+    
     if repo and repo.lower() == "hatchet":
         # Hatchet pattern: hatchet_<version>_<OS>_<ARCH>.tar.gz
         if "linux" in if_cond and "x86_64" in if_cond:
@@ -79,6 +79,40 @@ def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -
             return f"hatchet_{v}_Darwin_x86_64.tar.gz"
         if "osx" in if_cond and "arm64" in if_cond:
             return f"hatchet_{v}_Darwin_arm64.tar.gz"
+    
+    if repo and repo.lower() == "copilot-cli":
+        # Copilot-CLI pattern: copilot-<os>-<arch>.tar.gz
+        if "linux" in if_cond and "x86_64" in if_cond:
+            return f"copilot-linux-x64.tar.gz"
+        if "linux" in if_cond and "arm64" in if_cond:
+            return f"copilot-linux-arm64.tar.gz"
+        if "osx" in if_cond and "x86_64" in if_cond:
+            return f"copilot-darwin-x64.tar.gz"
+        if "osx" in if_cond and "arm64" in if_cond:
+            return f"copilot-darwin-arm64.tar.gz"
+    
+    if repo and repo.lower() == "opencode":
+        # OpenCode pattern: opencode-<os>-<arch>.tar.gz or .zip
+        if "linux" in if_cond and "x86_64" in if_cond:
+            return f"opencode-linux-x64.tar.gz"
+        if "linux" in if_cond and "arm64" in if_cond:
+            return f"opencode-linux-arm64.tar.gz"
+        if "osx" in if_cond and "x86_64" in if_cond:
+            return f"opencode-darwin-x64.zip"
+        if "osx" in if_cond and "arm64" in if_cond:
+            return f"opencode-darwin-arm64.zip"
+    
+    if repo and repo.lower() == "radar":
+        # Radar pattern: radar_v<version>_<os>_<arch>.tar.gz
+        if "linux" in if_cond and "x86_64" in if_cond:
+            return f"radar_v{v}_linux_amd64.tar.gz"
+        if "linux" in if_cond and "arm64" in if_cond:
+            return f"radar_v{v}_linux_arm64.tar.gz"
+        if "osx" in if_cond and "x86_64" in if_cond:
+            return f"radar_v{v}_darwin_amd64.tar.gz"
+        if "osx" in if_cond and "arm64" in if_cond:
+            return f"radar_v{v}_darwin_arm64.tar.gz"
+    
     return None
 
 
