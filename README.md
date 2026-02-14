@@ -73,7 +73,7 @@ conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli openco
 
 1. **Automated Release Tracking**: GitHub Actions runs daily to check for new releases from upstream projects
 2. **Recipe Updates**: When a new version is detected, the recipe is automatically updated
-3. **Multi-Platform Builds**: Packages are built for Linux (x86_64), macOS (Intel and Apple Silicon), and Windows (x86_64)
+3. **Multi-Platform Builds**: Packages are built for Linux (x86_64 and aarch64), macOS (Intel and Apple Silicon), and Windows (x86_64)
 4. **Publishing**: Built packages are automatically uploaded to the `longred-forge` channel on prefix.dev
 
 ## 🛠️ Technical Details

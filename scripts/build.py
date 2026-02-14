@@ -102,7 +102,7 @@ def build_recipe(
         # Check if recipe is noarch - only build on linux-64 to avoid duplicate builds
         build_config = recipe_content.get("build", {})
         is_noarch = build_config.get("noarch") is not None
-        if is_noarch and not target_platform.startswith("linux"):
+        if is_noarch and target_platform != "linux-64":
             print(f"ℹ️  Skipping noarch package on {target_platform} (will be built on linux-64)")
             print("::endgroup::")
             return
