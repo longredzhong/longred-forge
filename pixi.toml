@@ -3,8 +3,8 @@ name = "longred-forge"
 version = "0.1.0"
 description = "Longred personal conda package repository"
 authors = ["Longred <longredzhong@outlook.com>"]
-channels = ["conda-forge"]
-platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+channels = ["https://prefix.dev/conda-forge"]
+platforms = ["linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64"]
 
 [tasks]
 

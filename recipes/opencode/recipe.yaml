@@ -8,7 +8,11 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-linux-x64.tar.gz
-    sha256: c766b662c591a1f75aa5e50c4385fbe995f5896a8b56bcc67bef1af3f31e0740
+    sha256: 87e0630728241ee6e21bb9660c928a3a0c53113b3aa4e4abdc77d6dbe3a0b0e9
+- if: linux and arm64
+  then:
+  - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-linux-arm64.tar.gz
+    sha256: skip
 - if: osx and x86_64
   then:
   - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-darwin-x64.zip

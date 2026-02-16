@@ -10,6 +10,11 @@ source:
   - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
       version }}_Linux_x86_64.tar.gz
     sha256: 4470b069774e74b8c66642c407d932082b9bceff0e9bc1819b8810503a535f22
+- if: linux and arm64
+  then:
+  - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
+      version }}_Linux_arm64.tar.gz
+    sha256: skip
 - if: osx and x86_64
   then:
   - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{

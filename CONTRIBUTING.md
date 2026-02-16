@@ -44,7 +44,7 @@ When creating or updating recipes:
 1. **Use the latest version**: Always target the latest stable release
 2. **Include checksums**: Use SHA256 checksums for source files (use `skip` for auto-extracted tarballs from GitHub)
 3. **Minimal dependencies**: Only include necessary runtime dependencies
-4. **Cross-platform**: Support Linux, macOS (Intel and ARM) when possible
+4. **Cross-platform**: Support Linux (x86_64 and aarch64), macOS (Intel and ARM), and Windows when possible
 5. **Testing**: Include basic tests to verify the package works
 6. **Metadata**: Provide accurate homepage, license, and summary
 
