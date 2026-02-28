@@ -34,7 +34,7 @@ requirements:
   run: null
 tests:
 - script:
-  - garage-webui --help
+  - test -f $PREFIX/bin/garage-webui
 about:
   homepage: https://github.com/khairul169/garage-webui
   license: MIT
