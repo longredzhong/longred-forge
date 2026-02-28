@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+context:
+  version: 1.1.0
+package:
+  name: garage-webui
+  version: ${{ version }}
+source:
+- if: linux and x86_64
+  then:
+  - url: https://github.com/khairul169/garage-webui/releases/download/${{ version
+      }}/garage-webui-v${{ version }}-linux-amd64
+    sha256: 180b5946957928f6cef1683c484a69d3b6c4f0ec00e132402863fc8ff824e746
+- if: linux and arm64
+  then:
+  - url: https://github.com/khairul169/garage-webui/releases/download/${{ version
+      }}/garage-webui-v${{ version }}-linux-arm64
+    sha256: 89c2f4502c00e8edc207612234d0ddcd96147155165b5c662dd2c71849adf42f
+build:
+  number: 0
+  dynamic_linking:
+    binary_relocation: false
+    rpath_allowlist:
+    - '**/*'
+  script: 'python -c "import os, shutil, stat, sys, glob; prefix = os.environ.get(''PREFIX'');
+    [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, ''bin''); os.makedirs(bin_dir,
+    exist_ok=True); source_files = glob.glob(''garage-webui-v*''); [exit(1) if not
+    source_files else None]; source_file = source_files[0]; dest_file = os.path.join(bin_dir,
+    ''garage-webui''); shutil.copy2(source_file, dest_file); os.chmod(dest_file, os.stat(dest_file).st_mode
+    | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)"
+
+    '
+requirements:
+  build: null
+  run: null
+tests:
+- script:
+  - garage-webui --help
+about:
+  homepage: https://github.com/khairul169/garage-webui
+  license: MIT
+  summary: A web UI for garage S3-compatible object storage
+  description: 'garage-webui is a web-based user interface for garage, a lightweight
+    S3-compatible object storage server. It provides an easy way to manage buckets,
+    objects, and keys through a browser-based interface.
+
+    '
+  repository: https://github.com/khairul169/garage-webui
+  documentation: https://github.com/khairul169/garage-webui
+extra:
+  recipe-maintainers:
+  - longredzhong

@@ -113,6 +113,13 @@ def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -
         if "osx" in if_cond and "arm64" in if_cond:
             return f"radar_v{v}_darwin_arm64.tar.gz"
 
+    if repo and repo.lower() == "garage-webui":
+        # garage-webui pattern: garage-webui-v<version>-linux-<arch>
+        if "linux" in if_cond and "x86_64" in if_cond:
+            return f"garage-webui-v{v}-linux-amd64"
+        if "linux" in if_cond and "arm64" in if_cond:
+            return f"garage-webui-v{v}-linux-arm64"
+
     return None
 
 
