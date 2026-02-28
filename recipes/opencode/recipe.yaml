@@ -9,7 +9,7 @@ source:
   then:
   - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-linux-x64.tar.gz
     sha256: 78b01946464e935c9b79261eda4a48f406621b0787a358fe607b6c71305f320e
-- if: linux and arm64
+- if: linux and aarch64
   then:
   - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-linux-arm64.tar.gz
     sha256: dd4ca5764a093f92d8515833d5c58eabc657e72cdc3ef2ba3ac11e0db749b80d

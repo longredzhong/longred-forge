@@ -73,7 +73,7 @@ def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -
         # Hatchet pattern: hatchet_<version>_<OS>_<ARCH>.tar.gz
         if "linux" in if_cond and "x86_64" in if_cond:
             return f"hatchet_{v}_Linux_x86_64.tar.gz"
-        if "linux" in if_cond and "arm64" in if_cond:
+        if "linux" in if_cond and "aarch64" in if_cond:
             return f"hatchet_{v}_Linux_arm64.tar.gz"
         if "osx" in if_cond and "x86_64" in if_cond:
             return f"hatchet_{v}_Darwin_x86_64.tar.gz"
@@ -84,7 +84,7 @@ def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -
         # Copilot-CLI pattern: copilot-<os>-<arch>.tar.gz
         if "linux" in if_cond and "x86_64" in if_cond:
             return f"copilot-linux-x64.tar.gz"
-        if "linux" in if_cond and "arm64" in if_cond:
+        if "linux" in if_cond and "aarch64" in if_cond:
             return f"copilot-linux-arm64.tar.gz"
         if "osx" in if_cond and "x86_64" in if_cond:
             return f"copilot-darwin-x64.tar.gz"
@@ -95,7 +95,7 @@ def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -
         # OpenCode pattern: opencode-<os>-<arch>.tar.gz or .zip
         if "linux" in if_cond and "x86_64" in if_cond:
             return f"opencode-linux-x64.tar.gz"
-        if "linux" in if_cond and "arm64" in if_cond:
+        if "linux" in if_cond and "aarch64" in if_cond:
             return f"opencode-linux-arm64.tar.gz"
         if "osx" in if_cond and "x86_64" in if_cond:
             return f"opencode-darwin-x64.zip"
@@ -106,7 +106,7 @@ def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -
         # Radar pattern: radar_v<version>_<os>_<arch>.tar.gz
         if "linux" in if_cond and "x86_64" in if_cond:
             return f"radar_v{v}_linux_amd64.tar.gz"
-        if "linux" in if_cond and "arm64" in if_cond:
+        if "linux" in if_cond and "aarch64" in if_cond:
             return f"radar_v{v}_linux_arm64.tar.gz"
         if "osx" in if_cond and "x86_64" in if_cond:
             return f"radar_v{v}_darwin_amd64.tar.gz"

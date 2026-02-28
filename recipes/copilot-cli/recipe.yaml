@@ -9,7 +9,7 @@ source:
   then:
   - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-linux-x64.tar.gz
     sha256: 344f89ee1e619c9ffcb072381b7e53c2f305053008b55584dc5846d003c167b9
-- if: linux and arm64
+- if: linux and aarch64
   then:
   - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-linux-arm64.tar.gz
     sha256: 60afebcf47644db1cedd4bbe2be9fc18e6ffb4bc394f570a7896b7a8fd889f63
