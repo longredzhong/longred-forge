@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+context:
+  version: 2.1.63
+  gcs_base: https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases
+package:
+  name: claude-code
+  version: ${{ version }}
+source:
+- if: linux and x86_64
+  then:
+  - url: ${{ gcs_base }}/${{ version }}/linux-x64/claude
+    sha256: 734447e461bb92f0ffd5f683bb6216c35a3c16e8dd84be8d150b43605d39b0d1
+- if: linux and aarch64
+  then:
+  - url: ${{ gcs_base }}/${{ version }}/linux-arm64/claude
+    sha256: 1fec8c8369606b4a6c00af963354b7d48aee793ed5db378fe4cf280149f3190a
+- if: osx and x86_64
+  then:
+  - url: ${{ gcs_base }}/${{ version }}/darwin-x64/claude
+    sha256: 07842d6521f59bc68979d833ef33cbc1b985b9f5e09fa8975efe039989666aa9
+- if: osx and arm64
+  then:
+  - url: ${{ gcs_base }}/${{ version }}/darwin-arm64/claude
+    sha256: 2e8667322e0bd104087df2a8857f176acc75d7091aa02828825dfeb4a5708531
+build:
+  number: 0
+  dynamic_linking:
+    binary_relocation: false
+    rpath_allowlist:
+    - '**/*'
+  script: 'python -c "import os, shutil, stat; prefix = os.environ.get(''PREFIX'');
+    [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, ''bin''); os.makedirs(bin_dir,
+    exist_ok=True); source_file = ''claude''; [exit(1) if not os.path.isfile(source_file)
+    else None]; dest_file = os.path.join(bin_dir, ''claude''); shutil.copy2(source_file,
+    dest_file); os.chmod(dest_file, os.stat(dest_file).st_mode | stat.S_IEXEC | stat.S_IXUSR
+    | stat.S_IXGRP | stat.S_IXOTH)"
+
+    '
+requirements:
+  build: null
+  run: null
+tests:
+- script:
+  - claude --version
+about:
+  homepage: https://claude.ai/code
+  license: LicenseRef-proprietary
+  summary: Claude Code - Agentic coding tool by Anthropic
+  description: 'Claude Code is an agentic coding tool that lives in your terminal,
+    understands your codebase, and helps you code faster through natural language commands.
+
+    '
+  repository: https://github.com/anthropics/claude-code
+  documentation: https://docs.anthropic.com/en/docs/claude-code
+extra:
+  recipe-maintainers:
+  - longredzhong
