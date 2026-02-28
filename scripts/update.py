@@ -23,6 +23,9 @@ if sys.platform == "win32":
 DEFAULT_HTTP_TIMEOUT = 30.0
 ASSET_DOWNLOAD_TIMEOUT = 120.0
 
+# GCS bucket for claude-code native binaries
+CLAUDE_CODE_GCS_BUCKET = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases"
+
 
 def parse_args():
     p = argparse.ArgumentParser()
@@ -62,6 +65,42 @@ def digest_from_checksum_txt(filename: str, txt: str) -> Optional[str]:
             parts = line.split()
             if len(parts) >= 1:
                 return parts[0]
+    return None
+
+
+def get_gcs_checksums(version: str) -> Dict[str, str]:
+    """Fetch SHA-256 checksums from GCS manifest.json for a given claude-code version.
+
+    Returns a dict mapping GCS platform names to sha256 hex strings, e.g.:
+      {"linux-x64": "abc123...", "linux-arm64": "def456...", ...}
+    """
+    manifest_url = f"{CLAUDE_CODE_GCS_BUCKET}/{version}/manifest.json"
+    r = httpx.get(manifest_url, timeout=DEFAULT_HTTP_TIMEOUT)
+    r.raise_for_status()
+    manifest = r.json()
+    platforms = manifest.get("platforms", {})
+    result: Dict[str, str] = {}
+    for platform, info in platforms.items():
+        if not isinstance(info, dict):
+            continue
+        checksum = info.get("checksum", "")
+        if checksum:
+            result[platform] = checksum
+        else:
+            print(f"Warning: missing checksum for platform {platform} in GCS manifest")
+    return result
+
+
+def gcs_platform_for_if_cond(if_cond: str) -> Optional[str]:
+    """Map a recipe if-condition string to the corresponding GCS platform name."""
+    if "linux" in if_cond and "x86_64" in if_cond:
+        return "linux-x64"
+    if "linux" in if_cond and "aarch64" in if_cond:
+        return "linux-arm64"
+    if "osx" in if_cond and "x86_64" in if_cond:
+        return "darwin-x64"
+    if "osx" in if_cond and "arm64" in if_cond:
+        return "darwin-arm64"
     return None
 
 
@@ -263,6 +302,9 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
     for a in assets:
         a["_release_assets_cache"] = assets
 
+    # Pre-fetch GCS checksums if any source URL references the claude-code GCS bucket
+    gcs_checksums: Optional[Dict[str, str]] = None
+
     if isinstance(doc.get("source"), list):
         for src in doc["source"]:
             if not isinstance(src, dict):
@@ -293,6 +335,30 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
                 # For simple single-file downloads (like gemini.js), extract filename from URL
                 recipe_url: Optional[str] = item.get("url")
                 if not recipe_url:
+                    continue
+
+                # GCS-based source (claude-code): fetch checksums from manifest
+                # The URL may use a ${{ gcs_base }} context variable or the literal GCS URL
+                ctx_gcs_base = (doc.get("context") or {}).get("gcs_base", "")
+                is_gcs_source = (
+                    CLAUDE_CODE_GCS_BUCKET in recipe_url
+                    or (ctx_gcs_base and ctx_gcs_base == CLAUDE_CODE_GCS_BUCKET)
+                )
+                if is_gcs_source:
+                    if gcs_checksums is None:
+                        try:
+                            gcs_checksums = get_gcs_checksums(version)
+                            print(f"Fetched GCS checksums for version {version}")
+                        except Exception as e:
+                            print(f"Failed to fetch GCS checksums: {e}")
+                            gcs_checksums = {}
+                    gcs_platform = gcs_platform_for_if_cond(if_cond)
+                    if gcs_platform and gcs_checksums.get(gcs_platform):
+                        sha = gcs_checksums[gcs_platform]
+                        print(f"Using GCS sha for {gcs_platform}: {sha}")
+                        item["sha256"] = sha
+                    else:
+                        print(f"GCS checksum not found for platform: {gcs_platform}")
                     continue
                 
                 # Try hardcoded patterns first (for known repos like hatchet), then try URL-based pattern
