@@ -10,7 +10,7 @@ source:
   - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
       version }}_linux_amd64.tar.gz
     sha256: abf24cec5f439af2d43837ccf18430168afd35329d441621b7179741e1510d03
-- if: linux and arm64
+- if: linux and aarch64
   then:
   - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
       version }}_linux_arm64.tar.gz

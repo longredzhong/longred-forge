@@ -10,7 +10,7 @@ source:
   - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
       version }}_Linux_x86_64.tar.gz
     sha256: 720e3a9fcce8e5bbc53b597c0b31541cbb72404f63a2b878fa5970187b3a36bd
-- if: linux and arm64
+- if: linux and aarch64
   then:
   - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
       version }}_Linux_arm64.tar.gz

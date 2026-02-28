@@ -9,7 +9,7 @@ source:
   then:
   - url: https://github.com/shaka-project/shaka-packager/releases/download/v${{ version }}/packager-linux-x64
     sha256: 7bdefe5a25fe84535c6c1a425f4c3c6b65fa85c441c2aeba01254b3c0f4b1956
-- if: linux and arm64
+- if: linux and aarch64
   then:
   - url: https://github.com/shaka-project/shaka-packager/releases/download/v${{ version }}/packager-linux-arm64
     sha256: 170ee824cc30a8ed7c7c22346c46bd614aa5532a4af16d9f3c8cfaed6eda268e
