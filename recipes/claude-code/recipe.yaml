@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 2.1.72
+  version: 2.1.73
   gcs_base: https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases
 package:
   name: claude-code
@@ -9,19 +9,19 @@ source:
 - if: linux and x86_64
   then:
   - url: ${{ gcs_base }}/${{ version }}/linux-x64/claude
-    sha256: b55338e7fbb8bf7d268b91bab3b28753621dab9637b1cca943669f4490ed878d
+    sha256: 960cd0d71a225f3b946bb49dd5c19624c558077d9cf3da4eb570380b43135b7d
 - if: linux and aarch64
   then:
   - url: ${{ gcs_base }}/${{ version }}/linux-arm64/claude
-    sha256: 9f0c10cb9d222eaf4ec4870403a1561b1329dc669303613369a877fd05a11708
+    sha256: 7a9d6851c57df4af7ac2800817a81970cf17c388e02d3749610d2fe199c2d0f0
 - if: osx and x86_64
   then:
   - url: ${{ gcs_base }}/${{ version }}/darwin-x64/claude
-    sha256: 24b9fa183e4226640f0a2158e77702b0dd860d9205b1bec7e695609a309c8986
+    sha256: 3b03e15e3e809ada49e5a4125eb36508585b6d5adcd715b23d1ca3bedeb2a4e9
 - if: osx and arm64
   then:
   - url: ${{ gcs_base }}/${{ version }}/darwin-arm64/claude
-    sha256: c584f51362d562695bc71750d1c2196f9a0e0e36fd043e2bc683ccfc9a3ab3d7
+    sha256: 5d402f804dde699c3824e93fefc198d81a52947a43e578286ea01cea9c029a73
 build:
   number: 0
   dynamic_linking:
