@@ -1,13 +1,13 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.33.2
+  version: 0.34.0
 package:
   name: gemini-cli
   version: ${{ version }}
 source:
 - url: https://github.com/google-gemini/gemini-cli/releases/download/v${{ version
     }}/gemini.js
-  sha256: 99216c7ed4929f7bf07e24d69c9c34ba7a7122cc5431f314e593355965cc2662
+  sha256: 41fa25eb30138d52ba77881f03aaa5dda5708ea444ecd018aa0e584f21150c79
 build:
   number: 0
   noarch: generic
