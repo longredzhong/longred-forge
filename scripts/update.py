@@ -177,7 +177,9 @@ def asset_name_from_recipe_pattern(recipe_url: Optional[str], if_cond: str, vers
     # Extract just the filename.
     m = re.search(r'/([^/]+)$', url_pattern)
     if m:
-        return m.group(1)
+        filename = m.group(1)
+        if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]*", filename):
+            return filename
     return None
 
 

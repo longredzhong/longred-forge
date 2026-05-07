@@ -41,8 +41,25 @@ build:
     binary_relocation: false
     rpath_allowlist:
     - '**/*'
-  script: |
-    python -c "import os, shutil, stat, sys; prefix = os.environ.get('PREFIX'); [exit(1) if not prefix else None]; is_unix = sys.platform.startswith('linux') or sys.platform == 'darwin'; bin_dir = os.path.join(prefix, 'bin') if is_unix else os.path.join(prefix, 'Scripts'); os.makedirs(bin_dir, exist_ok=True); binaries = [('deepseek-linux-x64', 'deepseek'), ('deepseek-linux-arm64', 'deepseek'), ('deepseek-macos-x64', 'deepseek'), ('deepseek-macos-arm64', 'deepseek'), ('deepseek-windows-x64.exe', 'deepseek.exe'), ('deepseek-tui-linux-x64', 'deepseek-tui'), ('deepseek-tui-linux-arm64', 'deepseek-tui'), ('deepseek-tui-macos-x64', 'deepseek-tui'), ('deepseek-tui-macos-arm64', 'deepseek-tui'), ('deepseek-tui-windows-x64.exe', 'deepseek-tui.exe')]; selected = [(src, dst) for src, dst in binaries if os.path.isfile(src)]; [exit(1) if len(selected) != 2 else None]; [shutil.copy2(src, os.path.join(bin_dir, dst)) for src, dst in selected]; [os.chmod(os.path.join(bin_dir, dst), os.stat(os.path.join(bin_dir, dst)).st_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) for src, dst in selected if is_unix]"
+  script: >-
+    python -c "import os, shutil, stat, sys;
+    prefix = os.environ.get('PREFIX');
+    [exit(1) if not prefix else None];
+    is_unix = sys.platform.startswith('linux') or sys.platform == 'darwin';
+    bin_dir = os.path.join(prefix, 'bin') if is_unix else os.path.join(prefix, 'Scripts');
+    os.makedirs(bin_dir, exist_ok=True);
+    binaries = [
+    ('deepseek-linux-x64', 'deepseek'), ('deepseek-linux-arm64', 'deepseek'),
+    ('deepseek-macos-x64', 'deepseek'), ('deepseek-macos-arm64', 'deepseek'),
+    ('deepseek-windows-x64.exe', 'deepseek.exe'),
+    ('deepseek-tui-linux-x64', 'deepseek-tui'), ('deepseek-tui-linux-arm64', 'deepseek-tui'),
+    ('deepseek-tui-macos-x64', 'deepseek-tui'), ('deepseek-tui-macos-arm64', 'deepseek-tui'),
+    ('deepseek-tui-windows-x64.exe', 'deepseek-tui.exe')];
+    selected = [(src, dst) for src, dst in binaries if os.path.isfile(src)];
+    [exit(1) if len(selected) != 2 else None];
+    [shutil.copy2(src, os.path.join(bin_dir, dst)) for src, dst in selected];
+    [os.chmod(os.path.join(bin_dir, dst), os.stat(os.path.join(bin_dir, dst)).st_mode |
+    stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) for src, dst in selected if is_unix]"
 requirements:
   build: null
   run: null
