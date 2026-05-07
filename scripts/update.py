@@ -26,7 +26,7 @@ ASSET_DOWNLOAD_TIMEOUT = 120.0
 # Safe release asset basenames start and end with an alphanumeric, underscore, hyphen,
 # or plus sign, and may contain non-consecutive dots between those characters.
 VALID_ASSET_BASENAME_PATTERN = re.compile(
-    r"(?:[A-Za-z0-9](?:[A-Za-z0-9_+-]|\.(?=[A-Za-z0-9_+-]))*[A-Za-z0-9_+-]|[A-Za-z0-9])"
+    r"^(?:[A-Za-z0-9](?:[A-Za-z0-9_+-]|\.(?=[A-Za-z0-9_+-]))*[A-Za-z0-9_+-]|[A-Za-z0-9])$"
 )
 
 # GCS bucket for claude-code native binaries
