@@ -56,7 +56,8 @@ build:
     ('deepseek-tui-macos-x64', 'deepseek-tui'), ('deepseek-tui-macos-arm64', 'deepseek-tui'),
     ('deepseek-tui-windows-x64.exe', 'deepseek-tui.exe')];
     selected = [(src, dst) for src, dst in binaries if os.path.isfile(src)];
-    [exit(1) if len(selected) != 2 else None];
+    len(selected) == 2 or (print('Error: expected exactly 2 binaries, found ' + str(len(selected)),
+    file=sys.stderr), exit(1));
     [shutil.copy2(src, os.path.join(bin_dir, dst)) for src, dst in selected];
     [os.chmod(os.path.join(bin_dir, dst), os.stat(os.path.join(bin_dir, dst)).st_mode |
     stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) for src, dst in selected if is_unix]"
@@ -72,10 +73,9 @@ about:
   repository: https://github.com/Hmbown/DeepSeek-TUI
   license: MIT
   summary: DeepSeek TUI - terminal coding agent for DeepSeek
-  description: 'DeepSeek TUI is a terminal coding agent for DeepSeek V4. It provides
-    the `deepseek` dispatcher command and the companion `deepseek-tui` runtime.
-
-    '
+  description: >
+    DeepSeek TUI is a terminal coding agent for DeepSeek V4. It provides the
+    `deepseek` dispatcher command and the companion `deepseek-tui` runtime.
 extra:
   recipe-maintainers:
   - longredzhong
