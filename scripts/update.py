@@ -25,7 +25,7 @@ ASSET_DOWNLOAD_TIMEOUT = 120.0
 
 # Safe release asset basenames start and end with an alphanumeric, underscore, hyphen,
 # or plus sign, and may contain non-consecutive dots between those characters.
-VALID_ASSET_FILENAME_PATTERN = re.compile(
+VALID_ASSET_BASENAME_PATTERN = re.compile(
     r"(?:[A-Za-z0-9](?:[A-Za-z0-9_+-]|\.(?=[A-Za-z0-9_+-]))*[A-Za-z0-9_+-]|[A-Za-z0-9])"
 )
 
@@ -184,7 +184,7 @@ def asset_name_from_recipe_pattern(recipe_url: Optional[str], if_cond: str, vers
     m = re.search(r'/([^/]+)$', url_pattern)
     if m:
         filename = m.group(1)
-        if VALID_ASSET_FILENAME_PATTERN.fullmatch(filename):
+        if VALID_ASSET_BASENAME_PATTERN.fullmatch(filename):
             return filename
     return None
 
