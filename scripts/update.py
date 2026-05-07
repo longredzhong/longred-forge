@@ -178,6 +178,8 @@ def asset_name_from_recipe_pattern(recipe_url: Optional[str], if_cond: str, vers
     m = re.search(r'/([^/]+)$', url_pattern)
     if m:
         filename = m.group(1)
+        # Allow safe release asset basenames: start with alphanumeric, then alphanumerics,
+        # underscores, hyphens, plus signs, or non-trailing/non-consecutive dots.
         if re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9_+-]|\.(?=[A-Za-z0-9_+-]))*", filename):
             return filename
     return None
