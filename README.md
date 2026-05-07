@@ -48,20 +48,27 @@ A media packaging and development framework for VOD and Live DASH and HLS applic
 
 **Upstream:** [shaka-project/shaka-packager](https://github.com/shaka-project/shaka-packager)
 
+### deepseek-tui
+
+DeepSeek TUI is a terminal coding agent for DeepSeek V4. It packages both the `deepseek` dispatcher and the
+`deepseek-tui` runtime.
+
+**Upstream:** [Hmbown/DeepSeek-TUI](https://github.com/Hmbown/DeepSeek-TUI)
+
 
 **Installation:**
 
 ```bash
 # Use the pixi CLI to install globally
-pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager 
+pixi global install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager deepseek-tui 
 
 # Or add to a pixi project
-pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager 
+pixi add -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager deepseek-tui 
 
 # Using mamba/conda
-mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager 
-miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager 
-conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager 
+mamba install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager deepseek-tui 
+miniconda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager deepseek-tui 
+conda install -c https://prefix.dev/longred-forge hatchet-cli copilot-cli opencode radar shaka-packager deepseek-tui 
 ```
 
 ## 🚀 How It Works
@@ -93,6 +100,8 @@ longred-forge/
 │   ├── radar/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── shaka-packager/
+│   │   └── recipe.yaml        # Package recipe
+│   ├── deepseek-tui/
 │   │   └── recipe.yaml        # Package recipe
 │   └── 
 ├── scripts/

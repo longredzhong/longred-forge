@@ -166,15 +166,16 @@ def asset_name_from_recipe_pattern(recipe_url: Optional[str], if_cond: str, vers
     """Extract asset name pattern from recipe source URL, substituting the version placeholder."""
     if not recipe_url:
         return None
-    # Extract pattern like copilot-linux-x64.tar.gz or radar_v${{ version }}_linux_amd64.tar.gz
+    # Extract pattern like copilot-linux-x64.tar.gz, radar_v${{ version }}_linux_amd64.tar.gz,
+    # or direct binary assets such as deepseek-linux-x64.
     import re
     # Substitute version placeholder with provided version (if available)
     url_pattern = recipe_url.replace("${{ version }}", str(version) if version is not None else "")
     url_pattern = url_pattern.strip()
     if "{" in url_pattern:  # Skip if unresolved other variables remain
         return None
-    # Extract just the filename
-    m = re.search(r'/([^/]+\.(?:tar\.gz|zip))$', url_pattern)
+    # Extract just the filename.
+    m = re.search(r'/([^/]+)$', url_pattern)
     if m:
         return m.group(1)
     return None
