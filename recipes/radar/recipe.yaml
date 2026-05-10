@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 1.5.11
+  version: 1.5.12
 package:
   name: radar
   version: ${{ version }}
@@ -9,27 +9,27 @@ source:
   then:
   - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
       version }}_linux_amd64.tar.gz
-    sha256: 3369f9ca1789b63d9c0fbd9b7f4b3b5a3c24004f4d4b489811ae9b02c461b4a7
+    sha256: 5df04f3ecc3c3041e26ef8a8c3dd93a89a118bb4312442363701b23d93d7723c
 - if: linux and aarch64
   then:
   - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
       version }}_linux_arm64.tar.gz
-    sha256: 90d95bc0ac0e91edb2e54637569265b8fa02ecbf721f563e327e1ba8f11c3e03
+    sha256: 78026cb0a418fee93e32c2ffd83b2382b32cb7df9aad33ab72a2b51aed2c0dd4
 - if: osx and x86_64
   then:
   - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
       version }}_darwin_amd64.tar.gz
-    sha256: f25785a3cb83fe91279ff206b95bb2d36f4f5f1247b4ac5b09d98dcf273cba56
+    sha256: c6767b0074fa12889441cbeac847b012d6f03feceadd54da1b6ebc635ae1b89d
 - if: osx and arm64
   then:
   - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
       version }}_darwin_arm64.tar.gz
-    sha256: 94f0ac2d5b975dbd4c4eb11303769416e77332518392294e5553123de4ca4fd2
+    sha256: 06792b00f5ad7b5430dfe03bad1b34554593d83cb62f40087282ada4b8346765
 - if: win and x86_64
   then:
   - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
       version }}_windows_amd64.zip
-    sha256: 9d61bd90923a71cf7614bf15d93cb33370174b92010c0046ec5a81dc5f5ce7e7
+    sha256: 75372ac5b271a3a8eaea329360733597ed66a1fa7edc58d6e57836fbe2e5aa26
 build:
   number: 0
   dynamic_linking:
