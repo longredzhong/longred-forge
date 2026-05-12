@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.8.29
+  version: 0.8.30
 package:
   name: deepseek-tui
   version: ${{ version }}
@@ -8,33 +8,33 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-linux-x64
-    sha256: 439580d332e70a53a7290d2e45092a77880b5a04da41141ad036621a3cfeb7d8
+    sha256: d99260ca48b9466cfb72986bd5526d3bcf5441b117102b62973ac44800c2b17d
   - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-tui-linux-x64
-    sha256: 5b7bb3b8fe1af787eaffff29fc47e4fa008c5888f7d5c649ef68d232cc617072
+    sha256: bd2a305754a5a002ff025ee17adebada613872eb380cb50fe3d21663460dfed5
 - if: linux and aarch64
   then:
   - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-linux-arm64
-    sha256: 122a89a69eec4fcf09309d75f2968f154540d9941845080bc503d1497da74413
+    sha256: 1f18c21a4d9383456fb1357e83d78cc3c2a0932d81f8b7753d256ef214505b06
   - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-tui-linux-arm64
-    sha256: f10a1f832a7f04fe07e18ed18a33aea6cc6b732015dc2fa243cf1cf431075799
+    sha256: 005fc96d810abc14d7e275b1349ba543d643f3a0fd364b9f63ce0142cf6d4050
 - if: osx and x86_64
   then:
   - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-macos-x64
-    sha256: 9527b85c6cc264d6a69f8bdbc49f78496c1ac7130e9b48b993a7209f2a64766b
+    sha256: 8ed2b250db81ee6f6da5309a2f576a0a667eb8753dbe9f50baee2cbed0c20b66
   - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-tui-macos-x64
-    sha256: 74863518b7f2b4b870bb2bd4df10be5bc48de0aa3316bab7843d1bda20c390df
+    sha256: d923b1b18184ca8299d51b3f5dc752b99dcc9993449da19bf227a8e34c860f60
 - if: osx and arm64
   then:
   - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-macos-arm64
-    sha256: 0f513dabafdad0733cb675e04a35f22cc26a521d92b8f7d708253a7c0ed2aa6a
+    sha256: f19738b819df2fe085041740b1797bac6fca3ca7146ec4144eddf96c20a8d86c
   - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-tui-macos-arm64
-    sha256: 8907ef361d693c8d785c24c6e0b70c88638fdf06e2c0e1b9ccce23d2b973992d
+    sha256: 14b218d4d45fffe6d99ef285ea4c1245e79cf15a27a2918d411d4395111384cd
 - if: win and x86_64
   then:
   - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-windows-x64.exe
-    sha256: 64c73243642cc91ea79666371d2346ba56761f106fe3599088577c1abdde5542
+    sha256: 050714119175d985a4bdae63e6aa498e15df0c7a3dad86e789f02c8e29322ffe
   - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-tui-windows-x64.exe
-    sha256: 7b1ecfd4bb1d25f8a8d7179e85c095b90d2383893f62a7ffa459686057a8a673
+    sha256: cac42878ef01e708766139e55ff9e7b99106be10bfe60ec7e215778e50e988eb
 build:
   number: 0
   dynamic_linking:
