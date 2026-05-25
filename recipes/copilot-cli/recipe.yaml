@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 1.0.53
+  version: 1.0.54
 package:
   name: copilot-cli
   version: ${{ version }}
@@ -8,23 +8,23 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-linux-x64.tar.gz
-    sha256: c3af9da59f728482d0a5d5eb452b8d1eafa04c20675d52575621d575742a53eb
+    sha256: a24a665390b427c623a8b0ffd9967cde2dc0ae60126e9bde585c2bff137f4f10
 - if: linux and aarch64
   then:
   - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-linux-arm64.tar.gz
-    sha256: f695c58d5a494c96dd58cef99af43eb5d15a5e04fc0f651985347447c11f29e2
+    sha256: 62edd0e95bb902b6eb3802fc8a034fcb25b1b49180bcd8541f498127c0953899
 - if: osx and x86_64
   then:
   - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-darwin-x64.tar.gz
-    sha256: 9f145bc8eae63d63de43632302c2a8222105d37223c13de8d66cc60b8b8540a6
+    sha256: 6485cc455ee782265ac953d9eb456caf820143a7ebd9d0085b1e4696579c230f
 - if: osx and arm64
   then:
   - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-darwin-arm64.tar.gz
-    sha256: 04a199d97e8bf86b530d5853c43e22c8913b6e5cd9efb2f28f537e5c7a9e84ad
+    sha256: af0e573f8b45363e31733e309653e487618ead12c9bafda5d430639488712810
 - if: win and x86_64
   then:
   - url: https://github.com/github/copilot-cli/releases/download/v${{ version }}/copilot-win32-x64.zip
-    sha256: 2eb1e4e4917855c6d00ebceaabf02a22b270085bd392c19c410f4658debf45ea
+    sha256: 3b2c513bb0d9bcf4ce5c875bbeb18efd1ef8a01519d6f8a9ecd8f1bbe52587e4
 build:
   number: 0
   dynamic_linking:
