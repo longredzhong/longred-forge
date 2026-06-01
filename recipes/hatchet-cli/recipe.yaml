@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.87.14
+  version: 0.88.0
 package:
   name: hatchet-cli
   version: ${{ version }}
@@ -9,27 +9,27 @@ source:
   then:
   - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
       version }}_Linux_x86_64.tar.gz
-    sha256: a43d09ebb11e4284c7a3fd594a58254500e5331eff1361902e10a94c1af0968c
+    sha256: 3da669e8ecb5577343296ac87d0a25adfa2f18d9344ebafbec3002b34f9a7e11
 - if: linux and aarch64
   then:
   - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
       version }}_Linux_arm64.tar.gz
-    sha256: 7c6995723dec77c33fc63a8fa15d1f4bb4ace54560bafaeffb0f02b0c52accdd
+    sha256: 320db0462ecee7dae75ad07e26bbb4117eb90f59a0d606fa65ed10db0defba16
 - if: osx and x86_64
   then:
   - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
       version }}_Darwin_x86_64.tar.gz
-    sha256: d8ea07aef60009de87d75ed14ac3da26eb468df45cc7979d4f39acd139b77993
+    sha256: acc2f48bac29132dd16473ad868e340cc4ddd7d617c95b05c63198fbab0223cd
 - if: osx and arm64
   then:
   - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
       version }}_Darwin_arm64.tar.gz
-    sha256: 4f490a468964949c94f6b0b4b0a5e36774c7c74463668871e8975a937d6836e5
+    sha256: eced575c342946eca3ba18a7ac0cf94fbc7468e1a8285e0d43441ee40633e94a
 - if: win and x86_64
   then:
   - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
       version }}_Windows_x86_64.zip
-    sha256: 177f8b69fe139f37f671f0dc528865cd28e533335e44bc352a03c3969b1516ce
+    sha256: b05fa725d225ca9a54d5075a5894f330c9a8f952f4dbf0d7990743ab5469c461
 build:
   number: 0
   dynamic_linking:
