@@ -1,80 +1,92 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.8.40
+  version: 0.8.58
 package:
   name: deepseek-tui
   version: ${{ version }}
 source:
 - if: linux and x86_64
   then:
-  - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-linux-x64
-    sha256: 5dc4b59c1d04a3ac0ab98c512a5f8d6ae88ead0c5038924daba9d286728f773d
-  - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-tui-linux-x64
-    sha256: 70987a1d64827f439731dd6e09492ccdbb891478aff363418160f35f1e371511
+  - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-linux-x64
+    sha256: 011f63259cc1d553547bbc9a2378e949426c5eece0bea93969678b59efcbfef0
+  - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-linux-x64
+    sha256: 069087bbd31b0c6b8201734d2573d36698f706b230c7b8d6b36f48df571b49a8
 - if: linux and aarch64
   then:
-  - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-linux-arm64
-    sha256: 4d0ada491a09bb77b3e27621945f4a9ebd1e511ea0aa680158fe9203157662cf
-  - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-tui-linux-arm64
-    sha256: b897534a8ed23f0fce2d246dee6ed5413cba854148428fb59363b09a90201e17
+  - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-linux-arm64
+    sha256: c360c176b8cd3d1d909ef0136a97458f100803aea47054197ad62c2b29cfe5aa
+  - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-linux-arm64
+    sha256: dfa686a46bf64ff69a53b3e3f50b271b4c919ef700b31e4ec1e706ce085b4972
 - if: osx and x86_64
   then:
-  - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-macos-x64
-    sha256: d05050cbb3d731f1d07c864070fe0a21ab2faf8dc325f684668105a993d40d97
-  - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-tui-macos-x64
-    sha256: de1cb93004fee6f5886bf7e2c0f73d1e7163af8c73ad74dc3f712c1ec6a9fe3b
+  - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-macos-x64
+    sha256: a7f259296f48d7631847e42478b64226e07c289774ed95497a12f3fba0e59e6a
+  - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-macos-x64
+    sha256: 2a3b659a19fd3c72b40d30dc84e3596b17e37de88504bf1111c72a6e6eb81a28
 - if: osx and arm64
   then:
-  - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-macos-arm64
-    sha256: 42ce7008f3fee35a187ff675418be082e3763c48b65c7cc04d63c7563e929e77
-  - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-tui-macos-arm64
-    sha256: 9002faf4380fe1e303eec2545877528ddb4d5a652abfbf8be001a4a3de13e012
+  - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-macos-arm64
+    sha256: 848beba882808e33e414289349e5e1eb0c150ac488ef23cf15e21a643d389364
+  - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-macos-arm64
+    sha256: 9ff06034abd7749fcdff5a053ac05e3faecf2d7ae95bca160b0d337aca019855
 - if: win and x86_64
   then:
-  - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-windows-x64.exe
-    sha256: b612189e3576a701662741e9ec6d21798b15fa7ab1fe9b68da632c2826bbf155
-  - url: https://github.com/Hmbown/DeepSeek-TUI/releases/download/v${{ version }}/deepseek-tui-windows-x64.exe
-    sha256: 23b5ffd74aa098d8e81ef1d5ee5d55e2169a1afcc67c9ed6182b876874cd3a55
+  - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-windows-x64.exe
+    sha256: 7a4ff9d3c881edc48ae41d07bd76bb3b06fcaa83175bb3007520edb9ef1dab97
+  - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-windows-x64.exe
+    sha256: 1d105e6f67d3470d3fd0c251051895ea7ab99d972a45d962bb13b22916699072
 build:
   number: 0
   dynamic_linking:
     binary_relocation: false
     rpath_allowlist:
     - '**/*'
-  script: 'python -c "exec( ''import os, shutil, stat, sys\n'' ''prefix = os.environ.get(\"PREFIX\")\n''
-    ''if not prefix:\n'' ''    print(\"Error: PREFIX is not set\", file=sys.stderr)\n''
-    ''    sys.exit(1)\n'' ''is_unix = sys.platform.startswith(\"linux\") or sys.platform
-    == \"darwin\"\n'' ''bin_dir = os.path.join(prefix, \"bin\") if is_unix else os.path.join(prefix,
-    \"Scripts\")\n'' ''os.makedirs(bin_dir, exist_ok=True)\n'' ''binaries = [\n''
-    ''    (\"deepseek-linux-x64\", \"deepseek\"), (\"deepseek-linux-arm64\", \"deepseek\"),\n''
-    ''    (\"deepseek-macos-x64\", \"deepseek\"), (\"deepseek-macos-arm64\", \"deepseek\"),\n''
-    ''    (\"deepseek-windows-x64.exe\", \"deepseek.exe\"),\n'' ''    (\"deepseek-tui-linux-x64\",
-    \"deepseek-tui\"),\n'' ''    (\"deepseek-tui-linux-arm64\", \"deepseek-tui\"),\n''
-    ''    (\"deepseek-tui-macos-x64\", \"deepseek-tui\"),\n'' ''    (\"deepseek-tui-macos-arm64\",
-    \"deepseek-tui\"),\n'' ''    (\"deepseek-tui-windows-x64.exe\", \"deepseek-tui.exe\"),\n''
-    '']\n'' ''selected = [(src, dst) for src, dst in binaries if os.path.isfile(src)]\n''
-    ''if len(selected) != 2:\n'' ''    print(f\"Error: expected exactly 2 binaries,
-    found {len(selected)}\", file=sys.stderr)\n'' ''    sys.exit(1)\n'' ''for src,
-    dst in selected:\n'' ''    dest = os.path.join(bin_dir, dst)\n'' ''    shutil.copy2(src,
-    dest)\n'' ''    if is_unix:\n'' ''        os.chmod(dest, os.stat(dest).st_mode
-    | stat.S_IEXEC | stat.S_IXUSR |\n'' ''                 stat.S_IXGRP | stat.S_IXOTH)\n''
-    )"'
+  script: >-
+    python -c "exec(
+    'import os, shutil, stat, sys\n'
+    'prefix = os.environ.get(\"PREFIX\")\n'
+    'if not prefix:\n'
+    '    print(\"Error: PREFIX is not set\", file=sys.stderr)\n'
+    '    sys.exit(1)\n'
+    'is_unix = sys.platform.startswith(\"linux\") or sys.platform == \"darwin\"\n'
+    'bin_dir = os.path.join(prefix, \"bin\") if is_unix else os.path.join(prefix, \"Scripts\")\n'
+    'os.makedirs(bin_dir, exist_ok=True)\n'
+    'binaries = [\n'
+    '    (\"codewhale-linux-x64\", \"codewhale\"), (\"codewhale-linux-arm64\", \"codewhale\"),\n'
+    '    (\"codewhale-macos-x64\", \"codewhale\"), (\"codewhale-macos-arm64\", \"codewhale\"),\n'
+    '    (\"codewhale-windows-x64.exe\", \"codewhale.exe\"),\n'
+    '    (\"codewhale-tui-linux-x64\", \"codewhale-tui\"),\n'
+    '    (\"codewhale-tui-linux-arm64\", \"codewhale-tui\"),\n'
+    '    (\"codewhale-tui-macos-x64\", \"codewhale-tui\"),\n'
+    '    (\"codewhale-tui-macos-arm64\", \"codewhale-tui\"),\n'
+    '    (\"codewhale-tui-windows-x64.exe\", \"codewhale-tui.exe\"),\n'
+    ']\n'
+    'selected = [(src, dst) for src, dst in binaries if os.path.isfile(src)]\n'
+    'if len(selected) != 2:\n'
+    '    print(f\"Error: expected exactly 2 binaries, found {len(selected)}\", file=sys.stderr)\n'
+    '    sys.exit(1)\n'
+    'for src, dst in selected:\n'
+    '    dest = os.path.join(bin_dir, dst)\n'
+    '    shutil.copy2(src, dest)\n'
+    '    if is_unix:\n'
+    '        os.chmod(dest, os.stat(dest).st_mode | stat.S_IEXEC | stat.S_IXUSR |\n'
+    '                 stat.S_IXGRP | stat.S_IXOTH)\n'
+    )"
 requirements:
   build: null
   run: null
 tests:
 - script:
-  - deepseek --version
-  - deepseek-tui --version
+  - codewhale --version
+  - codewhale-tui --version
 about:
-  homepage: https://github.com/Hmbown/DeepSeek-TUI
-  repository: https://github.com/Hmbown/DeepSeek-TUI
+  homepage: https://github.com/Hmbown/CodeWhale
+  repository: https://github.com/Hmbown/CodeWhale
   license: MIT
-  summary: DeepSeek TUI - terminal coding agent for DeepSeek
-  description: 'DeepSeek TUI is a terminal coding agent for DeepSeek V4. It provides
-    the `deepseek` dispatcher command and the companion `deepseek-tui` runtime.
-
-    '
+  summary: CodeWhale - terminal coding agent (formerly DeepSeek-TUI)
+  description: >
+    CodeWhale is a terminal coding agent (formerly DeepSeek-TUI). It provides the
+    `codewhale` dispatcher command and the companion `codewhale-tui` runtime.
 extra:
   recipe-maintainers:
   - longredzhong
