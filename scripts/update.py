@@ -128,24 +128,24 @@ def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -
     if repo and repo.lower() == "copilot-cli":
         # Copilot-CLI pattern: copilot-<os>-<arch>.tar.gz
         if "linux" in if_cond and "x86_64" in if_cond:
-            return f"copilot-linux-x64.tar.gz"
+            return "copilot-linux-x64.tar.gz"
         if "linux" in if_cond and "aarch64" in if_cond:
-            return f"copilot-linux-arm64.tar.gz"
+            return "copilot-linux-arm64.tar.gz"
         if "osx" in if_cond and "x86_64" in if_cond:
-            return f"copilot-darwin-x64.tar.gz"
+            return "copilot-darwin-x64.tar.gz"
         if "osx" in if_cond and "arm64" in if_cond:
-            return f"copilot-darwin-arm64.tar.gz"
+            return "copilot-darwin-arm64.tar.gz"
 
     if repo and repo.lower() == "opencode":
         # OpenCode pattern: opencode-<os>-<arch>.tar.gz or .zip
         if "linux" in if_cond and "x86_64" in if_cond:
-            return f"opencode-linux-x64.tar.gz"
+            return "opencode-linux-x64.tar.gz"
         if "linux" in if_cond and "aarch64" in if_cond:
-            return f"opencode-linux-arm64.tar.gz"
+            return "opencode-linux-arm64.tar.gz"
         if "osx" in if_cond and "x86_64" in if_cond:
-            return f"opencode-darwin-x64.zip"
+            return "opencode-darwin-x64.zip"
         if "osx" in if_cond and "arm64" in if_cond:
-            return f"opencode-darwin-arm64.zip"
+            return "opencode-darwin-arm64.zip"
 
     if repo and repo.lower() == "radar":
         # Radar pattern: radar_v<version>_<os>_<arch>.tar.gz
@@ -164,6 +164,19 @@ def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -
             return f"garage-webui-v{v}-linux-amd64"
         if "linux" in if_cond and "arm64" in if_cond:
             return f"garage-webui-v{v}-linux-arm64"
+
+    if repo and repo.lower() == "mimocode":
+        # MiMo-Code pattern: mimocode-<os>-<arch>.tar.gz or .zip
+        if "linux" in if_cond and "x86_64" in if_cond:
+            return "mimocode-linux-x64.tar.gz"
+        if "linux" in if_cond and "aarch64" in if_cond:
+            return "mimocode-linux-arm64.tar.gz"
+        if "osx" in if_cond and "x86_64" in if_cond:
+            return "mimocode-darwin-x64.zip"
+        if "osx" in if_cond and "arm64" in if_cond:
+            return "mimocode-darwin-arm64.zip"
+        if "win" in if_cond and "x86_64" in if_cond:
+            return "mimocode-windows-x64.zip"
 
     return None
 
