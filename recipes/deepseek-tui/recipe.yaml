@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.8.58
+  version: 0.8.59
 package:
   name: deepseek-tui
   version: ${{ version }}
@@ -8,70 +8,57 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-linux-x64
-    sha256: 011f63259cc1d553547bbc9a2378e949426c5eece0bea93969678b59efcbfef0
+    sha256: b62fc804f65525d68bbd0d3439ebf34df70c4345c710bbce29372e978fa2060f
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-linux-x64
-    sha256: 069087bbd31b0c6b8201734d2573d36698f706b230c7b8d6b36f48df571b49a8
+    sha256: dcb87cd214d2306d111be087911e34deba9c32d0c0ea431d6f2bc17bbb0b41a4
 - if: linux and aarch64
   then:
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-linux-arm64
-    sha256: c360c176b8cd3d1d909ef0136a97458f100803aea47054197ad62c2b29cfe5aa
+    sha256: 354ef85b184b7531fac9601d6c696f901fb4da0df69f81a3c0b82490356d6403
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-linux-arm64
-    sha256: dfa686a46bf64ff69a53b3e3f50b271b4c919ef700b31e4ec1e706ce085b4972
+    sha256: 8ac8e7d0a74eb0b5c8d616479e73913749c494a97ea156df0dddfa610a13d9fb
 - if: osx and x86_64
   then:
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-macos-x64
-    sha256: a7f259296f48d7631847e42478b64226e07c289774ed95497a12f3fba0e59e6a
+    sha256: ac48165591fd02faefe25788dd2026eb73a9bf8ef312a35384f9db5f3a46e171
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-macos-x64
-    sha256: 2a3b659a19fd3c72b40d30dc84e3596b17e37de88504bf1111c72a6e6eb81a28
+    sha256: 8ef9566239a682aadddc1229ee9613af70dcce22a9295551457b8c355f1e33c7
 - if: osx and arm64
   then:
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-macos-arm64
-    sha256: 848beba882808e33e414289349e5e1eb0c150ac488ef23cf15e21a643d389364
+    sha256: bf577561991207a04a91721be6c3f6ec52765b411072d69e8a8a5b6ee7a40122
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-macos-arm64
-    sha256: 9ff06034abd7749fcdff5a053ac05e3faecf2d7ae95bca160b0d337aca019855
+    sha256: b922c9870e3e32097c923e87e4d80f4c7e2db531b579317246c2caa4c721b8cb
 - if: win and x86_64
   then:
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-windows-x64.exe
-    sha256: 7a4ff9d3c881edc48ae41d07bd76bb3b06fcaa83175bb3007520edb9ef1dab97
+    sha256: 8891c0327fc307d9c5e1ca3dab4d735facd6227056e05d42cc7465f9c432f2de
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-windows-x64.exe
-    sha256: 1d105e6f67d3470d3fd0c251051895ea7ab99d972a45d962bb13b22916699072
+    sha256: f5a2e044b5c02e072f90cc8430b3c0be55b5f76b8c88d2363ebff470dfa02870
 build:
   number: 0
   dynamic_linking:
     binary_relocation: false
     rpath_allowlist:
     - '**/*'
-  script: >-
-    python -c "exec(
-    'import os, shutil, stat, sys\n'
-    'prefix = os.environ.get(\"PREFIX\")\n'
-    'if not prefix:\n'
-    '    print(\"Error: PREFIX is not set\", file=sys.stderr)\n'
-    '    sys.exit(1)\n'
-    'is_unix = sys.platform.startswith(\"linux\") or sys.platform == \"darwin\"\n'
-    'bin_dir = os.path.join(prefix, \"bin\") if is_unix else os.path.join(prefix, \"Scripts\")\n'
-    'os.makedirs(bin_dir, exist_ok=True)\n'
-    'binaries = [\n'
-    '    (\"codewhale-linux-x64\", \"codewhale\"), (\"codewhale-linux-arm64\", \"codewhale\"),\n'
-    '    (\"codewhale-macos-x64\", \"codewhale\"), (\"codewhale-macos-arm64\", \"codewhale\"),\n'
-    '    (\"codewhale-windows-x64.exe\", \"codewhale.exe\"),\n'
-    '    (\"codewhale-tui-linux-x64\", \"codewhale-tui\"),\n'
-    '    (\"codewhale-tui-linux-arm64\", \"codewhale-tui\"),\n'
-    '    (\"codewhale-tui-macos-x64\", \"codewhale-tui\"),\n'
-    '    (\"codewhale-tui-macos-arm64\", \"codewhale-tui\"),\n'
-    '    (\"codewhale-tui-windows-x64.exe\", \"codewhale-tui.exe\"),\n'
-    ']\n'
-    'selected = [(src, dst) for src, dst in binaries if os.path.isfile(src)]\n'
-    'if len(selected) != 2:\n'
-    '    print(f\"Error: expected exactly 2 binaries, found {len(selected)}\", file=sys.stderr)\n'
-    '    sys.exit(1)\n'
-    'for src, dst in selected:\n'
-    '    dest = os.path.join(bin_dir, dst)\n'
-    '    shutil.copy2(src, dest)\n'
-    '    if is_unix:\n'
-    '        os.chmod(dest, os.stat(dest).st_mode | stat.S_IEXEC | stat.S_IXUSR |\n'
-    '                 stat.S_IXGRP | stat.S_IXOTH)\n'
-    )"
+  script: 'python -c "exec( ''import os, shutil, stat, sys\n'' ''prefix = os.environ.get(\"PREFIX\")\n''
+    ''if not prefix:\n'' ''    print(\"Error: PREFIX is not set\", file=sys.stderr)\n''
+    ''    sys.exit(1)\n'' ''is_unix = sys.platform.startswith(\"linux\") or sys.platform
+    == \"darwin\"\n'' ''bin_dir = os.path.join(prefix, \"bin\") if is_unix else os.path.join(prefix,
+    \"Scripts\")\n'' ''os.makedirs(bin_dir, exist_ok=True)\n'' ''binaries = [\n''
+    ''    (\"codewhale-linux-x64\", \"codewhale\"), (\"codewhale-linux-arm64\", \"codewhale\"),\n''
+    ''    (\"codewhale-macos-x64\", \"codewhale\"), (\"codewhale-macos-arm64\", \"codewhale\"),\n''
+    ''    (\"codewhale-windows-x64.exe\", \"codewhale.exe\"),\n'' ''    (\"codewhale-tui-linux-x64\",
+    \"codewhale-tui\"),\n'' ''    (\"codewhale-tui-linux-arm64\", \"codewhale-tui\"),\n''
+    ''    (\"codewhale-tui-macos-x64\", \"codewhale-tui\"),\n'' ''    (\"codewhale-tui-macos-arm64\",
+    \"codewhale-tui\"),\n'' ''    (\"codewhale-tui-windows-x64.exe\", \"codewhale-tui.exe\"),\n''
+    '']\n'' ''selected = [(src, dst) for src, dst in binaries if os.path.isfile(src)]\n''
+    ''if len(selected) != 2:\n'' ''    print(f\"Error: expected exactly 2 binaries,
+    found {len(selected)}\", file=sys.stderr)\n'' ''    sys.exit(1)\n'' ''for src,
+    dst in selected:\n'' ''    dest = os.path.join(bin_dir, dst)\n'' ''    shutil.copy2(src,
+    dest)\n'' ''    if is_unix:\n'' ''        os.chmod(dest, os.stat(dest).st_mode
+    | stat.S_IEXEC | stat.S_IXUSR |\n'' ''                 stat.S_IXGRP | stat.S_IXOTH)\n''
+    )"'
 requirements:
   build: null
   run: null
@@ -84,9 +71,10 @@ about:
   repository: https://github.com/Hmbown/CodeWhale
   license: MIT
   summary: CodeWhale - terminal coding agent (formerly DeepSeek-TUI)
-  description: >
-    CodeWhale is a terminal coding agent (formerly DeepSeek-TUI). It provides the
-    `codewhale` dispatcher command and the companion `codewhale-tui` runtime.
+  description: 'CodeWhale is a terminal coding agent (formerly DeepSeek-TUI). It provides
+    the `codewhale` dispatcher command and the companion `codewhale-tui` runtime.
+
+    '
 extra:
   recipe-maintainers:
   - longredzhong
