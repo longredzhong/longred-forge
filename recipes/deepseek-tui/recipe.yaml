@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.8.64
+  version: 0.8.65
 package:
   name: deepseek-tui
   version: ${{ version }}
@@ -8,33 +8,33 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-linux-x64
-    sha256: b0abc99bac494832198cdee25ecab904c6b2ec09b89a2be1cd6998a2ba60ed76
+    sha256: 243ebdb823613b6edcad404b507aa985075f009aab00f388aeaeb94cddae1c51
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-linux-x64
-    sha256: 437c11439104a5059987c8055a17748e34405538b3fe80ed55529067a1f42643
+    sha256: 535b03468524009e67fb86ea67d26b031d51f515d2d99205ba44c579515a4ff8
 - if: linux and aarch64
   then:
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-linux-arm64
-    sha256: 818a1f08b1d0d8341be7851f4ffb46d29d85138d42599f05ef56fae684063639
+    sha256: 48b40ec62e3c5dabdfc141345b81b2fcd6bec21baedac479eaf5d71d3266c14b
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-linux-arm64
-    sha256: 09229a361ac918e9f7816ee07b41ae34d782b382c57246b117aea907b6f6e383
+    sha256: 8cf7281b6f0cfe466b794f3a3575b4397d8106c4d3dbb49df568ce02a7a6a75c
 - if: osx and x86_64
   then:
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-macos-x64
-    sha256: 7cf56ae4574503e874d82bcc662c41e60af7db17e8c2e0aa68699cb4912e4e35
+    sha256: 9be7d5022ad434c093b6c851580a2a9853adac7b9cc92c6eca29f45b0d69974e
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-macos-x64
-    sha256: 8cbbf4e4f085fcfdf5700aecac1b847f97aa47a6c60e0f0dce19bb4ae04a3d2e
+    sha256: 4133c97ff51831ca1f52c35f3f20425a07c533d7d71e330247269471d17aafea
 - if: osx and arm64
   then:
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-macos-arm64
-    sha256: 4d562270131af71cc002ca29cd86038cd7b5faa23cea721e9f615693d65cfb25
+    sha256: 9afcdbcc910c142ada31467b6a5e4ac76b9b46c90229418bf156e627ecac924c
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-macos-arm64
-    sha256: 6dffc5f3a723c4c8dd33b6b91aedd40372193fc919c16c73021bbd61bf447fc2
+    sha256: cb659fa1c33ba84c3ceb0488983ff6c735177c32cb02b0ded5601bbd46f0addb
 - if: win and x86_64
   then:
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-windows-x64.exe
-    sha256: a53aa9cb5acf438e469546168d7631298c7171a68cd05d23cdddc5aec4513354
+    sha256: e5faa7360eb14ea8f4eb0e90e3a1b797bd3f4beb63a25fe27d406658088264f8
   - url: https://github.com/Hmbown/CodeWhale/releases/download/v${{ version }}/codewhale-tui-windows-x64.exe
-    sha256: ec5f5641886070e401d163d5ce8152fd9d47e69d573d3acc6a082384d41a8650
+    sha256: 3d5997fb82134119f062744e85d687a491667b6b7904897faf6a696f289cfb5d
 build:
   number: 0
   dynamic_linking:
