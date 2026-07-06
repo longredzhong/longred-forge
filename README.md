@@ -49,20 +49,43 @@ DeepSeek TUI is a terminal coding agent for DeepSeek V4. It packages both the `d
 
 **Upstream:** [Hmbown/DeepSeek-TUI](https://github.com/Hmbown/DeepSeek-TUI)
 
+### claude-code
+
+Claude Code is an agentic coding tool that lives in your terminal, helping you write, edit, and debug code with AI assistance.
+
+**Upstream:** [anthropics/claude-code](https://github.com/anthropics/claude-code)
+
+### garage-webui
+
+A web-based user interface for garage, a lightweight S3-compatible distributed object storage. Provides a graphical dashboard for managing buckets, objects, and storage nodes.
+
+**Upstream:** [khairul169/garage-webui](https://github.com/khairul169/garage-webui)
+
+### mimocode
+
+MiMo-Code is an AI-powered coding agent that helps you write, review, and debug code directly from your terminal.
+
+**Upstream:** [XiaomiMiMo/MiMo-Code](https://github.com/XiaomiMiMo/MiMo-Code)
+
+### obscura
+
+A lightweight Rust headless browser for web scraping and automation. ~70 MB binary, ~30 MB RAM at runtime, with a Chrome DevTools Protocol port that Puppeteer and Playwright connect to unchanged.
+
+**Upstream:** [h4ckf0r0day/obscura](https://github.com/h4ckf0r0day/obscura)
 
 **Installation:**
 
 ```bash
 # Use the pixi CLI to install globally
-pixi global install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui 
+pixi global install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura
 
 # Or add to a pixi project
-pixi add -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui 
+pixi add -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura
 
 # Using mamba/conda
-mamba install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui 
-miniconda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui 
-conda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui 
+mamba install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura
+miniconda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura
+conda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura
 ```
 
 ## 🚀 How It Works
@@ -85,17 +108,24 @@ This repository uses:
 ```
 longred-forge/
 ├── recipes/
+│   ├── claude-code/
+│   │   └── recipe.yaml        # Package recipe
+│   ├── deepseek-tui/
+│   │   └── recipe.yaml        # Package recipe
+│   ├── garage-webui/
+│   │   └── recipe.yaml        # Package recipe
 │   ├── hatchet-cli/
+│   │   └── recipe.yaml        # Package recipe
+│   ├── mimocode/
+│   │   └── recipe.yaml        # Package recipe
+│   ├── obscura/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── opencode/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── radar/
 │   │   └── recipe.yaml        # Package recipe
-│   ├── shaka-packager/
-│   │   └── recipe.yaml        # Package recipe
-│   ├── deepseek-tui/
-│   │   └── recipe.yaml        # Package recipe
-│   └── 
+│   └── shaka-packager/
+│       └── recipe.yaml        # Package recipe
 ├── scripts/
 │   ├── build.py                # Local build helper
 │   └── update.py               # Release tracking helper
