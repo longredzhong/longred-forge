@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 3.9.0
+  version: 3.9.1
 package:
   name: shaka-packager
   version: ${{ version }}
@@ -9,27 +9,27 @@ source:
   then:
   - url: https://github.com/shaka-project/shaka-packager/releases/download/v${{ version
       }}/packager-linux-x64
-    sha256: b7099452cace917b82d099e7ccc58a0db5af74b45426be19c5a85435872dd9c2
+    sha256: 0526d5bea9f09e7e01464138cf50f4def3249c390f9b26700464d8046e14c952
 - if: linux and aarch64
   then:
   - url: https://github.com/shaka-project/shaka-packager/releases/download/v${{ version
       }}/packager-linux-arm64
-    sha256: af1c0c037d1ae63e82186e90364181dee73ebc80bf00a8670c32487b82c1fcd3
+    sha256: ec3a7e03987141050d3e881d457553c7d9de58e1e0943b177bf4fc6ba0e23f36
 - if: osx and x86_64
   then:
   - url: https://github.com/shaka-project/shaka-packager/releases/download/v${{ version
       }}/packager-osx-x64
-    sha256: 0cec1fe9e1e7e5aee1fc5dfed3c526d4707525f0796fd1d79bd1d350ea3addbc
+    sha256: be5f448b915b8a1e4631c157ecc04563791e2f252d0e6cc1f45211fdef5040b3
 - if: osx and arm64
   then:
   - url: https://github.com/shaka-project/shaka-packager/releases/download/v${{ version
       }}/packager-osx-arm64
-    sha256: 2da46e390c501051ef4f5f824ccbfe0882ce90c35d64ec9e4602b3481eea62b6
+    sha256: 9d24b53c0324ec23ffb4b6d467533851a248f6d504b8ef6c19fe1139db664570
 - if: win and x86_64
   then:
   - url: https://github.com/shaka-project/shaka-packager/releases/download/v${{ version
       }}/packager-win-x64.exe
-    sha256: 3fe204b0772b0c84cfa813791a34670a9639340fe25c267b51f74c9a5ef62a28
+    sha256: 16debce4440e8702329aae0308a64693734b3d536e97aeee0b012b159fc957df
 build:
   number: 0
   dynamic_linking:
