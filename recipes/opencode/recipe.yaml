@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 1.18.7
+  version: 1.18.8
 package:
   name: opencode
   version: ${{ version }}
@@ -8,23 +8,23 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-linux-x64.tar.gz
-    sha256: cb5d9d6d2f8fbef0a9c975ed4494f73b2a62f4e4ffd508bcc3212da4fa76c3da
+    sha256: b72014b8b53427fdb5a628d2433569ee7ccd289bd5c4490636064b24791c1305
 - if: linux and aarch64
   then:
   - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-linux-arm64.tar.gz
-    sha256: 6c791e453c2ca03ee3dea09ebd16bfdfac4837e45d344a1487cd196b80090fc7
+    sha256: 3e1b4f3bd12764c911f9211910608f85429b6209900a662c7ed27196c9033b93
 - if: osx and x86_64
   then:
   - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-darwin-x64.zip
-    sha256: feee11da7697a80e2fcf943ff9ca392d4e960c5ddabd918bdd6e4de790279b7e
+    sha256: 0193ed3f295bb93f073ae0e8fa0737e9b31f167464761901589401fd278d4cc4
 - if: osx and arm64
   then:
   - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-darwin-arm64.zip
-    sha256: 47efed233667713fd3e0603ddaea95d0ee2076ce00dc9faa7dbc9208aeb13505
+    sha256: 0fb2e11a819dd97949f0f7e0348e0e0c4fd8c42b3a5ed7aee1f0d437c94b9f0c
 - if: win and x86_64
   then:
   - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-windows-x64.zip
-    sha256: 54598e262c0744e6c3b9ddba85764917a48d366a9aa6c817c2feb9d34b3f1105
+    sha256: 85baa5de531db8d611fb5d9a62ffee00f6de69ae26e4845ec091dd2da4eb5fd1
 build:
   number: 0
   dynamic_linking:
