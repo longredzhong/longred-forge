@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.83.0
+  version: 0.84.0
 package:
   name: pi
   version: ${{ version }}
@@ -8,34 +8,44 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-linux-x64.tar.gz
-    sha256: b0625eb623197b0afe20c870d21ef2f34481f1504e5777df3f698a66c7636f5f
+    sha256: 061e4fd191aaf5733b709aec30fce0693b7575a913e942990c0de9f31fc5c4db
 - if: linux and aarch64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-linux-arm64.tar.gz
-    sha256: b84f9016610c738dd9440df62f649880dbe9951db97a7ae936cbf292850e9802
+    sha256: 67e331ab3e191e45a2197c1127a7b44e98fe04d93d4654d7cba769019cf1b694
 - if: osx and x86_64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-darwin-x64.tar.gz
-    sha256: 9ab12e406e545be131d1279a9a2c0d5c0d4a3c6e9d86a52700a7a135a445041b
+    sha256: 7e8a94080302b5efef3c7500d8d88b1e8b6d87852a506d81075a5fe250a0d973
 - if: osx and arm64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-darwin-arm64.tar.gz
-    sha256: 147fc3c451ec543a15102af251ce316079c8fcadfe8ae4d3ffee202346e9bed9
+    sha256: 2eb639474976e3a08c560a197be5077a427a4120fddfd5cecf89ff87bd043934
 - if: win and x86_64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-windows-x64.zip
-    sha256: 7bda7993553a0d556f1eed53d96dd4a83e183332475265fb87c79ff269bf357d
+    sha256: cd91e3576d81e185b328371e463ee9f157746812e9d334324e88c3ce95b8ab6e
 - if: win and aarch64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-windows-arm64.zip
-    sha256: c1eef079a5f497d3052b76dbbcda0e1e5536fa9e332c89489040d0724362436b
+    sha256: 32f3edc733df4d3e76dab594160af49a238e9c36eef188b4675b055711f2bf2b
 build:
   number: 0
   dynamic_linking:
     binary_relocation: false
     rpath_allowlist:
     - '**/*'
-  script: 'python -c "import os, shutil, stat, sys; prefix = os.environ.get(''PREFIX''); [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, ''bin'') if (sys.platform.startswith(''linux'') or sys.platform == ''darwin'') else os.path.join(prefix, ''Scripts''); binary_name = ''pi'' if (sys.platform.startswith(''linux'') or sys.platform == ''darwin'') else ''pi.exe''; os.makedirs(bin_dir, exist_ok=True); source_patterns = [binary_name, f''./{binary_name}'', os.path.join(''.'', binary_name)]; source_file = next((p for p in source_patterns if os.path.isfile(p)), None); [exit(1) if not source_file else None]; dest_file = os.path.join(bin_dir, binary_name); shutil.copy2(source_file, dest_file); (lambda: os.chmod(dest_file, os.stat(dest_file).st_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) if (sys.platform.startswith(''linux'') or sys.platform == ''darwin'') else None)()"
+  script: 'python -c "import os, shutil, stat, sys; prefix = os.environ.get(''PREFIX'');
+    [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, ''bin'') if
+    (sys.platform.startswith(''linux'') or sys.platform == ''darwin'') else os.path.join(prefix,
+    ''Scripts''); binary_name = ''pi'' if (sys.platform.startswith(''linux'') or sys.platform
+    == ''darwin'') else ''pi.exe''; os.makedirs(bin_dir, exist_ok=True); source_patterns
+    = [binary_name, f''./{binary_name}'', os.path.join(''.'', binary_name)]; source_file
+    = next((p for p in source_patterns if os.path.isfile(p)), None); [exit(1) if not
+    source_file else None]; dest_file = os.path.join(bin_dir, binary_name); shutil.copy2(source_file,
+    dest_file); (lambda: os.chmod(dest_file, os.stat(dest_file).st_mode | stat.S_IEXEC
+    | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) if (sys.platform.startswith(''linux'')
+    or sys.platform == ''darwin'') else None)()"
 
     '
 requirements:
@@ -48,7 +58,10 @@ about:
   homepage: https://github.com/earendil-works/pi
   license: MIT
   summary: Pi - AI coding agent for your terminal
-  description: 'Pi is an open-source AI coding agent that lives in your terminal. It helps you write, edit, and debug code through natural language commands, providing intelligent code completion, refactoring suggestions, and automated coding assistance powered by advanced AI models.
+  description: 'Pi is an open-source AI coding agent that lives in your terminal.
+    It helps you write, edit, and debug code through natural language commands, providing
+    intelligent code completion, refactoring suggestions, and automated coding assistance
+    powered by advanced AI models.
 
     '
   repository: https://github.com/earendil-works/pi
