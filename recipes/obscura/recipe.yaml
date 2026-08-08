@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.1.11
+  version: 0.2.0
 package:
   name: obscura
   version: ${{ version }}
@@ -8,19 +8,19 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/h4ckf0r0day/obscura/releases/download/v${{ version }}/obscura-x86_64-linux.tar.gz
-    sha256: c9343428c9692c49e837487f1d0a8f308b280dd854981c5a06f2aece0048230e
+    sha256: d601f4f542319c3b9fa8dca9f5ccfc134a2ca001648da528db5f03c9e6c2599b
 - if: linux and aarch64
   then:
   - url: https://github.com/h4ckf0r0day/obscura/releases/download/v${{ version }}/obscura-aarch64-linux.tar.gz
-    sha256: 166178103f2c79db9c32988774c16a0e71b3fac44cd064eb96db00ce732ccf0f
+    sha256: 8ac11fb7db704d2a5acfd917804e066b8f9a102f2f0a8eaef110322848e12565
 - if: osx and x86_64
   then:
   - url: https://github.com/h4ckf0r0day/obscura/releases/download/v${{ version }}/obscura-x86_64-macos.tar.gz
-    sha256: e2d850620d97a9a5b0dbfd322ca28472d43a8802b896545a7ba1ab6ebae0724e
+    sha256: 72613618071c6bb75b4dbecfb79844232bcc5eeef2b53d7e3f424cb3ad42b345
 - if: osx and arm64
   then:
   - url: https://github.com/h4ckf0r0day/obscura/releases/download/v${{ version }}/obscura-aarch64-macos.tar.gz
-    sha256: 38441f56e3414b5e6a05e51c01c65591608f499dfd01a10072979a152652b1e7
+    sha256: ccb0ee8a6905947d610beb1d7a250f7e6f8b9a75b1419fc59a9f3b607fabf54e
 - if: win and x86_64
   then:
   - url: https://github.com/h4ckf0r0day/obscura/releases/download/v${{ version }}/obscura-x86_64-windows.zip
