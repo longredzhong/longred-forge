@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.84.4
+  version: 0.85.0
 package:
   name: pi
   version: ${{ version }}
@@ -8,27 +8,27 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-linux-x64.tar.gz
-    sha256: c2f3c3e6a1850bd87654cc3ca8811013272397c3d042a4e2a64c43ee1b423972
+    sha256: a7e7c65f1dc528d2e17e7d946ad2b61df0e2b0f9952faee77807c2484b464d6e
 - if: linux and aarch64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-linux-arm64.tar.gz
-    sha256: 135580f6b942151646e67b8b866d987d28ce3cff5a497030775ddd29659f943d
+    sha256: 821750e0ac6bf6e10c35b93ddab88a44f2d0ef8411af9ea4e8ffe620f62130df
 - if: osx and x86_64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-darwin-x64.tar.gz
-    sha256: 7a042d6413065421387001a4986190a1a03186c95a695f4dee0bdc76e60de8f7
+    sha256: 611290e032a47f1546bd30e12c14a59a600a24662d5239c0c159ef3c7a0ca3b0
 - if: osx and arm64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-darwin-arm64.tar.gz
-    sha256: c68e3ac4d05b4e282aaab2e6c76f161d3e9e68f19a22e38913cbfaadb6c800f0
+    sha256: b0a1a3ab9708047e31b76a27911e8b445b3e4a38e2f46a08b6635df75f3499c0
 - if: win and x86_64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-windows-x64.zip
-    sha256: 03b2318774f18721e959d9f8f3340a9f942e7aa516fb7030d3007a12a40a4a97
+    sha256: 526085e0206acb8e8f9997efcd4e3654fb8a47a04318e09e7324ed5abe549586
 - if: win and aarch64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-windows-arm64.zip
-    sha256: 6b2726efc34a9158ab06bf7b981f7bcccf15de9ea236a3f4ef7a894a78aa386e
+    sha256: c10fb6f30f188b1eba61608e0d33453456ee9805ff543fdd99bcaf85f2d949df
 build:
   number: 0
   dynamic_linking:
