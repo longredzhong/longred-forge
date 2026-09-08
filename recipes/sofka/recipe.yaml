@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+context:
+  version: 0.24.8
+package:
+  name: sofka
+  version: ${{ version }}
+source:
+- if: linux and x86_64
+  then:
+  - url: https://github.com/nklmilojevic/sofka/releases/download/v${{ version }}/sofka-v${{ version }}-x86_64-unknown-linux-gnu.tar.gz
+    sha256: 8b904d53b3ec455cc2d7c729c1ef5869bb2a14f8ffbdfbb7cf1a515f68020ecc
+- if: linux and aarch64
+  then:
+  - url: https://github.com/nklmilojevic/sofka/releases/download/v${{ version }}/sofka-v${{ version }}-aarch64-unknown-linux-gnu.tar.gz
+    sha256: c380dda7471e0f3c2c767297d74029a942ccac499f0cd36c7c7e2578df12e109
+- if: osx and x86_64
+  then:
+  - url: https://github.com/nklmilojevic/sofka/releases/download/v${{ version }}/sofka-v${{ version }}-x86_64-apple-darwin.tar.gz
+    sha256: d07e11eb737f8573e0f96af883bb55ff6b9299d6d63394b193776e83a523ebbc
+- if: osx and arm64
+  then:
+  - url: https://github.com/nklmilojevic/sofka/releases/download/v${{ version }}/sofka-v${{ version }}-aarch64-apple-darwin.tar.gz
+    sha256: cc6054111a601610ab6a94a814abb590f29ca14952623d8321e09f820b23cc24
+build:
+  number: 0
+  skip: win
+  dynamic_linking:
+    binary_relocation: false
+    rpath_allowlist:
+    - '**/*'
+  script: 'python -c "import os, shutil, stat, sys; prefix = os.environ.get(''PREFIX''); [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, ''bin''); binary_name = ''sofka''; os.makedirs(bin_dir, exist_ok=True); source_patterns = [binary_name, f''./{binary_name}'', os.path.join(''.'', binary_name)]; source_file = next((p for p in source_patterns if os.path.isfile(p)), None); [exit(1) if not source_file else None]; dest_file = os.path.join(bin_dir, binary_name); shutil.copy2(source_file, dest_file); os.chmod(dest_file, os.stat(dest_file).st_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)"'
+requirements:
+  build: null
+  run: null
+tests:
+- script:
+  - sofka --version
+about:
+  homepage: https://sofka.rs
+  repository: https://github.com/nklmilojevic/sofka
+  documentation: https://sofka.rs
+  license: Apache-2.0
+  summary: A Kubernetes TUI, reimagined in Rust - built on kube-rs and ratatui, async-first from the ground up
+  description: >
+    sofka is a terminal UI for Kubernetes, reimagined in Rust. Built on kube-rs and ratatui, async-first from the ground up.
+extra:
+  recipe-maintainers:
+  - longredzhong

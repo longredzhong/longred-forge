@@ -73,19 +73,31 @@ A lightweight Rust headless browser for web scraping and automation. ~70 MB bina
 
 **Upstream:** [h4ckf0r0day/obscura](https://github.com/h4ckf0r0day/obscura)
 
+### pi
+
+Pi is an open-source AI coding agent that lives in your terminal. It helps you write, edit, and debug code through natural language commands, providing intelligent code assistance.
+
+**Upstream:** [earendil-works/pi](https://github.com/earendil-works/pi)
+
+### sofka
+
+A Kubernetes TUI, reimagined in Rust - built on kube-rs and ratatui, async-first from the ground up.
+
+**Upstream:** [nklmilojevic/sofka](https://github.com/nklmilojevic/sofka)
+
 **Installation:**
 
 ```bash
 # Use the pixi CLI to install globally
-pixi global install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura
+pixi global install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka
 
 # Or add to a pixi project
-pixi add -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura
+pixi add -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka
 
 # Using mamba/conda
-mamba install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura
-miniconda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura
-conda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura
+mamba install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka
+miniconda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka
+conda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka
 ```
 
 ## 🚀 How It Works
@@ -122,9 +134,13 @@ longred-forge/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── opencode/
 │   │   └── recipe.yaml        # Package recipe
+│   ├── pi/
+│   │   └── recipe.yaml        # Package recipe
 │   ├── radar/
 │   │   └── recipe.yaml        # Package recipe
-│   └── shaka-packager/
+│   ├── shaka-packager/
+│   │   └── recipe.yaml        # Package recipe
+│   └── sofka/
 │       └── recipe.yaml        # Package recipe
 ├── scripts/
 │   ├── build.py                # Local build helper
