@@ -178,6 +178,20 @@ def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -
         if "win" in if_cond and "x86_64" in if_cond:
             return "mimocode-windows-x64.zip"
 
+    if repo and repo.lower() == "mihomo":
+        # Mihomo pattern: mihomo-<os>-<arch>[-compatible]-v<version>.gz (or .zip on Windows)
+        # The amd64 builds ship upstream's "compatible" (GOAMD64=v1) variants for portability.
+        if "linux" in if_cond and "x86_64" in if_cond:
+            return f"mihomo-linux-amd64-compatible-v{v}.gz"
+        if "linux" in if_cond and "aarch64" in if_cond:
+            return f"mihomo-linux-arm64-v{v}.gz"
+        if "osx" in if_cond and "x86_64" in if_cond:
+            return f"mihomo-darwin-amd64-compatible-v{v}.gz"
+        if "osx" in if_cond and "arm64" in if_cond:
+            return f"mihomo-darwin-arm64-v{v}.gz"
+        if "win" in if_cond and "x86_64" in if_cond:
+            return f"mihomo-windows-amd64-compatible-v{v}.zip"
+
     return None
 
 

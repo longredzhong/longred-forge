@@ -85,19 +85,30 @@ A Kubernetes TUI, reimagined in Rust - built on kube-rs and ratatui, async-first
 
 **Upstream:** [nklmilojevic/sofka](https://github.com/nklmilojevic/sofka)
 
+### mihomo
+
+Mihomo (formerly Clash.Meta) is a rule-based tunnel written in Go. It supports a wide range of proxy
+protocols, rule-based routing with GEOIP/GEOSITE databases, a RESTful external controller, transparent
+proxy, TUN mode and DNS-based traffic splitting.
+
+**Upstream:** [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo)
+
+> The amd64 builds are upstream's `compatible` variants (GOAMD64=v1), so they run on every x86-64 CPU
+> instead of requiring AVX2.
+
 **Installation:**
 
 ```bash
 # Use the pixi CLI to install globally
-pixi global install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka
+pixi global install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka mihomo
 
 # Or add to a pixi project
-pixi add -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka
+pixi add -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka mihomo
 
 # Using mamba/conda
-mamba install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka
-miniconda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka
-conda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka
+mamba install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka mihomo
+miniconda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka mihomo
+conda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka mihomo
 ```
 
 ## 🚀 How It Works
@@ -127,6 +138,8 @@ longred-forge/
 │   ├── garage-webui/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── hatchet-cli/
+│   │   └── recipe.yaml        # Package recipe
+│   ├── mihomo/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── mimocode/
 │   │   └── recipe.yaml        # Package recipe

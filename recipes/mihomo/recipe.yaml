@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+context:
+  version: 1.19.30
+package:
+  name: mihomo
+  version: ${{ version }}
+source:
+- if: linux and x86_64
+  then:
+  - url: https://github.com/MetaCubeX/mihomo/releases/download/v${{ version }}/mihomo-linux-amd64-compatible-v${{ version }}.gz
+    sha256: db214c7a2517e63c150d123178d16d102e03a241ccdae4e5e07ffbe9cf56c6f9
+    file_name: mihomo.gz
+- if: linux and aarch64
+  then:
+  - url: https://github.com/MetaCubeX/mihomo/releases/download/v${{ version }}/mihomo-linux-arm64-v${{ version }}.gz
+    sha256: 58896873736d28628f66de3677c8654fa0f180662523148e136cff4f6e890069
+    file_name: mihomo.gz
+- if: osx and x86_64
+  then:
+  - url: https://github.com/MetaCubeX/mihomo/releases/download/v${{ version }}/mihomo-darwin-amd64-compatible-v${{ version }}.gz
+    sha256: 6e75de0732e8afabe413ff7c235e8f16226ce136672371c60787cbf9607402c5
+    file_name: mihomo.gz
+- if: osx and arm64
+  then:
+  - url: https://github.com/MetaCubeX/mihomo/releases/download/v${{ version }}/mihomo-darwin-arm64-v${{ version }}.gz
+    sha256: 2c7f3a7904fa1cee291e124123e630e7b1ebd13765dd9bf26c0a28432004d9f4
+    file_name: mihomo.gz
+- if: win and x86_64
+  then:
+  - url: https://github.com/MetaCubeX/mihomo/releases/download/v${{ version }}/mihomo-windows-amd64-compatible-v${{ version }}.zip
+    sha256: 289fde5e29d37a5b3326480590d8b3551c5bf7f8737290355c19bce74d57a563
+build:
+  number: 0
+  dynamic_linking:
+    binary_relocation: false
+    rpath_allowlist:
+    - '**/*'
+  script: >-
+    python -c "import glob, gzip, os, shutil, sys; prefix = os.environ['PREFIX']; is_unix = not sys.platform.startswith('win');
+    bin_dir = os.path.join(prefix, 'bin' if is_unix else 'Scripts'); os.makedirs(bin_dir, exist_ok=True); dest = os.path.join(bin_dir,
+    'mihomo' if is_unix else 'mihomo.exe'); src = None if is_unix else glob.glob('**/*.exe', recursive=True)[0]; open(dest, 'wb').write(gzip.decompress(open('mihomo.gz',
+    'rb').read())) if is_unix else shutil.copy2(src, dest); os.chmod(dest, os.stat(dest).st_mode | 0o755) if is_unix else None"
+
+requirements:
+  build: null
+  run: null
+tests:
+- script:
+  - mihomo -v
+about:
+  homepage: https://github.com/MetaCubeX/mihomo
+  repository: https://github.com/MetaCubeX/mihomo
+  documentation: https://wiki.metacubex.one
+  license: GPL-3.0-only
+  summary: A simple, yet powerful rule-based proxy
+  description: 'Mihomo (formerly Clash.Meta) is a rule-based tunnel written in Go.
+
+
+    It speaks a wide range of proxy protocols (Shadowsocks, VMess, Trojan, Hysteria,
+    WireGuard, ...),
+
+    performs rule-based routing with GEOIP/GEOSITE databases, exposes a RESTful external
+    controller,
+
+    and supports transparent proxy, TUN mode and DNS-based traffic splitting.
+
+
+    The amd64 builds shipped here are the upstream ''compatible'' variants (GOAMD64=v1),
+    so they run
+
+    on every x86-64 CPU rather than requiring AVX2.
+
+    '
+extra:
+  recipe-maintainers:
+  - longredzhong
