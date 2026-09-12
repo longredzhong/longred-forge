@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.25.5
+  version: 0.25.6
 package:
   name: sofka
   version: ${{ version }}
@@ -9,22 +9,22 @@ source:
   then:
   - url: https://github.com/nklmilojevic/sofka/releases/download/v${{ version }}/sofka-v${{
       version }}-x86_64-unknown-linux-gnu.tar.gz
-    sha256: 7a9e7c807813015c680001b4d172300ea29322f6410705db162c8e92385ac517
+    sha256: c6f1f4386612638f185295eef6adf7e546d636e69ca58fb67e3a22d263775031
 - if: linux and aarch64
   then:
   - url: https://github.com/nklmilojevic/sofka/releases/download/v${{ version }}/sofka-v${{
       version }}-aarch64-unknown-linux-gnu.tar.gz
-    sha256: be19ac6e161da1c93ebece6246868b39376578cbd1f5b06f8c8bcf816f96ee78
+    sha256: e641244f2000491721821a0bd24697ce6631a2a701483f125dcf809ab65a89b9
 - if: osx and x86_64
   then:
   - url: https://github.com/nklmilojevic/sofka/releases/download/v${{ version }}/sofka-v${{
       version }}-x86_64-apple-darwin.tar.gz
-    sha256: b8f932c95702f13d04a71fb84a6470e6a36ae5bb5add519709d1d122eac7e38c
+    sha256: 8b635344596c75a7e72e0550896727e5bb3eb9cec571b19c86a39b182d6dd37d
 - if: osx and arm64
   then:
   - url: https://github.com/nklmilojevic/sofka/releases/download/v${{ version }}/sofka-v${{
       version }}-aarch64-apple-darwin.tar.gz
-    sha256: 90a0f972dc756238fe393add10298c8bcef9bd639277564892e06ed51f6cd02b
+    sha256: f2ac477c87c24c027843f1aa06dac15f931238ef433967f874f81e3c235fed70
 build:
   number: 0
   skip: win
