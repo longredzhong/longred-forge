@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.1.15
+  version: 0.1.16
 package:
   name: mimocode
   version: ${{ version }}
@@ -8,23 +8,23 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/XiaomiMiMo/MiMo-Code/releases/download/v${{ version }}/mimocode-linux-x64.tar.gz
-    sha256: 3530927a2d69eb0f809c11f663ecd6939b82c0b598ff0fbe1f82f431d764ca0c
+    sha256: 3793d8b08ae7c1c6cee707645da1b1c827e0f13faa5d40d076f08ea4ee1d9a5e
 - if: linux and aarch64
   then:
   - url: https://github.com/XiaomiMiMo/MiMo-Code/releases/download/v${{ version }}/mimocode-linux-arm64.tar.gz
-    sha256: 749ea8704ce98d300e1d162faf982ed0a3795fab48bd984c1e5c80f2e72b0101
+    sha256: 220c621eb61a175ba0bc8e9c45c217abfed8dace1f17111c3717bceb95ad2ab3
 - if: osx and x86_64
   then:
   - url: https://github.com/XiaomiMiMo/MiMo-Code/releases/download/v${{ version }}/mimocode-darwin-x64.zip
-    sha256: 42a3f0416dbcfb8590ae504538d27a0414e9625a7b766b2512aeafe7b8b35cad
+    sha256: 2cb812cc978379be322340fd59f22c6baa42f2bd2534078fb1d291a71220368f
 - if: osx and arm64
   then:
   - url: https://github.com/XiaomiMiMo/MiMo-Code/releases/download/v${{ version }}/mimocode-darwin-arm64.zip
-    sha256: 9805686d8e14a5bff091833ec021aba0e7f7d41361cebf90152482e5c38e40b3
+    sha256: 191d5c9634e8e24fe3038b31ea1191bdd8f23afcf5f389988cc6856077a632b3
 - if: win and x86_64
   then:
   - url: https://github.com/XiaomiMiMo/MiMo-Code/releases/download/v${{ version }}/mimocode-windows-x64.zip
-    sha256: c9b8a1bb12b4e621098b622629982715cc8423587c2640d8c2fa0113d3c09511
+    sha256: cebf70eb32877db4aef0e27f9194aca0147506dc2ada1d05c6547c0c90d604d1
 build:
   number: 0
   dynamic_linking:
