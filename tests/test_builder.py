@@ -89,9 +89,10 @@ class BuilderTests(unittest.TestCase):
         artifact = planner.Artifact('tool', '1', 'h_2', 'linux-64')
         response = Mock(status_code=200)
         response.json.return_value = {'packages.conda': {artifact.filename: {'sha256': 'wrong'}}}
-        with patch.object(publisher.HTTPClient, 'json', return_value=response.json.return_value):
+        with patch.object(publisher.HTTPClient, 'json', return_value=response.json.return_value) as request:
             with self.assertRaisesRegex(RuntimeError, 'increment build.number'):
                 publisher.indexed(artifact, 'example', 'expected')
+            self.assertIn('?verify=', request.call_args.args[0])
 
 
 if __name__ == '__main__':

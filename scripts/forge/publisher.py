@@ -14,7 +14,11 @@ from .planner import Artifact
 
 def indexed(artifact: Artifact, channel: str, sha256: str | None = None) -> bool:
     try:
-        repodata = HTTPClient().json(f'https://repo.prefix.dev/{channel}/{artifact.platform}/repodata.json')
+        url = f'https://repo.prefix.dev/{channel}/{artifact.platform}/repodata.json'
+        if sha256:
+            # Ordinary channel metadata is cached for 30 minutes; verify uploads against a fresh URL.
+            url += f'?verify={time.time_ns()}'
+        repodata = HTTPClient().json(url)
     except httpx.HTTPStatusError as exc:
         if exc.response.status_code == 404:
             return False
