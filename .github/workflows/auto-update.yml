@@ -6,6 +6,10 @@ on:
     - cron: "10 */3 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: recipe-updater
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -19,13 +23,18 @@ jobs:
       - name: ⚙️ Install pixi env
         uses: prefix-dev/setup-pixi@v0.9.3
         with:
-          pixi-version: v0.62.2
+          pixi-version: v0.81.0
           activate-environment: true
 
       - name: Run updater for all recipes (apply) via pixi
+        id: update
+        continue-on-error: true
         run: |
           # Run updater without --recipe so it processes all recipes under recipes/*/recipe.yaml
-          pixi run python scripts/update.py --apply
+          pixi run python scripts/update.py --apply --report output/update-results.json
+
+      - name: Validate candidate recipes
+        run: pixi run validate
 
       - name: Commit & push recipe changes
         id: commit
@@ -61,3 +70,15 @@ jobs:
               ref: 'main'
             });
             console.log('Manually triggered Build & Publish workflow');
+
+      - name: Retain updater results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-results
+          path: output/update-results.json
+          if-no-files-found: ignore
+
+      - name: Report partial update failure
+        if: always() && steps.update.outcome == 'failure'
+        run: exit 1

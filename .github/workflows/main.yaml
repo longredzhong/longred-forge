@@ -12,17 +12,39 @@ on:
       - "pixi.toml"
       - "pixi.lock"
       - ".github/workflows/main.yaml"
-  workflow_dispatch:  # Enable manual trigger
+  pull_request:
+    paths:
+      - "recipes/**"
+      - "scripts/**"
+      - "tests/**"
+      - "pixi.*"
+      - ".github/workflows/**"
+  workflow_dispatch:
+    inputs:
+      recipe:
+        description: Recipe directory name (empty means all)
+        type: string
+        default: ""
+      force_rebuild:
+        description: Rebuild existing packages (use with publish disabled)
+        type: boolean
+        default: false
+      publish:
+        description: Publish built artifacts
+        type: boolean
+        default: true
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   build:
     name: ${{ join(matrix.targets) }}
     runs-on: ${{ matrix.os }}
-    permissions:
-      id-token: write
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      PREFIX_TOKEN: ${{ secrets.PREFIX_TOKEN }}
     strategy:
       fail-fast: false
       matrix:
@@ -35,18 +57,70 @@ jobs:
     steps:
       - name: ⬇️ Git Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: ⚙️ Install pixi env
         uses: prefix-dev/setup-pixi@v0.9.3
         with:
-          pixi-version: v0.62.2
+          pixi-version: v0.81.0
           activate-environment: true
 
-      - name: Run regression tests
-        run: pixi run python -m unittest discover -s tests -v
+      - name: Run lint and regression tests
+        run: |
+          pixi run lint
+          pixi run test
 
-      - name: 🧑‍🍳 Build & Publish Recipes
-        run: pixi run python -u scripts/build.py --skip-existing --target-platforms ${{ join(matrix.targets, ' ') }}
+      - name: Render recipe matrix
+        run: pixi run validate
+
+      - name: Build recipes (no publishing credentials)
+        shell: bash
+        env:
+          RECIPE: ${{ inputs.recipe }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          FORCE_REBUILD: ${{ inputs.force_rebuild }}
+        run: |
+          args=()
+          if [[ -n "$RECIPE" ]]; then
+            [[ "$RECIPE" =~ ^[a-zA-Z0-9_-]+$ ]] || exit 1
+            args+=(--recipe-path "recipes/$RECIPE/recipe.yaml")
+          elif [[ -n "$BASE_SHA" && ! "$BASE_SHA" =~ ^0+$ ]]; then
+            args+=(--changed-since "$BASE_SHA")
+          fi
+          if [[ "$FORCE_REBUILD" != "true" ]]; then
+            args+=(--skip-existing)
+          fi
+          pixi run python -u scripts/build.py --no-upload --report output/build-results.json --target-platforms ${{ join(matrix.targets, ' ') }} "${args[@]}"
+
+      - name: Publish and verify channel index
+        if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.publish) && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          PREFIX_TOKEN: ${{ secrets.PREFIX_TOKEN }}
+          RECIPE: ${{ inputs.recipe }}
+          BASE_SHA: ${{ github.event.before }}
+        run: |
+          args=()
+          if [[ -n "$RECIPE" ]]; then
+            args+=(--recipe-path "recipes/$RECIPE/recipe.yaml")
+          elif [[ -n "$BASE_SHA" && ! "$BASE_SHA" =~ ^0+$ ]]; then
+            args+=(--changed-since "$BASE_SHA")
+          fi
+          pixi run python -u scripts/build.py --no-build --skip-existing --report output/publish-results.json --target-platforms ${{ join(matrix.targets, ' ') }} "${args[@]}"
+
+      - name: Retain packages and result manifests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ join(matrix.targets, '-') }}
+          path: |
+            output/**/*.conda
+            output/**/*.receipt.json
+            output/*results.json
+            output/rattler-build-log.txt
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: 📝 Add to Summary
         if: always()
