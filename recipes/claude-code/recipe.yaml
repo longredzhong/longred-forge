@@ -29,16 +29,13 @@ build:
     binary_relocation: false
     rpath_allowlist:
     - '**/*'
-  script: 'python -c "import os, shutil, stat; prefix = os.environ.get(''PREFIX'');
-    [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, ''bin''); os.makedirs(bin_dir,
-    exist_ok=True); source_file = ''claude''; [exit(1) if not os.path.isfile(source_file)
-    else None]; dest_file = os.path.join(bin_dir, ''claude''); shutil.copy2(source_file,
-    dest_file); os.chmod(dest_file, os.stat(dest_file).st_mode | stat.S_IEXEC | stat.S_IXUSR
-    | stat.S_IXGRP | stat.S_IXOTH)"
-
-    '
+  script:
+  - if: win
+    then: python "%RECIPE_DIR%/install.py"
+    else: python "$RECIPE_DIR/install.py"
 requirements:
-  build: null
+  build:
+  - python
   run: null
 tests:
 - script:

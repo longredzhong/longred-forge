@@ -31,20 +31,13 @@ build:
     binary_relocation: false
     rpath_allowlist:
     - '**/*'
-  script: 'python -c "import os, shutil, stat, sys; prefix = os.environ.get(''PREFIX'');
-    [exit(1) if not prefix else None]; bin_dir = os.path.join(prefix, ''bin'') if
-    (sys.platform.startswith(''linux'') or sys.platform == ''darwin'') else os.path.join(prefix,
-    ''Scripts''); is_unix = sys.platform.startswith(''linux'') or sys.platform ==
-    ''darwin''; binaries = [''obscura'', ''obscura-worker''] if is_unix else [''obscura.exe'',
-    ''obscura-worker.exe'']; os.makedirs(bin_dir, exist_ok=True); [shutil.copy2(next(p
-    for p in [b, f''./{b}'', os.path.join(''.'', b)] if os.path.isfile(p)), os.path.join(bin_dir,
-    b)) or (os.chmod(os.path.join(bin_dir, b), os.stat(os.path.join(bin_dir, b)).st_mode
-    | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) if is_unix else None)
-    for b in binaries]"
-
-    '
+  script:
+  - if: win
+    then: python "%RECIPE_DIR%/install.py"
+    else: python "$RECIPE_DIR/install.py"
 requirements:
-  build: null
+  build:
+  - python
   run: null
 tests:
 - script:

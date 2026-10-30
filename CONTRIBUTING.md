@@ -42,8 +42,8 @@ For direct contributions:
 When creating or updating recipes:
 
 1. **Use the latest version**: Always target the latest stable release
-2. **Include checksums**: Use SHA256 checksums for source files (use `skip` for auto-extracted tarballs from GitHub)
-3. **Minimal dependencies**: Only include necessary runtime dependencies
+2. **Include checksums**: Use verified SHA256 checksums for source files
+3. **Minimal dependencies**: Only include necessary runtime dependencies; declare Python in build requirements for recipe-local `install.py`
 4. **Cross-platform**: Support Linux (x86_64 and aarch64), macOS (Intel and ARM), and Windows when possible
 5. **Testing**: Include basic tests to verify the package works
 6. **Metadata**: Provide accurate homepage, license, and summary
@@ -53,7 +53,7 @@ When creating or updating recipes:
 When creating or updating workflows:
 
 1. **Use specific versions**: Pin action versions (e.g., `@v4`, not `@latest`)
-2. **Security**: Use OIDC authentication when possible
+2. **Security**: Publishing uses a channel-write prefix.dev API token (`PREFIX_TOKEN`; locally `PREFIX_API_KEY`), not OIDC
 3. **Efficient builds**: Use matrix strategies for multi-platform builds
 4. **Error handling**: Include proper error messages and fallbacks
 5. **Documentation**: Comment complex workflow steps
@@ -76,17 +76,22 @@ Before submitting a PR, test your changes locally:
 curl -fsSL https://pixi.sh/install.sh | bash
 
 # Build the package
-pixi run build --recipe recipes/your-package
+pixi run build --recipe-path recipes/your-package/recipe.yaml --no-upload
 
-# Test the built package
-pixi run test --package-file output/*.conda
+# Run repository regression tests and checks
+pixi run test
+pixi run validate
+pixi run lint
 ```
+
+The `build` task invokes `python scripts/build.py`; package tests run during the build.
+Use `pixi run update --dry-run` to preview upstream recipe updates.
 
 ### Manual Installation Test
 
 ```bash
 # Install locally
-mamba install -c local output/*.conda
+mamba install output/linux-64/your-package-*.conda
 
 # Verify it works
 your-package --version
@@ -115,24 +120,24 @@ pixi install
 
 ```bash
 # Build a specific package
-pixi run build --recipe recipes/hatchet-cli
+pixi run build --recipe-path recipes/hatchet-cli/recipe.yaml --no-upload
 
 # Build for a specific platform
-rattler-build build --recipe recipes/hatchet-cli --target-platform linux-64
+pixi run build --recipe-path recipes/hatchet-cli/recipe.yaml --target-platforms linux-64 --no-upload
 ```
 
 ## Release Process
 
 Packages are automatically built and published when:
 
-1. A new version is detected (daily checks)
+1. A new version is detected (checks every three hours, at minute 10)
 2. Changes are pushed to the main branch
 3. The workflow is manually triggered
 
 The process:
 1. GitHub Actions checks for new upstream releases
 2. Recipe is updated if a new version is found
-3. Packages are built for all platforms
+3. Packages are built for supported targets; recipe `build.skip` conditions exclude unsupported platforms
 4. Built packages are uploaded to prefix.dev
 
 ## Code of Conduct

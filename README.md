@@ -44,8 +44,8 @@ A media packaging and development framework for VOD and Live DASH and HLS applic
 
 ### deepseek-tui
 
-DeepSeek TUI is a terminal coding agent for DeepSeek V4. It packages both the `deepseek` dispatcher and the
-`deepseek-tui` runtime.
+The conda package retains the name `deepseek-tui` and now packages CodeWhale, with the `codewhale`
+dispatcher and `codewhale-tui` runtime commands.
 
 **Upstream:** [Hmbown/DeepSeek-TUI](https://github.com/Hmbown/DeepSeek-TUI)
 
@@ -107,15 +107,14 @@ pixi add -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-pa
 
 # Using mamba/conda
 mamba install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka mihomo
-miniconda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka mihomo
 conda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka mihomo
 ```
 
 ## 🚀 How It Works
 
-1. **Automated Release Tracking**: GitHub Actions runs daily to check for new releases from upstream projects
+1. **Automated Release Tracking**: GitHub Actions runs every three hours (at minute 10) to check for new releases from upstream projects
 2. **Recipe Updates**: When a new version is detected, the recipe is automatically updated
-3. **Multi-Platform Builds**: Packages are built for Linux (x86_64 and aarch64), macOS (Intel and Apple Silicon), and Windows (x86_64)
+3. **Multi-Platform Builds**: The build matrix covers Linux (x86_64 and aarch64), macOS (Intel and Apple Silicon), and Windows (x86_64); individual recipes skip unsupported targets.
 4. **Publishing**: Built packages are automatically uploaded to the `longred-forge` channel on prefix.dev
 
 ## 🛠️ Technical Details
@@ -164,6 +163,26 @@ longred-forge/
 ├── pixi.toml                   # Dev environment config
 └── README.md
 ```
+
+## Local Development
+
+```bash
+pixi install
+pixi run test
+pixi run validate
+pixi run lint
+pixi run build --recipe-path recipes/garage-webui/recipe.yaml --no-upload
+pixi run update --dry-run
+```
+
+The `build` task runs `python scripts/build.py`. Builds use the original recipe directory so each
+recipe can invoke its adjacent `install.py`. Python is a build dependency, not a new runtime dependency.
+On Unix, scripts use `python "$RECIPE_DIR/install.py"`; on Windows, they use
+`python "%RECIPE_DIR%/install.py"`, matching rattler-build's bash/cmd environment syntax.
+
+Package availability depends on upstream assets and recipe `build.skip` conditions; the matrix does
+not guarantee that every package is available on every platform. Publishing requires a channel-write
+API token (`PREFIX_TOKEN`, or locally `PREFIX_API_KEY`); use `--no-upload` for local validation.
 
 ## 📝 License
 
