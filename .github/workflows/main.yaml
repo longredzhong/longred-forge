@@ -7,6 +7,11 @@ on:
       - master
     paths:
       - "recipes/**"
+      - "scripts/**"
+      - "tests/**"
+      - "pixi.toml"
+      - "pixi.lock"
+      - ".github/workflows/main.yaml"
   workflow_dispatch:  # Enable manual trigger
 
 jobs:
@@ -37,9 +42,11 @@ jobs:
           pixi-version: v0.62.2
           activate-environment: true
 
+      - name: Run regression tests
+        run: pixi run python -m unittest discover -s tests -v
+
       - name: 🧑‍🍳 Build & Publish Recipes
-        run: pixi run python scripts/build.py --skip-existing --target-platforms ${{ join(matrix.targets, ' ') }}
-        continue-on-error: true
+        run: pixi run python -u scripts/build.py --skip-existing --target-platforms ${{ join(matrix.targets, ' ') }}
 
       - name: 📝 Add to Summary
         if: always()

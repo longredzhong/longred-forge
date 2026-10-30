@@ -15,8 +15,7 @@ import yaml  # type: ignore
 
 # Fix Windows encoding issue - ensure UTF-8 output
 if sys.platform == "win32":
-    import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")
 
 
 # Network defaults: keep CI runs from hanging indefinitely.
@@ -40,6 +39,7 @@ def parse_args():
     p.add_argument("--repo", default=None)
     p.add_argument("--apply", action="store_true")
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--refresh-checksums", action="store_true", help="Explicitly revalidate assets even when the version is unchanged")
     return p.parse_args()
 
 
@@ -294,7 +294,7 @@ def parse_owner_repo_from_url(url: str):
     return None
 
 
-def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[str], headers: Dict[str, str], token: Optional[str], apply: bool, dry: bool) -> None:
+def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[str], headers: Dict[str, str], token: Optional[str], apply: bool, dry: bool, refresh_checksums: bool = False) -> None:
     """Update a single recipe file in-place (or show preview if dry)."""
     print(f"Processing recipe: {recipe_path}")
     with open(recipe_path, "r", encoding="utf-8") as f:
@@ -325,7 +325,7 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
     version = tag.lstrip("v")
     print(f"Latest upstream release: {tag}")
 
-    if doc.get("context", {}).get("version") == version:
+    if str(doc.get("context", {}).get("version")) == version and not refresh_checksums:
         print(f"Recipe already at version {version}")
         return
 
@@ -386,15 +386,14 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
                             gcs_checksums = get_gcs_checksums(version)
                             print(f"Fetched GCS checksums for version {version}")
                         except Exception as e:
-                            print(f"Failed to fetch GCS checksums: {e}")
-                            gcs_checksums = {}
+                            raise RuntimeError(f"Failed to fetch GCS checksums: {e}") from e
                     gcs_platform = gcs_platform_for_if_cond(if_cond)
                     if gcs_platform and gcs_checksums.get(gcs_platform):
                         sha = gcs_checksums[gcs_platform]
                         print(f"Using GCS sha for {gcs_platform}: {sha}")
                         item["sha256"] = sha
                     else:
-                        print(f"GCS checksum not found for platform: {gcs_platform}")
+                        raise RuntimeError(f"GCS checksum not found for platform: {gcs_platform}")
                     continue
                 
                 # Try hardcoded patterns first (for known repos like hatchet), then try URL-based pattern
@@ -405,24 +404,22 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
                 
                 # For simple URLs, extract the filename directly
                 if not expected and not if_cond:
-                    import re
                     m = re.search(r'/([^/]+)$', recipe_url)
                     if m:
                         expected = m.group(1)
                 
                 if not expected:
-                    print(f"Could not determine asset name for url: {recipe_url}")
-                    continue
+                    raise RuntimeError(f"Could not determine asset name for url: {recipe_url}")
                 
                 asset = find_asset(assets, expected)
                 if not asset:
-                    print(f"No matching asset found for {expected}")
-                    continue
+                    raise RuntimeError(f"No matching asset found for {expected}")
                 try:
                     sha = compute_sha_for_asset(asset, headers)
                 except Exception as e:
-                    print(f"Failed to compute sha for {expected}: {e}")
-                    continue
+                    raise RuntimeError(f"Failed to compute sha for {expected}: {e}") from e
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", sha):
+                    raise RuntimeError(f"Invalid SHA256 for {expected}")
                 print(f"Using sha for {expected}: {sha}")
                 item["sha256"] = sha
 
@@ -457,7 +454,7 @@ def main():
     if recipe_path:
         # Single recipe
         print(f"Reading recipe: {os.path.abspath(recipe_path)}")
-        update_single_recipe(recipe_path, owner, repo, headers, token, apply, dry)
+        update_single_recipe(recipe_path, owner, repo, headers, token, apply, dry, args.refresh_checksums)
         return
 
     # No recipe specified: update all recipes under recipes/*/recipe.yaml
@@ -471,7 +468,7 @@ def main():
 
     for fp in sorted(files):
         try:
-            update_single_recipe(fp, owner, repo, headers, token, apply, dry)
+            update_single_recipe(fp, owner, repo, headers, token, apply, dry, args.refresh_checksums)
         except Exception as e:
             print(f"Failed to update {fp}: {e}")
 

@@ -23,6 +23,7 @@ source:
   - url: ${{ gcs_base }}/${{ version }}/darwin-arm64/claude
     sha256: 6b5ec691195e551b02c41df9f7d723f4ea61eaa03c2df90acefe3736f1aeb620
 build:
+  skip: win
   number: 0
   dynamic_linking:
     binary_relocation: false

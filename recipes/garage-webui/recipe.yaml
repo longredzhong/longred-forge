@@ -16,6 +16,7 @@ source:
       }}/garage-webui-v${{ version }}-linux-arm64
     sha256: 89c2f4502c00e8edc207612234d0ddcd96147155165b5c662dd2c71849adf42f
 build:
+  skip: not linux
   number: 0
   dynamic_linking:
     binary_relocation: false

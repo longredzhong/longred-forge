@@ -8,23 +8,23 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/h4ckf0r0day/obscura/releases/download/v${{ version }}/obscura-x86_64-linux.tar.gz
-    sha256: fa34ab530ec1c3593dbf3de2ae1a179543cc0437e2be64363f59606f5b19dace
+    sha256: 2116764b99bc084fae3668b68aa535b4cf456e4498845b47493ad4123e83ca36
 - if: linux and aarch64
   then:
   - url: https://github.com/h4ckf0r0day/obscura/releases/download/v${{ version }}/obscura-aarch64-linux.tar.gz
-    sha256: 8ec03fc1b274976c5bb527db586cb87c67c67cacdfe8433478bc45dad2a49867
+    sha256: 24c549a348b1d464e80aa3f643bc0c874b0a2942fb7836c683528028d0fbb190
 - if: osx and x86_64
   then:
   - url: https://github.com/h4ckf0r0day/obscura/releases/download/v${{ version }}/obscura-x86_64-macos.tar.gz
-    sha256: f52541f0162b596524d14046b6948da323560df4338a463e77366c5016a215a8
+    sha256: 9f354cf929a577491d6ba0ef451e07baefffd19d34115330f69a0e463771d6cd
 - if: osx and arm64
   then:
   - url: https://github.com/h4ckf0r0day/obscura/releases/download/v${{ version }}/obscura-aarch64-macos.tar.gz
-    sha256: 5b556bd9c6bf2984874dbec1b900f8b1e79203d45f616dfff67a1aeae5b047bd
+    sha256: fcca31eba4280cd67a2e226ef4b015e432d5c089f78cefd074ad12bbc8e23345
 - if: win and x86_64
   then:
   - url: https://github.com/h4ckf0r0day/obscura/releases/download/v${{ version }}/obscura-x86_64-windows.zip
-    sha256: a521ce5e95bb8fb36e580c8847af8ed7e9aa7a0b8ce35e0d666d97cd11a4286a
+    sha256: 9e56fa1cc1f9e4fb78926f7e9f36c40166b65177541ad7b7fd9645944c49174e
 build:
   number: 0
   dynamic_linking:

@@ -22,9 +22,7 @@ import yaml  # type: ignore
 
 # Fix Windows encoding issue - ensure UTF-8 output
 if sys.platform == "win32":
-    import io
-
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")
 
 
 def load_dotenv(path: Path):
@@ -161,9 +159,7 @@ def build_recipe(
         if upload_flag:
             prefix_token = os.environ.get("PREFIX_API_KEY") or os.environ.get("PREFIX_TOKEN")
             if not prefix_token:
-                print("⚠️  PREFIX_API_KEY/PREFIX_TOKEN not found in environment; skipping upload")
-                print("::endgroup::")
-                return
+                raise RuntimeError("PREFIX_API_KEY/PREFIX_TOKEN is required for publishing; use --no-upload for local builds")
 
             # Find artifact - match any build number.
             # For noarch packages, look in output/noarch/ instead of output/{target_platform}/.
@@ -181,7 +177,7 @@ def build_recipe(
             env = os.environ.copy()
             env["PREFIX_API_KEY"] = prefix_token
 
-            print(f"✓ API key found: {prefix_token[:5]}...")
+            print("✓ Publishing credentials available")
 
             upload_cmd = ["rattler-build", "upload", "prefix", "-c", channel, "--skip-existing", artifact]
             run(upload_cmd, env=env)
@@ -222,16 +218,29 @@ def main():
     platforms = args.target_platforms or (["linux-64"])
 
     recipes = find_recipes(args.recipe_path)
+    failures = []
     for recipe in recipes:
         for target in platforms:
-            build_recipe(
-                recipe,
-                target,
-                args.channel,
-                not args.no_upload,
-                not args.no_build,
-                args.skip_existing,
-            )
+            try:
+                build_recipe(
+                    recipe,
+                    target,
+                    args.channel,
+                    not args.no_upload,
+                    not args.no_build,
+                    args.skip_existing,
+                )
+            except Exception as exc:
+                failures.append((recipe, target, str(exc)))
+
+    if failures:
+        summary = "\n".join(f"- `{recipe}` ({target}): **failed**" for recipe, target, _ in failures)
+        print(f"Failed builds ({len(failures)}):\n{summary}")
+        gha_summary = os.environ.get("GITHUB_STEP_SUMMARY")
+        if gha_summary:
+            with open(gha_summary, "a", encoding="utf-8") as f:
+                f.write(f"\n### Failed builds\n{summary}\n")
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

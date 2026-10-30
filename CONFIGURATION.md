@@ -10,21 +10,13 @@ If you want to create your own personal forge based on this project, follow thes
 2. Navigate to "Channels" and create a new channel (e.g., `your-username-forge`)
 3. Note your channel name for later use
 
-### 2. Configure OIDC Authentication
+### 2. Configure Publishing Authentication
 
-OIDC (OpenID Connect) allows GitHub Actions to authenticate with prefix.dev without storing API keys. This is the recommended and only authentication method used in this repository.
-
-1. In your prefix.dev channel settings, go to "Trusted Publishers"
-2. Add a new trusted publisher with:
-   - **Provider**: GitHub Actions
-   - **Repository**: your-username/your-repo-name
-   - **Workflow**: `.github/workflows/publish.yml`
-   - **Environment**: (leave empty or specify if you use environments)
+The current build script uses a prefix.dev API token, not OIDC. Create a token with write access to your channel and save it as the GitHub Actions repository secret `PREFIX_TOKEN`. Local publishing also accepts `PREFIX_API_KEY`. Missing credentials fail publishing; use `--no-upload` for local build-only checks.
 
 ### 3. Update Workflow Configuration
 
-Edit `.github/workflows/publish.yml` and replace:
-- `longred-forge` with your channel name in the publish step
+The build workflow is [main.yaml](.github/workflows/main.yaml). Set your channel using `--channel your-channel` in its build command (the default is `longred-forge`).
 
 ### 4. Test the Workflow
 
@@ -148,6 +140,19 @@ The workflow builds packages for:
 ## Troubleshooting
 
 ### Build Failures
+
+Unsupported platforms must be excluded with recipe `build.skip` selectors (for example, `win` or `not linux`). A conditional source alone does not skip a recipe. The build runner continues other recipes after a failure, records failures in the Actions summary, and exits nonzero after the batch.
+
+If upstream assets change without a new version, explicitly refresh checksums after reviewing the release assets:
+
+```bash
+pixi run python scripts/update.py --recipe recipes/obscura/recipe.yaml --refresh-checksums --dry-run
+pixi run python scripts/update.py --recipe recipes/obscura/recipe.yaml --refresh-checksums --apply
+```
+
+Checksum refresh is opt-in. Failed asset resolution leaves the recipe unchanged. If changed assets have already been published under the same version, increment `build.number` before republishing.
+
+Run publishing regression tests with `pixi run python -m unittest discover -s tests -v`.
 
 1. Check the Actions logs for specific errors
 2. Verify the source URL is accessible
