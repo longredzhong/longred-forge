@@ -1,4 +1,6 @@
+import io
 import os
+from contextlib import redirect_stdout
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,7 +20,8 @@ class PublishingTests(unittest.TestCase):
                  patch.object(build, 'find_recipes', return_value=recipes), \
                  patch.object(build, 'load_dotenv', return_value={}), \
                  patch.object(build, 'build_recipe', side_effect=[RuntimeError('broken'), None, None, None]) as cook, \
-                 patch.dict(os.environ, {'GITHUB_STEP_SUMMARY': str(summary)}):
+                 patch.dict(os.environ, {'GITHUB_STEP_SUMMARY': str(summary)}), \
+                 redirect_stdout(io.StringIO()):
                 with self.assertRaises(SystemExit) as result:
                     build.main()
             self.assertEqual(result.exception.code, 1)
@@ -36,7 +39,7 @@ class PublishingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             recipe = Path(tmp) / 'recipe.yaml'
             recipe.write_text('context: {version: "1.0"}\npackage: {name: example}\n')
-            with patch.dict(os.environ, {}, clear=True):
+            with patch.dict(os.environ, {}, clear=True), redirect_stdout(io.StringIO()):
                 with self.assertRaisesRegex(RuntimeError, 'required for publishing'):
                     build.build_recipe(recipe, 'linux-64', 'example', True, False, False)
 
