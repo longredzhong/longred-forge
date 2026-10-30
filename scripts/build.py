@@ -12,13 +12,19 @@ that already exist in the target channel.
 import argparse
 import os
 import shlex
-import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import List, Optional
 
-import yaml  # type: ignore
+if __package__:
+    from .forge.builder import build_recipe
+    from .forge.planner import PLATFORMS, changed_recipes
+    from .forge.reporting import write_report
+else:
+    from forge.builder import build_recipe
+    from forge.planner import PLATFORMS, changed_recipes
+    from forge.reporting import write_report
 
 # Fix Windows encoding issue - ensure UTF-8 output
 if sys.platform == "win32":
@@ -60,147 +66,14 @@ def find_recipes(recipe_path: Optional[str]) -> List[Path]:
     return sorted(recipes)
 
 
-def package_exists_locally(target_platform: str, name: str, version: str) -> bool:
-    """Check if package file already exists locally in output directory."""
-    pattern = f"output/{target_platform}/{name}-{version}-*_*.conda"
-    files = list(Path(".").glob(pattern))
-    if files:
-        print(f"✓ {files[0].name} already built locally")
-        return True
-    return False
-
-
-def find_local_artifacts(target_platform: str, name: str, version: str) -> List[Path]:
-    """Find local build artifacts for a given package/version and platform.
-
-    Returns a list sorted by mtime descending (newest first).
-    """
-    pattern = f"output/{target_platform}/{name}-{version}-*_*.conda"
-    files = list(Path(".").glob(pattern))
-    files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-    return files
-
-
-def build_recipe(
-    recipe_yaml_path: Path,
-    target_platform: str,
-    channel: str,
-    upload_flag: bool,
-    build_flag: bool,
-    skip_existing: bool,
-):
-    recipe_dir = recipe_yaml_path.parent
-    recipe_name = recipe_dir.name
-    print(f"::group::{recipe_name}-{target_platform}")
-    try:
-        recipe_content = yaml.safe_load(recipe_yaml_path.read_text())
-        version = str(recipe_content.get("context", {}).get("version"))
-        package_name = str(recipe_content.get("package", {}).get("name") or recipe_name)
-        
-        # Check if recipe is noarch - only build on linux-64 to avoid duplicate builds
-        build_config = recipe_content.get("build", {})
-        is_noarch = build_config.get("noarch") is not None
-        if is_noarch and target_platform != "linux-64":
-            print(f"ℹ️  Skipping noarch package on {target_platform} (will be built on linux-64)")
-            print("::endgroup::")
-            return
-        
-        generated_recipe_dir = recipe_dir / f"generated/{target_platform}"
-        # clear dir
-        if generated_recipe_dir.exists():
-            shutil.rmtree(generated_recipe_dir)
-        generated_recipe_dir.mkdir(parents=True, exist_ok=True)
-
-        recipe_yaml_out = generated_recipe_dir / "recipe.yaml"
-        # write with schema header
-        header = "# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json\n"
-        out_text = header + yaml.safe_dump(recipe_content, sort_keys=False)
-        recipe_yaml_out.write_text(out_text)
-        print(f"Written {recipe_yaml_out}")
-
-        if build_flag:
-            # Check local cache first before invoking rattler-build.
-            # For noarch packages, the artifact lives in output/noarch/.
-            local_platform = "noarch" if is_noarch else target_platform
-            local_files = find_local_artifacts(local_platform, package_name, version)
-            if skip_existing and local_files:
-                print(f"✓ {local_files[0].name} already built locally")
-                print(f"✓ {package_name} {version} already exists locally; skipping build")
-                # Important: if upload is enabled, still attempt upload of existing artifact.
-                # This fixes the case where build happened previously but upload was skipped/failed.
-                if not upload_flag:
-                    print("::endgroup::")
-                    return
-
-            # Build the channel URL for prefix.dev
-            channel_url = f"https://repo.prefix.dev/{channel}"
-
-            # Run rattler-build with --skip-existing all to check remote channel
-            # Add the target channel for remote existence check
-            cmd = [
-                "rattler-build",
-                "build",
-                "-r",
-                str(recipe_yaml_out),
-                "--target-platform",
-                target_platform,
-                "--test",
-                "native",
-                "-c",
-                channel_url,  # Add target channel first for skip-existing check
-                "-c",
-                "conda-forge",
-                "--skip-existing",
-                "all" if skip_existing else "none",
-            ]
-            run(cmd)
-            print(f"✓ Built for {target_platform}")
-
-        if upload_flag:
-            prefix_token = os.environ.get("PREFIX_API_KEY") or os.environ.get("PREFIX_TOKEN")
-            if not prefix_token:
-                raise RuntimeError("PREFIX_API_KEY/PREFIX_TOKEN is required for publishing; use --no-upload for local builds")
-
-            # Find artifact - match any build number.
-            # For noarch packages, look in output/noarch/ instead of output/{target_platform}/.
-            search_platform = "noarch" if is_noarch else target_platform
-            files = find_local_artifacts(search_platform, package_name, version)
-            if not files:
-                # Package might have been skipped due to --skip-existing all (remote already has it),
-                # or build was disabled.
-                print(f"✓ No local artifacts to upload (package may already exist in {channel})")
-                print("::endgroup::")
-                return
-
-            artifact = str(files[0])
-
-            env = os.environ.copy()
-            env["PREFIX_API_KEY"] = prefix_token
-
-            print("✓ Publishing credentials available")
-
-            upload_cmd = ["rattler-build", "upload", "prefix", "-c", channel, "--skip-existing", artifact]
-            run(upload_cmd, env=env)
-            print(f"✓ Uploaded {Path(artifact).name}")
-
-            gha_summary = os.environ.get("GITHUB_STEP_SUMMARY")
-            if gha_summary:
-                with open(gha_summary, "a") as f:
-                    f.write(f"- :rocket: `{search_platform}/{Path(artifact).name}`: **published**\n")
-
-    except Exception as e:
-        print(f"::error title={recipe_yaml_path}::recipe failed to cook")
-        print(e)
-        print("::endgroup::")
-        raise
-    print("::endgroup::")
-
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--recipe-path", dest="recipe_path", help="Specific recipe to build")
     parser.add_argument("--channel", default="longred-forge")
-    parser.add_argument("--target-platforms", nargs="*", default=None)
+    parser.add_argument("--target-platforms", nargs="*", choices=PLATFORMS, default=None)
+    parser.add_argument("--changed-since", help="Build only recipes affected since this git ref")
+    parser.add_argument("--report", help="Write machine-readable results")
     parser.add_argument("--no-upload", action="store_true")
     parser.add_argument("--no-build", dest="no_build", action="store_true")
     parser.add_argument(
@@ -213,16 +86,20 @@ def main():
 
     # load .env if present
     env_vars = load_dotenv(Path(".env"))
-    os.environ.update(env_vars)
+    for key, value in env_vars.items():
+        os.environ.setdefault(key, value)
 
     platforms = args.target_platforms or (["linux-64"])
 
     recipes = find_recipes(args.recipe_path)
+    if args.changed_since and not args.recipe_path:
+        recipes = changed_recipes(args.changed_since)
     failures = []
+    results = []
     for recipe in recipes:
         for target in platforms:
             try:
-                build_recipe(
+                result = build_recipe(
                     recipe,
                     target,
                     args.channel,
@@ -230,9 +107,14 @@ def main():
                     not args.no_build,
                     args.skip_existing,
                 )
+                if isinstance(result, dict):
+                    results.append(result)
             except Exception as exc:
+                print(f"::error title={recipe}::{exc}")
                 failures.append((recipe, target, str(exc)))
+                results.append({'recipe': str(recipe), 'platform': target, 'status': 'failed', 'error': str(exc)})
 
+    write_report(args.report, results)
     if failures:
         summary = "\n".join(f"- `{recipe}` ({target}): **failed**" for recipe, target, _ in failures)
         print(f"Failed builds ({len(failures)}):\n{summary}")

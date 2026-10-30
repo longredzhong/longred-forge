@@ -9,6 +9,8 @@ from unittest.mock import patch
 import yaml  # type: ignore
 
 from scripts import build, update
+from scripts.forge import publisher
+from scripts.forge.planner import Artifact
 
 
 class PublishingTests(unittest.TestCase):
@@ -41,7 +43,7 @@ class PublishingTests(unittest.TestCase):
             recipe.write_text('context: {version: "1.0"}\npackage: {name: example}\n')
             with patch.dict(os.environ, {}, clear=True), redirect_stdout(io.StringIO()):
                 with self.assertRaisesRegex(RuntimeError, 'required for publishing'):
-                    build.build_recipe(recipe, 'linux-64', 'example', True, False, False)
+                    publisher.publish(Artifact('example', '1.0', 'h0_0', 'linux-64'), recipe, 'example')
 
 
 class UpdaterTests(unittest.TestCase):
@@ -60,7 +62,8 @@ class UpdaterTests(unittest.TestCase):
             with patch.object(update, 'get_latest_release', return_value=self.release()):
                 update.update_single_recipe(str(path), None, None, {}, None, True, False)
                 self.assertEqual(path.read_bytes(), original)
-                update.update_single_recipe(str(path), None, None, {}, None, True, False, True)
+                with patch.object(update.subprocess, 'run'):
+                    update.update_single_recipe(str(path), None, None, {}, None, True, False, True)
             self.assertEqual(yaml.safe_load(path.read_text())['source'][0]['sha256'], 'b' * 64)
 
     def test_unresolved_assets_never_write_new_version_with_old_hash(self):

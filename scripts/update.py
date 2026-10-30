@@ -1,16 +1,25 @@
 #!/usr/bin/env python3
 """Update recipe versions from GitHub releases.
 
-Usage: python scripts/update.py --recipe recipes/hatchet-cli/recipe.yaml --owner hatchet-dev --repo hatchet [--apply]
+Usage: python scripts/update.py --recipe recipes/hatchet-cli/recipe.yaml [--apply]
+
+Default/dry-run previews are validated with rattler-build for all five targets.
+--apply replaces each recipe atomically only after every source and render succeeds.
+--refresh-checksums explicitly revalidates unchanged versions. --report PATH writes
+JSON per-recipe statuses; any failure makes the batch exit nonzero after continuing.
 """
 import argparse
-import hashlib
+import glob
+import json
+import stat
+import subprocess
+import tempfile
+from pathlib import Path
 import os
 import re
 import sys
 from typing import Any, Dict, List, Optional
 
-import httpx
 import yaml  # type: ignore
 
 # Fix Windows encoding issue - ensure UTF-8 output
@@ -18,18 +27,50 @@ if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
 
 
-# Network defaults: keep CI runs from hanging indefinitely.
-DEFAULT_HTTP_TIMEOUT = 30.0
-ASSET_DOWNLOAD_TIMEOUT = 120.0
+# Re-export provider helpers to preserve the scripts.update API and patch points.
+if __package__:
+    from .forge.upstream import (
+        ASSET_DOWNLOAD_TIMEOUT, DEFAULT_HTTP_TIMEOUT, CLAUDE_CODE_GCS_BUCKET,
+        VALID_ASSET_BASENAME_PATTERN, asset_name_for, asset_name_from_recipe_pattern,
+        compute_sha_for_asset, digest_from_checksum_txt, find_asset, get_gcs_checksums,
+        get_latest_release, gcs_platform_for_if_cond, sha256_hex_bytes, validate_sha256,
+    )
+else:
+    from forge.upstream import (
+        ASSET_DOWNLOAD_TIMEOUT, DEFAULT_HTTP_TIMEOUT, CLAUDE_CODE_GCS_BUCKET,
+        VALID_ASSET_BASENAME_PATTERN, asset_name_for, asset_name_from_recipe_pattern,
+        compute_sha_for_asset, digest_from_checksum_txt, find_asset, get_gcs_checksums,
+        get_latest_release, gcs_platform_for_if_cond, sha256_hex_bytes, validate_sha256,
+    )
 
-# Safe release asset basenames start and end with an alphanumeric, underscore, hyphen,
-# or plus sign, and may contain non-consecutive dots between those characters.
-VALID_ASSET_BASENAME_PATTERN = re.compile(
-    r"^(?:[A-Za-z0-9](?:[A-Za-z0-9_+-]|\.(?=[A-Za-z0-9_+-]))*[A-Za-z0-9_+-]|[A-Za-z0-9])$"
-)
+TARGET_PLATFORMS = ("linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64")
 
-# GCS bucket for claude-code native binaries
-CLAUDE_CODE_GCS_BUCKET = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases"
+
+def validate_and_write(recipe_path: str, out: str, write: bool) -> None:
+    """Render all five targets beside the recipe, then atomically replace it.
+
+    A sibling candidate preserves relative scripts, patches, and other resources.
+    Dry runs perform the same validation but never replace the original.
+    """
+    path = Path(recipe_path)
+    candidate = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".yaml",
+                                         prefix=".update-", dir=path.parent, delete=False) as handle:
+            candidate = Path(handle.name)
+            handle.write(out)
+            handle.flush()
+            os.fsync(handle.fileno())
+        candidate.chmod(stat.S_IMODE(path.stat().st_mode))
+        for platform in TARGET_PLATFORMS:
+            subprocess.run(["rattler-build", "build", "--recipe", str(candidate),
+                            "--target-platform", platform, "--render-only"],
+                           check=True, capture_output=True, text=True, timeout=120)
+        if write:
+            os.replace(candidate, path)
+    finally:
+        if candidate is not None:
+            candidate.unlink(missing_ok=True)
 
 
 def parse_args():
@@ -40,232 +81,8 @@ def parse_args():
     p.add_argument("--apply", action="store_true")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--refresh-checksums", action="store_true", help="Explicitly revalidate assets even when the version is unchanged")
+    p.add_argument("--report", help="Write structured per-recipe JSON results")
     return p.parse_args()
-
-
-def get_latest_release(owner: str, repo: str, token: Optional[str]) -> Dict[str, Any]:
-    url = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
-    headers = {}
-    if token:
-        headers["Authorization"] = f"token {token}"
-    # GitHub API best-practice headers
-    headers.setdefault("Accept", "application/vnd.github+json")
-    headers.setdefault("X-GitHub-Api-Version", "2022-11-28")
-    headers.setdefault("User-Agent", "longred-forge-recipe-updater")
-    r = httpx.get(url, headers=headers, timeout=DEFAULT_HTTP_TIMEOUT)
-    r.raise_for_status()
-    return r.json()
-
-
-def sha256_hex_bytes(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
-
-
-def digest_from_checksum_txt(filename: str, txt: str) -> Optional[str]:
-    for line in txt.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        # common formats: <hash> <filename>
-        if line.endswith(filename):
-            parts = line.split()
-            if len(parts) >= 1:
-                return parts[0]
-    return None
-
-
-def get_gcs_checksums(version: str) -> Dict[str, str]:
-    """Fetch SHA-256 checksums from GCS manifest.json for a given claude-code version.
-
-    Returns a dict mapping GCS platform names to sha256 hex strings, e.g.:
-      {"linux-x64": "abc123...", "linux-arm64": "def456...", ...}
-    """
-    manifest_url = f"{CLAUDE_CODE_GCS_BUCKET}/{version}/manifest.json"
-    r = httpx.get(manifest_url, timeout=DEFAULT_HTTP_TIMEOUT)
-    r.raise_for_status()
-    manifest = r.json()
-    platforms = manifest.get("platforms", {})
-    result: Dict[str, str] = {}
-    for platform, info in platforms.items():
-        if not isinstance(info, dict):
-            continue
-        checksum = info.get("checksum", "")
-        if checksum:
-            result[platform] = checksum
-        else:
-            print(f"Warning: missing checksum for platform {platform} in GCS manifest")
-    return result
-
-
-def gcs_platform_for_if_cond(if_cond: str) -> Optional[str]:
-    """Map a recipe if-condition string to the corresponding GCS platform name."""
-    if "linux" in if_cond and "x86_64" in if_cond:
-        return "linux-x64"
-    if "linux" in if_cond and "aarch64" in if_cond:
-        return "linux-arm64"
-    if "osx" in if_cond and "x86_64" in if_cond:
-        return "darwin-x64"
-    if "osx" in if_cond and "arm64" in if_cond:
-        return "darwin-arm64"
-    return None
-
-
-def asset_name_for(if_cond: str, version_tag: str, repo: Optional[str] = None) -> Optional[str]:
-    v = version_tag.lstrip("v")
-    # Support multiple naming patterns for different tools
-
-    if repo and repo.lower() == "hatchet":
-        # Hatchet pattern: hatchet_<version>_<OS>_<ARCH>.tar.gz
-        if "linux" in if_cond and "x86_64" in if_cond:
-            return f"hatchet_{v}_Linux_x86_64.tar.gz"
-        if "linux" in if_cond and "aarch64" in if_cond:
-            return f"hatchet_{v}_Linux_arm64.tar.gz"
-        if "osx" in if_cond and "x86_64" in if_cond:
-            return f"hatchet_{v}_Darwin_x86_64.tar.gz"
-        if "osx" in if_cond and "arm64" in if_cond:
-            return f"hatchet_{v}_Darwin_arm64.tar.gz"
-
-    if repo and repo.lower() == "copilot-cli":
-        # Copilot-CLI pattern: copilot-<os>-<arch>.tar.gz
-        if "linux" in if_cond and "x86_64" in if_cond:
-            return "copilot-linux-x64.tar.gz"
-        if "linux" in if_cond and "aarch64" in if_cond:
-            return "copilot-linux-arm64.tar.gz"
-        if "osx" in if_cond and "x86_64" in if_cond:
-            return "copilot-darwin-x64.tar.gz"
-        if "osx" in if_cond and "arm64" in if_cond:
-            return "copilot-darwin-arm64.tar.gz"
-
-    if repo and repo.lower() == "opencode":
-        # OpenCode pattern: opencode-<os>-<arch>.tar.gz or .zip
-        if "linux" in if_cond and "x86_64" in if_cond:
-            return "opencode-linux-x64.tar.gz"
-        if "linux" in if_cond and "aarch64" in if_cond:
-            return "opencode-linux-arm64.tar.gz"
-        if "osx" in if_cond and "x86_64" in if_cond:
-            return "opencode-darwin-x64.zip"
-        if "osx" in if_cond and "arm64" in if_cond:
-            return "opencode-darwin-arm64.zip"
-
-    if repo and repo.lower() == "radar":
-        # Radar pattern: radar_v<version>_<os>_<arch>.tar.gz
-        if "linux" in if_cond and "x86_64" in if_cond:
-            return f"radar_v{v}_linux_amd64.tar.gz"
-        if "linux" in if_cond and "aarch64" in if_cond:
-            return f"radar_v{v}_linux_arm64.tar.gz"
-        if "osx" in if_cond and "x86_64" in if_cond:
-            return f"radar_v{v}_darwin_amd64.tar.gz"
-        if "osx" in if_cond and "arm64" in if_cond:
-            return f"radar_v{v}_darwin_arm64.tar.gz"
-
-    if repo and repo.lower() == "garage-webui":
-        # garage-webui pattern: garage-webui-v<version>-linux-<arch>
-        if "linux" in if_cond and "x86_64" in if_cond:
-            return f"garage-webui-v{v}-linux-amd64"
-        if "linux" in if_cond and "arm64" in if_cond:
-            return f"garage-webui-v{v}-linux-arm64"
-
-    if repo and repo.lower() == "mimocode":
-        # MiMo-Code pattern: mimocode-<os>-<arch>.tar.gz or .zip
-        if "linux" in if_cond and "x86_64" in if_cond:
-            return "mimocode-linux-x64.tar.gz"
-        if "linux" in if_cond and "aarch64" in if_cond:
-            return "mimocode-linux-arm64.tar.gz"
-        if "osx" in if_cond and "x86_64" in if_cond:
-            return "mimocode-darwin-x64.zip"
-        if "osx" in if_cond and "arm64" in if_cond:
-            return "mimocode-darwin-arm64.zip"
-        if "win" in if_cond and "x86_64" in if_cond:
-            return "mimocode-windows-x64.zip"
-
-    if repo and repo.lower() == "mihomo":
-        # Mihomo pattern: mihomo-<os>-<arch>[-compatible]-v<version>.gz (or .zip on Windows)
-        # The amd64 builds ship upstream's "compatible" (GOAMD64=v1) variants for portability.
-        if "linux" in if_cond and "x86_64" in if_cond:
-            return f"mihomo-linux-amd64-compatible-v{v}.gz"
-        if "linux" in if_cond and "aarch64" in if_cond:
-            return f"mihomo-linux-arm64-v{v}.gz"
-        if "osx" in if_cond and "x86_64" in if_cond:
-            return f"mihomo-darwin-amd64-compatible-v{v}.gz"
-        if "osx" in if_cond and "arm64" in if_cond:
-            return f"mihomo-darwin-arm64-v{v}.gz"
-        if "win" in if_cond and "x86_64" in if_cond:
-            return f"mihomo-windows-amd64-compatible-v{v}.zip"
-
-    return None
-
-
-def asset_name_from_recipe_pattern(recipe_url: Optional[str], if_cond: str, version: Optional[str]) -> Optional[str]:
-    """Extract asset name pattern from recipe source URL, substituting the version placeholder."""
-    if not recipe_url:
-        return None
-    # Extract pattern like copilot-linux-x64.tar.gz, radar_v${{ version }}_linux_amd64.tar.gz,
-    # or direct binary assets such as deepseek-linux-x64.
-    import re
-    # Substitute version placeholder with provided version (if available)
-    url_pattern = recipe_url.replace("${{ version }}", str(version) if version is not None else "")
-    url_pattern = url_pattern.strip()
-    if "{" in url_pattern:  # Skip if unresolved other variables remain
-        return None
-    # Extract just the filename.
-    m = re.search(r'/([^/]+)$', url_pattern)
-    if m:
-        filename = m.group(1)
-        if VALID_ASSET_BASENAME_PATTERN.fullmatch(filename):
-            return filename
-    return None
-
-
-def find_asset(assets: List[Dict[str, Any]], name: str) -> Optional[Dict[str, Any]]:
-    for a in assets:
-        if a.get("name") == name:
-            return a
-    return None
-
-
-def compute_sha_for_asset(asset: Dict[str, Any], headers: Dict[str, str]) -> str:
-    # Use asset.digest if present
-    digest = asset.get("digest")
-    if digest:
-        m = re.search(r"sha-?256:?(.*)", str(digest), re.IGNORECASE)
-        if m:
-            return m.group(1).strip()
-
-    # Look for checksum asset
-    asset_name: Optional[str] = asset.get("name")
-    if not asset_name:
-        raise RuntimeError("asset has no name")
-    # try common checksum suffixes
-    possible_suffixes = [".sha256", ".sha256sum", ".sha256.txt", ".sha256sums"]
-    release_assets: List[Dict[str, Any]] = asset.get("_release_assets_cache") or []
-    for s in possible_suffixes:
-        candidate = next((x for x in release_assets if x.get("name") == asset_name + s), None)
-        if candidate:
-            candidate_url: Optional[str] = candidate.get("browser_download_url")
-            if candidate_url:
-                txt = httpx.get(candidate_url, headers=headers, timeout=DEFAULT_HTTP_TIMEOUT).text
-                got = digest_from_checksum_txt(asset_name, txt)
-                if got:
-                    return got
-
-    # Try to find any checksum file in the release assets that contains the filename
-    for cand in release_assets:
-        cand_name: Optional[str] = cand.get("name")
-        if cand_name and ("sha" in cand_name.lower() or "checksum" in cand_name.lower()):
-            cand_url: Optional[str] = cand.get("browser_download_url")
-            if cand_url:
-                txt = httpx.get(cand_url, headers=headers, timeout=DEFAULT_HTTP_TIMEOUT).text
-                got = digest_from_checksum_txt(asset_name, txt)
-                if got:
-                    return got
-
-    # Last resort: download asset and compute
-    url = asset.get("browser_download_url")
-    if not url:
-        raise RuntimeError("asset has no download url")
-    r = httpx.get(url, headers=headers, timeout=ASSET_DOWNLOAD_TIMEOUT)
-    r.raise_for_status()
-    return sha256_hex_bytes(r.content)
 
 
 def parse_owner_repo_from_url(url: str):
@@ -294,8 +111,46 @@ def parse_owner_repo_from_url(url: str):
     return None
 
 
-def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[str], headers: Dict[str, str], token: Optional[str], apply: bool, dry: bool, refresh_checksums: bool = False) -> None:
-    """Update a single recipe file in-place (or show preview if dry)."""
+def checked_source_items(source):
+    """Validate every source before changing checksums, preserving YAML structure.
+
+    Local path resources need no upstream checksum. Unknown providers, URL lists,
+    nested conditionals and else branches fail closed rather than retaining hashes.
+    """
+    sources = source if isinstance(source, list) else [source]
+    if not sources:
+        raise RuntimeError("Recipe has no sources")
+    result = []
+    for entry in sources:
+        if not isinstance(entry, dict):
+            raise RuntimeError("Unsupported recipe source type")
+        condition = ""
+        if "then" in entry or "if" in entry:
+            if (set(entry) - {"if", "then"} or not isinstance(entry.get("if"), str)
+                    or not entry["if"] or "then" not in entry):
+                raise RuntimeError("Unsupported conditional source")
+            condition = entry["if"]
+            children = entry["then"]
+            children = children if isinstance(children, list) else [children]
+            if not children:
+                raise RuntimeError("Empty conditional source")
+        else:
+            children = [entry]
+        for child in children:
+            if not isinstance(child, dict) or any(key in child for key in ("if", "then", "else", "git")):
+                raise RuntimeError("Unsupported recipe source")
+            if "url" in child:
+                if not isinstance(child["url"], str) or not child["url"].strip() or "path" in child:
+                    raise RuntimeError("Unsupported recipe URL source")
+                result.append((child, condition))
+            elif (not isinstance(child.get("path"), str) or not child["path"].strip()
+                  or any(key in child for key in ("sha256", "md5", "sha1"))):
+                raise RuntimeError("Unsupported recipe source without URL")
+    return result
+
+
+def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[str], headers: Dict[str, str], token: Optional[str], apply: bool, dry: bool, refresh_checksums: bool = False) -> str:
+    """Resolve every source and validate before replacing; return a report status."""
     print(f"Processing recipe: {recipe_path}")
     with open(recipe_path, "r", encoding="utf-8") as f:
         raw = f.read()
@@ -310,24 +165,24 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
     if parsed:
         owner_from_recipe, repo_from_recipe = parsed
         print(f"Detected owner/repo from recipe: {owner_from_recipe}/{repo_from_recipe}")
-        owner = owner_from_recipe
-        repo = repo_from_recipe
+        owner = owner or owner_from_recipe
+        repo = repo or repo_from_recipe
 
     if not owner or not repo:
-        print("Owner/repo not set and not found in recipe. Skipping this recipe.")
-        return
+        raise RuntimeError("Owner/repo not set and not found in recipe")
 
     release = get_latest_release(owner, repo, token)
     tag = release.get("tag_name")
     if not tag:
-        print("No tag_name found in release; skipping")
-        return
+        raise RuntimeError("No tag_name found in release")
     version = tag.lstrip("v")
     print(f"Latest upstream release: {tag}")
 
     if str(doc.get("context", {}).get("version")) == version and not refresh_checksums:
         print(f"Recipe already at version {version}")
-        return
+        return "unchanged"
+
+    source_items = checked_source_items(doc.get("source"))
 
     # update version
     doc.setdefault("context", {})
@@ -340,101 +195,71 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
 
     # Pre-fetch GCS checksums if any source URL references the claude-code GCS bucket
     gcs_checksums: Optional[Dict[str, str]] = None
+    resolved_sources = 0
 
-    if isinstance(doc.get("source"), list):
-        for src in doc["source"]:
-            if not isinstance(src, dict):
-                continue
-            
-            # Handle two types of source structures:
-            # 1. Simple: source has url/sha256 directly
-            # 2. Conditional: source has if/then structure
-            
-            items_to_process: List[Dict[str, Any]] = []
-            if_cond = ""
-            
-            if "then" in src:
-                # Conditional structure with if/then
-                if_cond = src.get("if", "")
-                then_list = src.get("then") or []
-                items_to_process = then_list
-            elif "url" in src:
-                # Simple structure with url directly
-                items_to_process = [src]
-            
-            for item in items_to_process:
-                if not isinstance(item, dict):
-                    continue
-                if not item.get("url"):
-                    continue
-                
-                # For simple single-file downloads (like gemini.js), extract filename from URL
-                recipe_url: Optional[str] = item.get("url")
-                if not recipe_url:
-                    continue
+    for item, if_cond in source_items:
+        recipe_url = item["url"]
 
-                # GCS-based source (claude-code): fetch checksums from manifest
-                # The URL may use a ${{ gcs_base }} context variable or the literal GCS URL
-                ctx_gcs_base = (doc.get("context") or {}).get("gcs_base", "")
-                is_gcs_source = (
-                    CLAUDE_CODE_GCS_BUCKET in recipe_url
-                    or (ctx_gcs_base and ctx_gcs_base == CLAUDE_CODE_GCS_BUCKET)
-                )
-                if is_gcs_source:
-                    if gcs_checksums is None:
-                        try:
-                            gcs_checksums = get_gcs_checksums(version)
-                            print(f"Fetched GCS checksums for version {version}")
-                        except Exception as e:
-                            raise RuntimeError(f"Failed to fetch GCS checksums: {e}") from e
-                    gcs_platform = gcs_platform_for_if_cond(if_cond)
-                    if gcs_platform and gcs_checksums.get(gcs_platform):
-                        sha = gcs_checksums[gcs_platform]
-                        print(f"Using GCS sha for {gcs_platform}: {sha}")
-                        item["sha256"] = sha
-                    else:
-                        raise RuntimeError(f"GCS checksum not found for platform: {gcs_platform}")
-                    continue
-                
-                # Try hardcoded patterns first (for known repos like hatchet), then try URL-based pattern
-                expected = asset_name_for(if_cond, tag, repo)
-                if not expected:
-                    # Try to infer from recipe URL pattern
-                    expected = asset_name_from_recipe_pattern(recipe_url, if_cond, version)
-                
-                # For simple URLs, extract the filename directly
-                if not expected and not if_cond:
-                    m = re.search(r'/([^/]+)$', recipe_url)
-                    if m:
-                        expected = m.group(1)
-                
-                if not expected:
-                    raise RuntimeError(f"Could not determine asset name for url: {recipe_url}")
-                
-                asset = find_asset(assets, expected)
-                if not asset:
-                    raise RuntimeError(f"No matching asset found for {expected}")
+        # GCS-based source (claude-code): fetch checksums from manifest
+        # The URL may use a ${{ gcs_base }} context variable or the literal GCS URL
+        ctx_gcs_base = (doc.get("context") or {}).get("gcs_base", "")
+        is_gcs_source = (
+            CLAUDE_CODE_GCS_BUCKET in recipe_url
+            or (ctx_gcs_base and ctx_gcs_base == CLAUDE_CODE_GCS_BUCKET)
+        )
+        if is_gcs_source:
+            if gcs_checksums is None:
                 try:
-                    sha = compute_sha_for_asset(asset, headers)
+                    gcs_checksums = get_gcs_checksums(version)
+                    print(f"Fetched GCS checksums for version {version}")
                 except Exception as e:
-                    raise RuntimeError(f"Failed to compute sha for {expected}: {e}") from e
-                if not re.fullmatch(r"[0-9a-fA-F]{64}", sha):
-                    raise RuntimeError(f"Invalid SHA256 for {expected}")
-                print(f"Using sha for {expected}: {sha}")
+                    raise RuntimeError("Failed to fetch GCS checksums") from None
+            gcs_platform = gcs_platform_for_if_cond(if_cond)
+            if gcs_platform and gcs_checksums.get(gcs_platform):
+                sha = validate_sha256(gcs_checksums[gcs_platform])
+                print(f"Using GCS sha for {gcs_platform}: {sha}")
                 item["sha256"] = sha
+                resolved_sources += 1
+            else:
+                raise RuntimeError(f"GCS checksum not found for platform: {gcs_platform}")
+            continue
+
+        expected = asset_name_from_recipe_pattern(recipe_url, if_cond, version)
+
+        if not expected:
+            raise RuntimeError("Could not determine asset name from recipe URL")
+
+        asset = find_asset(assets, expected)
+        if not asset:
+            raise RuntimeError(f"No matching asset found for {expected}")
+        try:
+            sha = compute_sha_for_asset(asset, headers)
+        except Exception as e:
+            raise RuntimeError("Failed to compute asset checksum") from None
+        try:
+            sha = validate_sha256(sha)
+        except ValueError as exc:
+            raise RuntimeError(f"Invalid SHA256 for {expected}") from exc
+        print(f"Using sha for {expected}: {sha}")
+        item["sha256"] = sha
+        resolved_sources += 1
+
+    if not resolved_sources:
+        raise RuntimeError("Recipe has no updatable URL sources")
 
     out = "# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json\n" + yaml.safe_dump(doc, sort_keys=False)
 
-    if dry:
+    validate_and_write(recipe_path, out, apply and not dry)
+
+    if dry or not apply:
         print("--- Updated recipe preview ---")
         print(out)
         print("--- end preview ---")
         print("(dry-run) not writing changes for this recipe")
-        return
+        return "dry-run"
 
-    with open(recipe_path, "w", encoding="utf-8") as f:
-        f.write(out)
     print(f"Wrote updated recipe with version {version}")
+    return "updated"
 
 
 def main():
@@ -451,26 +276,24 @@ def main():
     if token:
         headers["Authorization"] = f"token {token}"
 
-    if recipe_path:
-        # Single recipe
-        print(f"Reading recipe: {os.path.abspath(recipe_path)}")
-        update_single_recipe(recipe_path, owner, repo, headers, token, apply, dry, args.refresh_checksums)
-        return
-
-    # No recipe specified: update all recipes under recipes/*/recipe.yaml
-    import glob
-
-    pattern = os.path.join("recipes", "*", "recipe.yaml")
-    files = glob.glob(pattern)
-    if not files:
-        print("No recipes found to process")
-        return
-
-    for fp in sorted(files):
+    files = [recipe_path] if recipe_path else sorted(glob.glob(os.path.join("recipes", "*", "recipe.yaml")))
+    results = []
+    for fp in files:
         try:
-            update_single_recipe(fp, owner, repo, headers, token, apply, dry, args.refresh_checksums)
-        except Exception as e:
-            print(f"Failed to update {fp}: {e}")
+            status = update_single_recipe(fp, owner, repo, headers, token, apply, dry, args.refresh_checksums)
+            results.append({"recipe": fp, "status": status})
+        except Exception as exc:
+            # Network exception strings can contain URLs with credentials. Do not log them.
+            error = type(exc).__name__
+            print(f"Failed to update {fp}: {error}")
+            results.append({"recipe": fp, "status": "failed", "error": error})
+    failed = sum(result["status"] == "failed" for result in results)
+    if args.report:
+        report = Path(args.report)
+        report.parent.mkdir(parents=True, exist_ok=True)
+        report.write_text(json.dumps({"recipes": results, "failed": failed}, indent=2) + "\n", encoding="utf-8")
+    if failed:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

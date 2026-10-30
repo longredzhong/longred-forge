@@ -1,0 +1,52 @@
+"""Publish exact planned artifacts and verify channel indexing."""
+
+import hashlib
+import os
+import subprocess
+import time
+from pathlib import Path
+
+import httpx
+
+from .planner import Artifact
+
+
+def indexed(artifact: Artifact, channel: str, sha256: str | None = None) -> bool:
+    response = httpx.get(
+        f'https://repo.prefix.dev/{channel}/{artifact.platform}/repodata.json',
+        follow_redirects=True, timeout=60,
+    )
+    if response.status_code == 404:
+        return False
+    response.raise_for_status()
+    metadata = response.json().get('packages.conda', {}).get(artifact.filename)
+    if metadata is None:
+        return False
+    if sha256 and metadata.get('sha256') != sha256:
+        raise RuntimeError(f'Channel checksum differs for {artifact.filename}; increment build.number')
+    return True
+
+
+def publish(artifact: Artifact, path: Path, channel: str) -> str:
+    token = os.environ.get('PREFIX_API_KEY') or os.environ.get('PREFIX_TOKEN')
+    if not token:
+        raise RuntimeError('PREFIX_API_KEY/PREFIX_TOKEN is required for publishing; use --no-upload for local builds')
+    with path.open('rb') as handle:
+        digest = hashlib.file_digest(handle, 'sha256').hexdigest()
+    if indexed(artifact, channel, digest):
+        return 'already_exists'
+    env = dict(os.environ, PREFIX_API_KEY=token)
+    for attempt in range(3):
+        result = subprocess.run(
+            ['rattler-build', 'upload', 'prefix', '-c', channel, '--skip-existing', str(path)], env=env,
+        )
+        if result.returncode == 0:
+            break
+        if attempt == 2:
+            raise RuntimeError(f'Upload failed: {artifact.filename}')
+        time.sleep(2 ** attempt)
+    for attempt in range(6):
+        if indexed(artifact, channel, digest):
+            return 'published'
+        time.sleep(2 ** min(attempt, 3))
+    raise RuntimeError(f'Uploaded artifact not indexed yet: {artifact.filename}')
