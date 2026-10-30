@@ -28,6 +28,8 @@ jobs:
 
       - name: Run updater for all recipes (apply) via pixi
         id: update
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
         run: |
           # Run updater without --recipe so it processes all recipes under recipes/*/recipe.yaml

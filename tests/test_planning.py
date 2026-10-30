@@ -15,7 +15,7 @@ class PlanningTests(unittest.TestCase):
 
     def test_core_change_selects_all_recipes(self):
         with patch.object(planner.subprocess, 'run', return_value=Mock(stdout='scripts/forge/builder.py\n')):
-            self.assertEqual(len(planner.changed_recipes('base')), 12)
+            self.assertEqual(planner.changed_recipes('base'), sorted(Path('recipes').glob('*/recipe.yaml')))
 
     def test_docs_only_change_is_empty(self):
         with patch.object(planner.subprocess, 'run', return_value=Mock(stdout='README.md\n')):

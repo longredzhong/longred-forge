@@ -33,14 +33,14 @@ if __package__:
         ASSET_DOWNLOAD_TIMEOUT, DEFAULT_HTTP_TIMEOUT, CLAUDE_CODE_GCS_BUCKET,
         VALID_ASSET_BASENAME_PATTERN, asset_name_for, asset_name_from_recipe_pattern,
         compute_sha_for_asset, digest_from_checksum_txt, find_asset, get_gcs_checksums,
-        get_latest_release, gcs_platform_for_if_cond, sha256_hex_bytes, validate_sha256,
+        get_latest_release, get_release_for_major, gcs_platform_for_if_cond, sha256_hex_bytes, validate_sha256,
     )
 else:
     from forge.upstream import (
         ASSET_DOWNLOAD_TIMEOUT, DEFAULT_HTTP_TIMEOUT, CLAUDE_CODE_GCS_BUCKET,
         VALID_ASSET_BASENAME_PATTERN, asset_name_for, asset_name_from_recipe_pattern,
         compute_sha_for_asset, digest_from_checksum_txt, find_asset, get_gcs_checksums,
-        get_latest_release, gcs_platform_for_if_cond, sha256_hex_bytes, validate_sha256,
+        get_latest_release, get_release_for_major, gcs_platform_for_if_cond, sha256_hex_bytes, validate_sha256,
     )
 
 TARGET_PLATFORMS = ("linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64")
@@ -171,12 +171,29 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
     if not owner or not repo:
         raise RuntimeError("Owner/repo not set and not found in recipe")
 
-    release = get_latest_release(owner, repo, token)
+    extra = doc.get("extra") or {}
+    update_config = (extra.get("update") or {}) if isinstance(extra, dict) else {}
+    major = None
+    if isinstance(update_config, dict) and "major" in update_config:
+        major = update_config["major"]
+        if type(major) is not int or major <= 0:
+            raise ValueError("extra.update.major must be a positive integer")
+
+    release = (get_latest_release(owner, repo, token) if major is None
+               else get_release_for_major(owner, repo, token, major))
     tag = release.get("tag_name")
     if not tag:
         raise RuntimeError("No tag_name found in release")
     version = tag.lstrip("v")
     print(f"Latest upstream release: {tag}")
+
+    if major is not None:
+        current = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)", str(doc.get("context", {}).get("version")))
+        selected = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)", tag)
+        if not current or not selected:
+            raise ValueError("Configured release lines require numeric version triples")
+        if tuple(map(int, selected.groups())) < tuple(map(int, current.groups())):
+            raise RuntimeError(f"Refusing downgrade from {current[0]} to {tag}")
 
     if str(doc.get("context", {}).get("version")) == version and not refresh_checksums:
         print(f"Recipe already at version {version}")

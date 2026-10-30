@@ -209,6 +209,18 @@ The workflow builds packages for:
 Availability depends on each recipe’s upstream assets and `build.skip` conditions; not every package
 is available on every platform. Cross-platform render checks do not replace native build tests.
 
+## Independent Major-Version Lines
+
+Recipes can set `extra.update.major` to a positive integer to select the highest stable numeric `vMAJOR.MINOR.PATCH` release within that major. The updater paginates GitHub releases, excludes draft/prerelease/component tags, and refuses downgrades. Without this setting, the existing GitHub latest-release behavior is retained.
+
+```yaml
+extra:
+  update:
+    major: 2
+```
+
+`opencode` tracks major 1; `opencode2` tracks major 2 and installs only the `opencode2` command. Separate command names do not imply isolated application state. GitHub release scans should use `GITHUB_TOKEN` to avoid anonymous API rate limits.
+
 ## Troubleshooting
 
 ### Build Failures

@@ -30,6 +30,17 @@ OpenCode is an open-source AI coding agent that helps you write, edit, and debug
 
 **Upstream:** [anomalyco/opencode](https://github.com/anomalyco/opencode)
 
+### opencode2
+
+OpenCode second generation, maintained separately from the incompatible v1 line. Install the `opencode2` package and run `opencode2`; the existing `opencode` package and command remain on v1. Both packages can coexist without overwriting executable files. This does not guarantee compatible configuration, plugins, or session data; use separate environments and back up existing data before migration.
+
+```bash
+pixi global install -c https://prefix.dev/longred-forge opencode2
+opencode2 --version
+```
+
+**Upstream:** [anomalyco/opencode](https://github.com/anomalyco/opencode)
+
 ### radar
 
 Modern Kubernetes visibility - Local-first, no account, no cloud dependency. Provides topology, event timeline, service traffic, resource browsing, Helm management, and GitOps support.

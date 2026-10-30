@@ -33,6 +33,42 @@ def get_latest_release(owner: str, repo: str, token: Optional[str]) -> Dict[str,
     return HTTPClient().json(f"https://api.github.com/repos/{owner}/{repo}/releases/latest", headers)
 
 
+def get_release_for_major(owner: str, repo: str, token: Optional[str], major: int) -> Dict[str, Any]:
+    """Select the greatest stable numeric release in a major line across all pages."""
+    if type(major) is not int or major <= 0:
+        raise ValueError("extra.update.major must be a positive integer")
+    if not all(re.fullmatch(r"[A-Za-z0-9_.-]+", part) for part in (owner, repo)):
+        raise ValueError("Invalid GitHub owner/repository")
+    headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28",
+               "User-Agent": "longred-forge-recipe-updater"}
+    if token:
+        headers["Authorization"] = f"token {token}"
+    client = HTTPClient()
+    best_version = None
+    best_release = None
+    page = 1
+    while True:
+        releases = client.json(
+            f"https://api.github.com/repos/{owner}/{repo}/releases?per_page=100&page={page}", headers)
+        if not releases:
+            break
+        for release in releases:
+            if release.get("draft") or release.get("prerelease"):
+                continue
+            match = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)", release.get("tag_name", ""))
+            if not match:
+                continue
+            version = tuple(int(part) for part in match.groups())
+            if version[0] == major and (best_version is None or version > best_version):
+                best_version, best_release = version, release
+        if len(releases) < 100:
+            break
+        page += 1
+    if best_release is None:
+        raise RuntimeError(f"No stable release found for major {major}")
+    return best_release
+
+
 def sha256_hex_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
