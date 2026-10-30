@@ -1,4 +1,4 @@
-"""Offline coverage for opt-in GitHub major release lines."""
+"""Offline coverage for opt-in GitHub major and tag-prefix release lines."""
 import io
 import tempfile
 import unittest
@@ -19,7 +19,7 @@ def release(tag, **fields):
 
 
 class ReleaseLineProviderTests(unittest.TestCase):
-    def select(self, pages, major=1, token=None):
+    def select(self, pages, major=1, token=None, prefix=None):
         requests = []
 
         def handler(request):
@@ -30,7 +30,8 @@ class ReleaseLineProviderTests(unittest.TestCase):
 
         client = HTTPClient(transport=httpx.MockTransport(handler))
         with patch.object(upstream, "HTTPClient", return_value=client):
-            result = upstream.get_release_for_major("example", "tool", token, major)
+            result = (upstream.get_release_for_major("example", "tool", token, major)
+                      if prefix is None else upstream.get_release_for_prefix("example", "tool", token, prefix))
         return result, requests
 
     def test_mixed_tags_flags_and_numeric_sorting(self):
@@ -74,6 +75,40 @@ class ReleaseLineProviderTests(unittest.TestCase):
                     upstream.get_release_for_major("example", "tool", None, major)
             with self.assertRaises(ValueError):
                 upstream.get_release_for_major("bad/owner", "tool", None, 1)
+            client.assert_not_called()
+
+
+    def test_prefix_mixed_tags_and_numeric_ordering(self):
+        tags = [release(tag) for tag in (
+            "v9.0.0", "rust-v0.9.99", "rust-v0.166.0", "rust-v0.99.0",
+            "rust-v0.999.0-alpha.1", "rust-v0.998.0+build", "rust-v0.997",
+            "other-rust-v0.999.0", "rust-v0.996.0\n", "rust-v０.999.0")]
+        tags += [release("rust-v0.999.0", draft=True),
+                 release("rust-v0.998.0", prerelease=True)]
+        result, requests = self.select([tags], prefix="rust-v", token="test-token")
+        self.assertEqual(result["tag_name"], "rust-v0.166.0")
+        self.assertEqual(requests[0].headers["Authorization"], "token test-token")
+        result, _ = self.select([[release("rust.v0.166.0"), release("rustXv9.0.0")]], prefix="rust.v")
+        self.assertEqual(result["tag_name"], "rust.v0.166.0")
+
+    def test_prefix_pagination_and_empty_final_page(self):
+        for last in ([release("rust-v0.166.0")], [release("rust-v0.166.0")] * 100):
+            pages = [[release("rust-v0.99.0")] * 100, last, []]
+            result, requests = self.select(pages, prefix="rust-v")
+            self.assertEqual(result["tag_name"], "rust-v0.166.0")
+            self.assertEqual(len(requests), 2 if len(last) < 100 else 3)
+
+    def test_prefix_missing_and_invalid(self):
+        for tags in ([], [release("v0.166.0"), release("rust-v0.167.0-alpha.1"),
+                          release("rust-v0.168.0", draft=True)]):
+            with self.subTest(tags=tags), self.assertRaisesRegex(RuntimeError, "No stable release"):
+                self.select([tags], prefix="rust-v")
+        with patch.object(upstream, "HTTPClient") as client:
+            for prefix in (None, "", " ", "rust/v", "../", "rust-v\n", "a?", "a+", True, 1, [], {}):
+                with self.subTest(prefix=prefix), self.assertRaisesRegex(ValueError, "tag_prefix"):
+                    upstream.get_release_for_prefix("example", "tool", None, prefix)
+            with self.assertRaises(ValueError):
+                upstream.get_release_for_prefix("bad/owner", "tool", None, "rust-v")
             client.assert_not_called()
 
 
@@ -158,6 +193,90 @@ class ReleaseLineUpdaterTests(unittest.TestCase):
         with patch.object(update, "get_release_for_major", return_value=release("v1.9.0")), \
                 self.assertRaisesRegex(ValueError, "numeric version triples"):
             self.run_update()
+
+    def configure_prefix(self, current="0.165.0"):
+        self.doc["context"]["version"] = current
+        self.doc["extra"]["update"] = {"tag_prefix": "rust-v"}
+        self.doc["source"]["url"] = (
+            "https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-${{ version }}.zip")
+
+    def test_prefix_stripped_and_literal_source_url_preserved(self):
+        self.configure_prefix()
+        original = self.write_recipe()
+        chosen = release("rust-v0.166.0", assets=[
+            {"name": "codex-0.166.0.zip", "digest": "sha256:" + "b" * 64}])
+        with patch.object(update, "get_release_for_prefix", return_value=chosen) as prefix, \
+                patch.object(update, "get_latest_release") as latest, \
+                patch.object(update, "get_release_for_major") as major, \
+                patch.object(update, "validate_and_write") as validate:
+            self.assertEqual(self.run_update(), "dry-run")
+        prefix.assert_called_once_with("example", "tool", "test-token", "rust-v")
+        latest.assert_not_called()
+        major.assert_not_called()
+        candidate = yaml.safe_load(validate.call_args.args[1])
+        self.assertEqual(candidate["context"]["version"], "0.166.0")
+        self.assertEqual(candidate["source"]["url"], self.doc["source"]["url"])
+        self.assertEqual(candidate["source"]["sha256"], "b" * 64)
+        self.assertEqual(self.recipe.read_bytes(), original)
+
+    def test_prefix_invalid_config_before_providers(self):
+        self.configure_prefix()
+        with patch.object(update, "get_release_for_prefix") as prefix, \
+                patch.object(update, "get_latest_release") as latest, \
+                patch.object(update, "get_release_for_major") as major:
+            for value in (None, "", " ", "rust/v", "a?", True, 1, [], {}):
+                self.doc["extra"]["update"]["tag_prefix"] = value
+                self.write_recipe()
+                with self.subTest(value=value), self.assertRaisesRegex(ValueError, "tag_prefix"):
+                    self.run_update()
+            self.doc["extra"]["update"] = {"major": 1, "tag_prefix": "rust-v"}
+            self.write_recipe()
+            with self.assertRaisesRegex(ValueError, "cannot be combined"):
+                self.run_update()
+            prefix.assert_not_called()
+            latest.assert_not_called()
+            major.assert_not_called()
+
+    def test_prefix_paginated_downgrade_rejected_even_with_refresh(self):
+        for refresh in (False, True):
+            self.configure_prefix("0.167.0")
+            original = self.write_recipe()
+            pages = [[release("rust-v0.99.0")] * 100, [release("rust-v0.166.0")]]
+            client = HTTPClient(transport=httpx.MockTransport(lambda request: httpx.Response(
+                200, json=pages[int(request.url.params["page"]) - 1])))
+            with self.subTest(refresh=refresh), \
+                    patch.object(upstream, "HTTPClient", return_value=client), \
+                    patch.object(update, "validate_and_write") as validate, \
+                    self.assertRaisesRegex(RuntimeError, "downgrade"):
+                self.run_update(refresh)
+            validate.assert_not_called()
+            self.assertEqual(self.recipe.read_bytes(), original)
+
+    def test_prefix_missing_never_falls_back(self):
+        self.configure_prefix()
+        original = self.write_recipe()
+        with patch.object(update, "get_release_for_prefix", side_effect=RuntimeError("No stable release")), \
+                patch.object(update, "get_latest_release") as latest, \
+                patch.object(update, "validate_and_write") as validate, \
+                self.assertRaisesRegex(RuntimeError, "No stable release"):
+            self.run_update()
+        latest.assert_not_called()
+        validate.assert_not_called()
+        self.assertEqual(self.recipe.read_bytes(), original)
+
+    def test_prefix_unchanged_and_invalid_versions(self):
+        self.configure_prefix("0.166.0")
+        self.write_recipe()
+        with patch.object(update, "get_release_for_prefix", return_value=release("rust-v0.166.0")):
+            self.assertEqual(self.run_update(), "unchanged")
+        for current, tag in (("0.166", "rust-v0.166.0"), ("0.166.0", "rust-v0.167.0-alpha.1"),
+                             ("0.166.0", "v0.167.0")):
+            self.configure_prefix(current)
+            self.write_recipe()
+            with self.subTest(current=current, tag=tag), \
+                    patch.object(update, "get_release_for_prefix", return_value=release(tag)), \
+                    self.assertRaises(ValueError):
+                self.run_update()
 
     def test_unconfigured_recipes_keep_latest_patch_point_and_non_triple_tags(self):
         for extra in (None, {}, {"update": {}}, {"resources": ["file"]}):

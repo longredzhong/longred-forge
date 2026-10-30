@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+context:
+  version: 18.14.0
+package:
+  name: oh-my-pi
+  version: ${{ version }}
+source:
+- if: linux and x86_64
+  then:
+  - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-linux-x64
+    sha256: e7dd2b606c4ebe9d1a7bcfad1b8820db968cd6b05409fed1c6bc8db0b6a95a8f
+- if: linux and aarch64
+  then:
+  - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-linux-arm64
+    sha256: dba8d170499709bc87359e02e677821aa76a6ef998ca0254578fe4ea07aff5bc
+- if: osx and x86_64
+  then:
+  - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-darwin-x64
+    sha256: fc119dff47f99569e32b0a2b10c25db9733ac6faef6ca005539b6e6f610e5984
+- if: osx and arm64
+  then:
+  - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-darwin-arm64
+    sha256: 608843959ab34295d52460dd09dd7d548b6c903c08a83c67954c2d4c36fd1f5a
+- if: win and x86_64
+  then:
+  - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-windows-x64.exe
+    sha256: 620a5935cdb6a9ed52d8b0c93892d6b5bb84155244a98f3be82af0455177bf29
+build:
+  number: 0
+  dynamic_linking:
+    binary_relocation: false
+    rpath_allowlist:
+    - '**/*'
+  script:
+  - if: win
+    then: python "%RECIPE_DIR%/install.py"
+    else: python "$RECIPE_DIR/install.py"
+requirements:
+  build:
+  - python
+tests:
+- script:
+  - omp --version
+about:
+  homepage: https://github.com/can1357/oh-my-pi
+  repository: https://github.com/can1357/oh-my-pi
+  license: MIT
+  summary: Oh My Pi coding agent, installed as omp
+extra:
+  recipe-maintainers:
+  - longredzhong

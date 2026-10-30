@@ -37,6 +37,22 @@ def get_release_for_major(owner: str, repo: str, token: Optional[str], major: in
     """Select the greatest stable numeric release in a major line across all pages."""
     if type(major) is not int or major <= 0:
         raise ValueError("extra.update.major must be a positive integer")
+    return _get_numeric_release(owner, repo, token, r"v?", major=major)
+
+
+def validate_tag_prefix(prefix: str) -> str:
+    if not isinstance(prefix, str) or not re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9_.-]*", prefix):
+        raise ValueError("extra.update.tag_prefix must be a nonempty safe tag prefix")
+    return prefix
+
+
+def get_release_for_prefix(owner: str, repo: str, token: Optional[str], prefix: str) -> Dict[str, Any]:
+    """Select the greatest stable numeric triplet after an exact literal prefix."""
+    return _get_numeric_release(owner, repo, token, re.escape(validate_tag_prefix(prefix)))
+
+
+def _get_numeric_release(owner: str, repo: str, token: Optional[str], prefix_pattern: str,
+                         major: Optional[int] = None) -> Dict[str, Any]:
     if not all(re.fullmatch(r"[A-Za-z0-9_.-]+", part) for part in (owner, repo)):
         raise ValueError("Invalid GitHub owner/repository")
     headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28",
@@ -55,17 +71,18 @@ def get_release_for_major(owner: str, repo: str, token: Optional[str], major: in
         for release in releases:
             if release.get("draft") or release.get("prerelease"):
                 continue
-            match = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)", release.get("tag_name", ""))
+            match = re.fullmatch(prefix_pattern + r"([0-9]+)\.([0-9]+)\.([0-9]+)", release.get("tag_name", ""))
             if not match:
                 continue
             version = tuple(int(part) for part in match.groups())
-            if version[0] == major and (best_version is None or version > best_version):
+            if (major is None or version[0] == major) and (best_version is None or version > best_version):
                 best_version, best_release = version, release
         if len(releases) < 100:
             break
         page += 1
     if best_release is None:
-        raise RuntimeError(f"No stable release found for major {major}")
+        selector = f"major {major}" if major is not None else f"tag prefix {prefix_pattern}"
+        raise RuntimeError(f"No stable release found for {selector}")
     return best_release
 
 

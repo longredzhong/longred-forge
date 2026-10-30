@@ -33,14 +33,16 @@ if __package__:
         ASSET_DOWNLOAD_TIMEOUT, DEFAULT_HTTP_TIMEOUT, CLAUDE_CODE_GCS_BUCKET,
         VALID_ASSET_BASENAME_PATTERN, asset_name_for, asset_name_from_recipe_pattern,
         compute_sha_for_asset, digest_from_checksum_txt, find_asset, get_gcs_checksums,
-        get_latest_release, get_release_for_major, gcs_platform_for_if_cond, sha256_hex_bytes, validate_sha256,
+        get_latest_release, get_release_for_major, get_release_for_prefix,
+        gcs_platform_for_if_cond, sha256_hex_bytes, validate_sha256, validate_tag_prefix,
     )
 else:
     from forge.upstream import (
         ASSET_DOWNLOAD_TIMEOUT, DEFAULT_HTTP_TIMEOUT, CLAUDE_CODE_GCS_BUCKET,
         VALID_ASSET_BASENAME_PATTERN, asset_name_for, asset_name_from_recipe_pattern,
         compute_sha_for_asset, digest_from_checksum_txt, find_asset, get_gcs_checksums,
-        get_latest_release, get_release_for_major, gcs_platform_for_if_cond, sha256_hex_bytes, validate_sha256,
+        get_latest_release, get_release_for_major, get_release_for_prefix,
+        gcs_platform_for_if_cond, sha256_hex_bytes, validate_sha256, validate_tag_prefix,
     )
 
 TARGET_PLATFORMS = ("linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64")
@@ -179,17 +181,32 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
         if type(major) is not int or major <= 0:
             raise ValueError("extra.update.major must be a positive integer")
 
-    release = (get_latest_release(owner, repo, token) if major is None
-               else get_release_for_major(owner, repo, token, major))
+    tag_prefix = None
+    if isinstance(update_config, dict) and "tag_prefix" in update_config:
+        tag_prefix = validate_tag_prefix(update_config["tag_prefix"])
+        if major is not None:
+            raise ValueError("extra.update.major and tag_prefix cannot be combined")
+
+    if tag_prefix is not None:
+        release = get_release_for_prefix(owner, repo, token, tag_prefix)
+    elif major is not None:
+        release = get_release_for_major(owner, repo, token, major)
+    else:
+        release = get_latest_release(owner, repo, token)
     tag = release.get("tag_name")
     if not tag:
         raise RuntimeError("No tag_name found in release")
-    version = tag.lstrip("v")
+    if tag_prefix is not None:
+        if not tag.startswith(tag_prefix):
+            raise ValueError("Release tag does not match configured tag_prefix")
+        version = tag[len(tag_prefix):]
+    else:
+        version = tag.lstrip("v")
     print(f"Latest upstream release: {tag}")
 
-    if major is not None:
-        current = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)", str(doc.get("context", {}).get("version")))
-        selected = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)", tag)
+    if major is not None or tag_prefix is not None:
+        current = re.fullmatch(r"v?([0-9]+)\.([0-9]+)\.([0-9]+)", str(doc.get("context", {}).get("version")))
+        selected = re.fullmatch(r"([0-9]+)\.([0-9]+)\.([0-9]+)", version)
         if not current or not selected:
             raise ValueError("Configured release lines require numeric version triples")
         if tuple(map(int, selected.groups())) < tuple(map(int, current.groups())):

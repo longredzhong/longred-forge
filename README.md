@@ -53,12 +53,17 @@ A media packaging and development framework for VOD and Live DASH and HLS applic
 
 **Upstream:** [shaka-project/shaka-packager](https://github.com/shaka-project/shaka-packager)
 
-### deepseek-tui
+### codex
 
-The conda package retains the name `deepseek-tui` and now packages CodeWhale, with the `codewhale`
-dispatcher and `codewhale-tui` runtime commands.
+OpenAI Codex CLI, installed as `codex`.
 
-**Upstream:** [Hmbown/DeepSeek-TUI](https://github.com/Hmbown/DeepSeek-TUI)
+**Upstream:** [openai/codex](https://github.com/openai/codex)
+
+### oh-my-pi
+
+Oh My Pi coding agent, installed as `omp`. Maintained separately from the `pi` package.
+
+**Upstream:** [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi)
 
 ### claude-code
 
@@ -111,14 +116,14 @@ proxy, TUN mode and DNS-based traffic splitting.
 
 ```bash
 # Use the pixi CLI to install globally
-pixi global install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka mihomo
+pixi global install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager codex oh-my-pi claude-code garage-webui mimocode obscura pi sofka mihomo
 
 # Or add to a pixi project
-pixi add -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka mihomo
+pixi add -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager codex oh-my-pi claude-code garage-webui mimocode obscura pi sofka mihomo
 
 # Using mamba/conda
-mamba install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka mihomo
-conda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager deepseek-tui claude-code garage-webui mimocode obscura pi sofka mihomo
+mamba install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager codex oh-my-pi claude-code garage-webui mimocode obscura pi sofka mihomo
+conda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager codex oh-my-pi claude-code garage-webui mimocode obscura pi sofka mihomo
 ```
 
 ## 🚀 How It Works
@@ -143,7 +148,7 @@ longred-forge/
 ├── recipes/
 │   ├── claude-code/
 │   │   └── recipe.yaml        # Package recipe
-│   ├── deepseek-tui/
+│   ├── codex/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── garage-webui/
 │   │   └── recipe.yaml        # Package recipe
@@ -155,6 +160,9 @@ longred-forge/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── obscura/
 │   │   └── recipe.yaml        # Package recipe
+│   ├── oh-my-pi/
+│   │   ├── install.py
+│   │   └── recipe.yaml
 │   ├── opencode/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── pi/
@@ -204,3 +212,7 @@ This repository is licensed under the MIT License. Individual packages may have 
 - Inspired by [brad-jones/brads-forge](https://github.com/brad-jones/brads-forge)
 - Built with [rattler-build](https://github.com/prefix-dev/rattler-build) by [prefix.dev](https://prefix.dev)
 - Packages from upstream projects maintain their original licenses and authorship
+
+## Retired packages
+
+`deepseek-tui` (CodeWhale) is no longer built, updated, or recommended by this repository. Previously published artifacts are retained for reproducibility; existing installations are not automatically removed. Codex (`codex`) and Oh My Pi (`omp`) are independent alternatives, not drop-in migrations of CodeWhale data.

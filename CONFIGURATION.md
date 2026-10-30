@@ -263,3 +263,7 @@ If the workflow doesn't detect new versions:
 - [prefix.dev Documentation](https://prefix.dev/docs)
 - [pixi Documentation](https://pixi.sh/latest/)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
+
+### Nonstandard release tags
+
+`extra.update.tag_prefix: rust-v` selects stable numeric releases such as `rust-v0.166.0` for Codex, excluding unrelated components and prereleases. Recipe versions omit the prefix, while download URLs preserve it. Normal recipes continue using upstream latest releases.
