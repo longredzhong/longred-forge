@@ -49,8 +49,8 @@ def publish(artifact: Artifact, path: Path, channel: str) -> str:
         if attempt == 2:
             raise RuntimeError(f'Upload failed: {artifact.filename}')
         time.sleep(2 ** attempt)
-    for attempt in range(6):
+    for attempt in range(24):
         if indexed(artifact, channel, digest):
             return 'published'
-        time.sleep(2 ** min(attempt, 3))
+        time.sleep(15)
     raise RuntimeError(f'Uploaded artifact not indexed yet: {artifact.filename}')
