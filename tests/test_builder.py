@@ -7,6 +7,11 @@ from scripts.forge import builder, planner, publisher
 
 
 class BuilderTests(unittest.TestCase):
+    def setUp(self):
+        self.fingerprint = patch.object(builder, 'recipe_fingerprint', return_value='recipe-hash')
+        self.fingerprint.start()
+        self.addCleanup(self.fingerprint.stop)
+
     def test_exact_rendered_identity_includes_build_number(self):
         item = {'recipe': {'package': {'name': 'tool', 'version': '1'}, 'build': {'string': 'habc_2'}}, 'build_configuration': {'target_platform': 'linux-64'}}
         import json
@@ -65,11 +70,26 @@ class BuilderTests(unittest.TestCase):
                     builder.build_recipe(Path('recipe.yaml'), 'linux-64', 'example', True, False, False, output)
                 publish.assert_not_called()
 
+    def test_recipe_change_invalidates_upload_receipt(self):
+        import hashlib
+        import json
+        artifact = planner.Artifact('tool', '1', 'h_2', 'linux-64')
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            path = artifact.path(output)
+            path.parent.mkdir()
+            path.write_bytes(b'old-build')
+            path.with_suffix('.receipt.json').write_text(json.dumps({'filename': artifact.filename, 'sha256': hashlib.sha256(b'old-build').hexdigest(), 'recipe_sha256': 'different-recipe'}))
+            with patch.object(builder, 'render', return_value=[artifact]), patch.object(builder, 'publish') as publish:
+                with self.assertRaisesRegex(RuntimeError, 'receipt missing or mismatched'):
+                    builder.build_recipe(Path('recipe.yaml'), 'linux-64', 'example', True, False, False, output)
+                publish.assert_not_called()
+
     def test_index_checksum_collision_is_not_success(self):
         artifact = planner.Artifact('tool', '1', 'h_2', 'linux-64')
         response = Mock(status_code=200)
         response.json.return_value = {'packages.conda': {artifact.filename: {'sha256': 'wrong'}}}
-        with patch.object(publisher.httpx, 'get', return_value=response):
+        with patch.object(publisher.HTTPClient, 'json', return_value=response.json.return_value):
             with self.assertRaisesRegex(RuntimeError, 'increment build.number'):
                 publisher.indexed(artifact, 'example', 'expected')
 

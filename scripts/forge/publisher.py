@@ -8,18 +8,18 @@ from pathlib import Path
 
 import httpx
 
+from .http import HTTPClient
 from .planner import Artifact
 
 
 def indexed(artifact: Artifact, channel: str, sha256: str | None = None) -> bool:
-    response = httpx.get(
-        f'https://repo.prefix.dev/{channel}/{artifact.platform}/repodata.json',
-        follow_redirects=True, timeout=60,
-    )
-    if response.status_code == 404:
-        return False
-    response.raise_for_status()
-    metadata = response.json().get('packages.conda', {}).get(artifact.filename)
+    try:
+        repodata = HTTPClient().json(f'https://repo.prefix.dev/{channel}/{artifact.platform}/repodata.json')
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            return False
+        raise
+    metadata = repodata.get('packages.conda', {}).get(artifact.filename)
     if metadata is None:
         return False
     if sha256 and metadata.get('sha256') != sha256:
