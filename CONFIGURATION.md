@@ -162,6 +162,16 @@ pixi run build --recipe-path recipes/my-package/recipe.yaml --no-upload
 
 ### Automatic Release Tracking
 
+The scheduled updater caches the last fully audited selection for each repository and
+release selector in GitHub Actions cache. Subsequent runs re-fetch that release and
+scan the first three pages (90 releases), comparing numeric versions across them.
+Every 24 hours, or if the cache is missing, invalid, or its selected release has been
+removed, the updater scans all pages again. A newly published or edited release outside
+the first 90 entries can therefore take up to the next successful daily audit to be
+detected. Failed API requests do not advance the audit timestamp or select a cached
+release without revalidation. The cache contains no credentials. For local use, set
+`RELEASE_CACHE_DIR` to an optional writable directory; without it, every scan is full.
+
 The workflow checks every three hours (at minute 10) for new releases from the upstream project. When a new version is detected:
 1. The recipe is automatically updated
 2. The package is built for supported platforms

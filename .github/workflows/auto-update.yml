@@ -26,14 +26,31 @@ jobs:
           pixi-version: v0.81.0
           activate-environment: true
 
+      - name: Restore release scan cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: output/release-cache
+          key: release-scan-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: release-scan-v1-
+
       - name: Run updater for all recipes (apply) via pixi
         id: update
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_CACHE_DIR: output/release-cache
         continue-on-error: true
         run: |
           # Run updater without --recipe so it processes all recipes under recipes/*/recipe.yaml
           pixi run python scripts/update.py --apply --report output/update-results.json
+
+      - name: Save release scan cache
+        if: always() && steps.update.outcome != 'skipped'
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: output/release-cache
+          key: release-scan-v1-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Validate candidate recipes
         run: pixi run validate

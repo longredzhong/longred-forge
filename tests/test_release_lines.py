@@ -25,7 +25,7 @@ class ReleaseLineProviderTests(unittest.TestCase):
         def handler(request):
             requests.append(request)
             self.assertEqual(request.url.path, "/repos/example/tool/releases")
-            self.assertEqual(request.url.params["per_page"], "100")
+            self.assertEqual(request.url.params["per_page"], str(upstream.RELEASES_PAGE_SIZE))
             return httpx.Response(200, json=pages[int(request.url.params["page"]) - 1])
 
         client = HTTPClient(transport=httpx.MockTransport(handler))
@@ -48,8 +48,8 @@ class ReleaseLineProviderTests(unittest.TestCase):
         self.assertEqual(result["tag_name"], "v2.0.0")
 
     def test_pagination_stops_at_last_partial_page_regardless_of_order(self):
-        pages = [[release("v1.10.0", created_at="2030-01-01T00:00:00Z")] * 100,
-                 [release("v1.100.0", created_at="2000-01-01T00:00:00Z")] * 100,
+        pages = [[release("v1.10.0", created_at="2030-01-01T00:00:00Z")] * upstream.RELEASES_PAGE_SIZE,
+                 [release("v1.100.0", created_at="2000-01-01T00:00:00Z")] * upstream.RELEASES_PAGE_SIZE,
                  [release("v1.20.0")]]
         result, requests = self.select(pages)
         self.assertEqual(result["tag_name"], "v1.100.0")
@@ -57,7 +57,7 @@ class ReleaseLineProviderTests(unittest.TestCase):
         self.assertNotIn("authorization", requests[0].headers)
 
     def test_full_last_page_requires_empty_page_to_prove_exhaustion(self):
-        result, requests = self.select([[release("v1.2.3")] * 100, []])
+        result, requests = self.select([[release("v1.2.3")] * upstream.RELEASES_PAGE_SIZE, []])
         self.assertEqual(result["tag_name"], "v1.2.3")
         self.assertEqual(len(requests), 2)
 
@@ -92,11 +92,11 @@ class ReleaseLineProviderTests(unittest.TestCase):
         self.assertEqual(result["tag_name"], "rust.v0.166.0")
 
     def test_prefix_pagination_and_empty_final_page(self):
-        for last in ([release("rust-v0.166.0")], [release("rust-v0.166.0")] * 100):
-            pages = [[release("rust-v0.99.0")] * 100, last, []]
+        for last in ([release("rust-v0.166.0")], [release("rust-v0.166.0")] * upstream.RELEASES_PAGE_SIZE):
+            pages = [[release("rust-v0.99.0")] * upstream.RELEASES_PAGE_SIZE, last, []]
             result, requests = self.select(pages, prefix="rust-v")
             self.assertEqual(result["tag_name"], "rust-v0.166.0")
-            self.assertEqual(len(requests), 2 if len(last) < 100 else 3)
+            self.assertEqual(len(requests), 2 if len(last) < upstream.RELEASES_PAGE_SIZE else 3)
 
     def test_prefix_missing_and_invalid(self):
         for tags in ([], [release("v0.166.0"), release("rust-v0.167.0-alpha.1"),
@@ -241,7 +241,7 @@ class ReleaseLineUpdaterTests(unittest.TestCase):
         for refresh in (False, True):
             self.configure_prefix("0.167.0")
             original = self.write_recipe()
-            pages = [[release("rust-v0.99.0")] * 100, [release("rust-v0.166.0")]]
+            pages = [[release("rust-v0.99.0")] * upstream.RELEASES_PAGE_SIZE, [release("rust-v0.166.0")]]
             client = HTTPClient(transport=httpx.MockTransport(lambda request: httpx.Response(
                 200, json=pages[int(request.url.params["page"]) - 1])))
             with self.subTest(refresh=refresh), \

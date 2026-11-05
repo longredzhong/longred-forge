@@ -11,6 +11,9 @@ import httpx
 from .http import HTTPClient
 from .planner import Artifact
 
+INDEX_POLL_INTERVAL = 15
+INDEX_POLL_ATTEMPTS = 140  # 35 minutes, including the channel's documented cache window.
+
 
 def indexed(artifact: Artifact, channel: str, sha256: str | None = None) -> bool:
     try:
@@ -49,8 +52,11 @@ def publish(artifact: Artifact, path: Path, channel: str) -> str:
         if attempt == 2:
             raise RuntimeError(f'Upload failed: {artifact.filename}')
         time.sleep(2 ** attempt)
-    for attempt in range(24):
+    for attempt in range(INDEX_POLL_ATTEMPTS + 1):
         if indexed(artifact, channel, digest):
             return 'published'
-        time.sleep(15)
+        if attempt < INDEX_POLL_ATTEMPTS:
+            if attempt and attempt % 20 == 0:
+                print(f'Waiting for channel index: {artifact.filename} ({attempt * INDEX_POLL_INTERVAL}s)', flush=True)
+            time.sleep(INDEX_POLL_INTERVAL)
     raise RuntimeError(f'Uploaded artifact not indexed yet: {artifact.filename}')

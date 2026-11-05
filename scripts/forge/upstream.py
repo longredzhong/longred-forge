@@ -1,13 +1,23 @@
 """Release providers, exact asset lookup, and strict SHA-256 resolution."""
 import hashlib
+import json
+import os
 import re
+import tempfile
+import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
-from urllib.parse import unquote, urlsplit
+from urllib.parse import quote, unquote, urlsplit
+
+import httpx
 
 from .http import ASSET_DOWNLOAD_TIMEOUT, DEFAULT_HTTP_TIMEOUT, HTTPClient
 
 CLAUDE_CODE_GCS_BUCKET = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases"
 VALID_ASSET_BASENAME_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_+.-]*[A-Za-z0-9_+-])?$")
+RELEASES_PAGE_SIZE = 30
+RELEASES_INCREMENTAL_PAGES = 3
+RELEASES_AUDIT_SECONDS = 24 * 60 * 60
 
 
 def validate_sha256(value: str) -> str:
@@ -62,10 +72,37 @@ def _get_numeric_release(owner: str, repo: str, token: Optional[str], prefix_pat
     client = HTTPClient()
     best_version = None
     best_release = None
+    cache_dir = os.environ.get("RELEASE_CACHE_DIR")
+    cache_path = None
+    audited_at = None
+    if cache_dir:
+        key = json.dumps([owner.lower(), repo.lower(), prefix_pattern, major], separators=(",", ":"))
+        cache_path = Path(cache_dir) / (hashlib.sha256(key.encode()).hexdigest() + ".json")
+        try:
+            cached = json.loads(cache_path.read_text(encoding="utf-8"))
+            stamp, tag = cached["audited_at"], cached["tag"]
+            if (type(stamp) not in (int, float) or not 0 <= time.time() - stamp < RELEASES_AUDIT_SECONDS
+                    or not isinstance(tag, str) or not re.fullmatch(prefix_pattern + r"([0-9]+)\.([0-9]+)\.([0-9]+)", tag)):
+                raise ValueError("Invalid or expired release cache")
+            try:
+                candidate = client.json(f"https://api.github.com/repos/{owner}/{repo}/releases/tags/{quote(tag, safe='')}", headers)
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code != 404:
+                    raise
+                candidate = None
+            if candidate and candidate.get("tag_name") == tag and not candidate.get("draft") and not candidate.get("prerelease"):
+                match = re.fullmatch(prefix_pattern + r"([0-9]+)\.([0-9]+)\.([0-9]+)", tag)
+                version = tuple(int(part) for part in match.groups())
+                if major is None or version[0] == major:
+                    best_version, best_release, audited_at = version, candidate, stamp
+        except (OSError, ValueError, KeyError, TypeError, AttributeError):
+            pass
+    incremental = audited_at is not None
+    print(f"Release scan {owner}/{repo}: {'incremental' if incremental else 'full'}")
     page = 1
     while True:
         releases = client.json(
-            f"https://api.github.com/repos/{owner}/{repo}/releases?per_page=100&page={page}", headers)
+            f"https://api.github.com/repos/{owner}/{repo}/releases?per_page={RELEASES_PAGE_SIZE}&page={page}", headers)
         if not releases:
             break
         for release in releases:
@@ -77,12 +114,24 @@ def _get_numeric_release(owner: str, repo: str, token: Optional[str], prefix_pat
             version = tuple(int(part) for part in match.groups())
             if (major is None or version[0] == major) and (best_version is None or version > best_version):
                 best_version, best_release = version, release
-        if len(releases) < 100:
+        if len(releases) < RELEASES_PAGE_SIZE:
+            incremental = False  # An exhausted listing is itself a complete audit.
+            break
+        if incremental and page >= RELEASES_INCREMENTAL_PAGES:
             break
         page += 1
     if best_release is None:
         selector = f"major {major}" if major is not None else f"tag prefix {prefix_pattern}"
         raise RuntimeError(f"No stable release found for {selector}")
+    if cache_path:
+        try:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=cache_path.parent, delete=False) as output:
+                temporary = Path(output.name)
+                json.dump({"audited_at": audited_at if incremental else time.time(), "tag": best_release["tag_name"]}, output)
+            temporary.replace(cache_path)
+        except OSError:
+            print(f"Release cache unavailable for {owner}/{repo}; future scans may be full")
     return best_release
 
 

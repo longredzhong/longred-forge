@@ -20,6 +20,7 @@ import re
 import sys
 from typing import Any, Dict, List, Optional
 
+import httpx
 import yaml  # type: ignore
 
 # Fix Windows encoding issue - ensure UTF-8 output
@@ -319,8 +320,12 @@ def main():
         except Exception as exc:
             # Network exception strings can contain URLs with credentials. Do not log them.
             error = type(exc).__name__
-            print(f"Failed to update {fp}: {error}")
-            results.append({"recipe": fp, "status": "failed", "error": error})
+            result = {"recipe": fp, "status": "failed", "error": error}
+            if isinstance(exc, httpx.HTTPStatusError):
+                result["http_status"] = exc.response.status_code
+            print(f"Failed to update {fp}: {error}" +
+                  (f" (HTTP {result['http_status']})" if "http_status" in result else ""))
+            results.append(result)
     failed = sum(result["status"] == "failed" for result in results)
     if args.report:
         report = Path(args.report)

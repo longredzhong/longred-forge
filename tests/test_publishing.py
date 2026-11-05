@@ -14,6 +14,29 @@ from scripts.forge.planner import Artifact
 
 
 class PublishingTests(unittest.TestCase):
+    def test_index_delay_and_timeout_remain_failure_without_matching_digest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            artifact = Artifact('example', '1.0', 'h0_0', 'linux-64')
+            path = Path(tmp) / artifact.filename
+            path.write_bytes(b'package')
+            with patch.dict(os.environ, {'PREFIX_TOKEN': 'test'}), \
+                 patch.object(publisher, 'INDEX_POLL_ATTEMPTS', 2), \
+                 patch.object(publisher.time, 'sleep') as sleep, \
+                 patch.object(publisher.subprocess, 'run') as upload, \
+                 patch.object(publisher, 'indexed', side_effect=[False, False, False, True]) as indexed:
+                upload.return_value.returncode = 0
+                self.assertEqual(publisher.publish(artifact, path, 'example'), 'published')
+                self.assertEqual(sleep.call_count, 2)
+                self.assertTrue(all(call.args[2] for call in indexed.call_args_list))
+            with patch.dict(os.environ, {'PREFIX_TOKEN': 'test'}), \
+                 patch.object(publisher, 'INDEX_POLL_ATTEMPTS', 2), \
+                 patch.object(publisher.time, 'sleep'), \
+                 patch.object(publisher.subprocess, 'run') as upload, \
+                 patch.object(publisher, 'indexed', return_value=False):
+                upload.return_value.returncode = 0
+                with self.assertRaisesRegex(RuntimeError, 'not indexed'):
+                    publisher.publish(artifact, path, 'example')
+
     def test_failed_recipe_does_not_stop_remaining_targets(self):
         recipes = [Path('recipes/broken/recipe.yaml'), Path('recipes/healthy/recipe.yaml')]
         with tempfile.TemporaryDirectory() as tmp:

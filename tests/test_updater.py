@@ -239,6 +239,21 @@ class UpdaterTests(unittest.TestCase):
         self.assertEqual(self.recipe.read_bytes(), original)
         render.assert_not_called()
 
+    def test_http_failure_reports_status_without_request_details(self):
+        report = self.root / "http-report.json"
+        request = httpx.Request("GET", "https://example.com/?token=secret")
+        response = httpx.Response(504, request=request)
+        error = httpx.HTTPStatusError("secret", request=request, response=response)
+        output = io.StringIO()
+        with patch("sys.argv", ["update.py", "--report", str(report)]), \
+                patch.object(update.glob, "glob", return_value=["broken"]), \
+                patch.object(update, "update_single_recipe", side_effect=error), redirect_stdout(output):
+            with self.assertRaises(SystemExit):
+                update.main()
+        self.assertIn("HTTP 504", output.getvalue())
+        self.assertEqual(json.loads(report.read_text())["recipes"][0]["http_status"], 504)
+        self.assertNotIn("secret", output.getvalue() + report.read_text())
+
     def test_batch_partial_failure_report_and_exit(self):
         report = self.root / "nested" / "reports" / "report.json"
         output = io.StringIO()
