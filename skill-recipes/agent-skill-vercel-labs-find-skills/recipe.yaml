@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-vercel-labs-find-skills
+  version: 0.0.1
+source:
+  git: https://github.com/vercel-labs/skills.git
+  rev: cabe07254cddf16a3a650253f0ba03d543d8a86e
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/find-skills"
+
+    cp -R "$SRC_DIR/skills/find-skills/." "$PREFIX/share/agent-skills/find-skills/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-vercel-labs-find-skills"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-vercel-labs-find-skills/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/find-skills/SKILL.md
+about:
+  summary: Agent skill find-skills
+  license: MIT
+  license_file: LICENSE
+  repository: https://github.com/vercel-labs/skills

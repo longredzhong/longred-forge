@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-cloudflare-nextjs-on-cloudflare
+  version: 0.0.1
+source:
+  url: https://github.com/cloudflare/skills/archive/41e0d19858946d18af9ee2c2feebbe2e11d829ff.tar.gz
+  sha256: 01fbe5991c3dc7b4cd2c2472088215d8121de8f4aefb6fbc56011bd69e89c2b9
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/nextjs-on-cloudflare"
+
+    cp -R "$SRC_DIR/skills/nextjs-on-cloudflare/." "$PREFIX/share/agent-skills/nextjs-on-cloudflare/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-cloudflare-nextjs-on-cloudflare"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-cloudflare-nextjs-on-cloudflare/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/nextjs-on-cloudflare/SKILL.md
+about:
+  summary: Agent skill nextjs-on-cloudflare
+  license: Apache-2.0
+  license_file: LICENSE
+  repository: https://github.com/cloudflare/skills

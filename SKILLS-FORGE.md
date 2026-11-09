@@ -1,0 +1,106 @@
+# Longred Skills Forge
+
+The channel is `https://prefix.dev/longredzhong/longred-skills-forge`.
+The initial catalog contains `find-skills` from `vercel-labs/skills` plus five
+skills from `github/awesome-copilot`, distributed under their upstream MIT
+licenses. The lock records the exact Git commit, skill subtree, license blob,
+and package version for each skill.
+
+`agent-skill-litestar-org-litestar-skills` contains the 20 Litestar skills as a
+single package: their documentation links to other skills in the same group.
+`agent-skill-tiangolo-library-skills` contains the `library-skills` instructions;
+the separate upstream CLI referenced by those instructions is not installed by
+the skill package. Turnpike's Cloudflare and TypeScript clean-code skills are
+fixed to commits that match its original `skills-lock.json` contents. Their
+source lock hashes are recorded and verified against the complete upstream
+skill directories using the `npx skills` hashing algorithm. Node.js supplies
+the same `localeCompare` ordering and is installed by the Pixi environment.
+Turnpike's `design-taste-frontend` is also pinned to its matching source
+snapshot. It contains mixed-license assets: its original attribution and
+credits remain in the skill directory, and additional third-party license texts
+are installed under `share/licenses/agent-skill-leonxlnx-design-taste-frontend/`.
+The configured `commit` prevents automatic drift to the current upstream branch.
+Updating a pinned source requires an intentional configuration change and new
+validation.
+The `cloudflare` skill package declares its `durable-objects` and
+`nextjs-on-cloudflare` sibling skills as exact runtime dependencies, so relative
+references resolve inside the same Pixi environment.
+
+Once both packages are indexed, install the manager with:
+
+```sh
+pixi global install -c https://prefix.dev/longredzhong/longred-skills-forge -c conda-forge longred-skills
+```
+
+In a project that already has a Pixi workspace:
+
+```sh
+longred-skills find find-skills
+longred-skills add agent-skill-vercel-labs-find-skills --agent codex
+longred-skills list
+longred-skills sync --agent codex
+
+# The entire Litestar group, including cross-referenced skills
+longred-skills add agent-skill-litestar-org-litestar-skills --agent codex
+
+# Turnpike's pinned frontend design skill and its attributed assets
+longred-skills add agent-skill-leonxlnx-design-taste-frontend --agent codex
+```
+
+`add` adds the channel and package to the selected Pixi environment, resolves
+the lockfile, and creates relative symlinks under `.codex/skills` or
+`.claude/skills`. `sync` can be rerun after `pixi install --locked`. Existing
+files or links to another target cause an error and are never overwritten.
+Already installed skills are checked for destination conflicts before `add`
+changes the Pixi project. If a conflict is only discoverable after installing
+a new package, the command reports that the manifest, lockfile and environment
+may already have changed; resolve the conflict and rerun `sync`.
+Windows requires permission to create directory symlinks. The CLI currently
+supports project scope, package-name search, `add`, `list`, and `sync`; remote
+repository import, removal, global skill management and update commands are not
+implemented yet. Use Pixi's own update and removal commands in the meantime;
+remove obsolete links manually only after checking their targets.
+
+## Maintaining the catalog
+
+Add explicitly reviewed repositories and skills to `skill-sources.yaml`. Only
+GitHub HTTPS repositories, simple branch names, and safe relative paths are
+currently supported. Verify redistribution rights and the applicable license
+before adding each entry. Additional license files can be placed in the package's
+recipe directory and listed under `additional_license_files`; their contents
+participate in package versioning and are installed alongside the upstream license.
+Setting `archive: true` pins a GitHub source archive
+with a SHA-256 instead of cloning Git history; the initial archive download can
+still be large. The updater queries each repository once for its ref;
+when the ref or configuration changes, it also retrieves its recursive tree.
+The workflow persists an optional repository cache; missing or invalid cache
+causes a full tree check; a full check is repeated at least every 24 hours.
+It refuses truncated trees and source symlinks
+or submodules, and validates new or changed SKILL.md frontmatter.
+
+```sh
+pixi run skills-check             # no writes
+pixi run skills-update            # update lock and recipes
+pixi run python scripts/build.py --recipe-path skill-recipes/agent-skill-vercel-labs-find-skills/recipe.yaml --channel longredzhong/longred-skills-forge --target-platforms linux-64 --no-upload
+```
+
+Unrelated commits do not rebuild a skill whose directory tree and license blob
+are unchanged. Changes to the license blob stop the update for manual review.
+After reviewing the new license, ensure the configuration still describes the
+correct license, then run `pixi run python scripts/skills_update.py --apply
+--accept-license-change` to generate a new package version. Removing an entry
+also requires an explicit migration.
+
+`.github/workflows/skills-forge.yml` checks sources every three hours, builds
+noarch packages, commits changed recipes and lock on `main`, and publishes using
+the `SKILLS_PREFIX_TOKEN` repository secret. Its trigger and credential must be
+configured on the deployed workflow; local changes alone do not activate it.
+Uploads are batched and must be confirmed in channel repodata or by a fresh-cache
+Pixi search with the exact channel URL, filename, and SHA-256. A package shown in
+the Prefix.dev UI alone does not prove it can be resolved by Pixi.
+
+The manager is versioned separately in `cli/pyproject.toml` and
+`tool-recipes/longred-skills/recipe.yaml`. Update both versions whenever the
+manager changes; a published package filename must not be overwritten. Build
+receipts include the local `cli/` source so source changes between build and
+publish invalidate the receipt.

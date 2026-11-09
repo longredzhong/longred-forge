@@ -1,0 +1,154 @@
+version: 1
+repositories:
+- repository: litestar-org/litestar-skills
+  branch: main
+  archive: true
+  license: MIT
+  license_file: LICENSE
+  skills:
+  - path: skills
+    name: litestar-skills
+    package: agent-skill-litestar-org-litestar-skills
+    bundle: true
+- repository: tiangolo/library-skills
+  branch: main
+  archive: true
+  license: MIT
+  license_file: LICENSE
+  skills:
+  - path: ts/src/tool_skill
+    name: library-skills
+    package: agent-skill-tiangolo-library-skills
+- repository: vercel-labs/skills
+  branch: main
+  license: MIT
+  license_file: LICENSE
+  skills:
+  - path: skills/find-skills
+    name: find-skills
+    package: agent-skill-vercel-labs-find-skills
+- repository: github/awesome-copilot
+  branch: main
+  archive: true
+  license: MIT
+  license_file: LICENSE
+  skills:
+  - path: skills/github-actions-efficiency
+    name: github-actions-efficiency
+    package: agent-skill-github-github-actions-efficiency
+  - path: skills/multi-stage-dockerfile
+    name: multi-stage-dockerfile
+    package: agent-skill-github-multi-stage-dockerfile
+  - path: skills/postgresql-code-review
+    name: postgresql-code-review
+    package: agent-skill-github-postgresql-code-review
+  - path: skills/webapp-testing
+    name: webapp-testing
+    package: agent-skill-github-webapp-testing
+  - path: skills/security-review
+    name: security-review
+    package: agent-skill-github-security-review
+- repository: cloudflare/skills
+  branch: main
+  commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+  archive: true
+  license: Apache-2.0
+  license_file: LICENSE
+  skills:
+  - path: skills/agents-sdk
+    name: agents-sdk
+    package: agent-skill-cloudflare-agents-sdk
+    lock_hash: f0f05a346b672f9f8672ec2b1d0acd1af4414351f7c2e53f2e6da5896c4e5c01
+  - path: skills/basin
+    name: basin
+    package: agent-skill-cloudflare-basin
+    lock_hash: 4b447ec8bd58635536c5630e0ef1223563b013676ffabfc02e8a2e0e5c436b98
+  - path: skills/cloudflare
+    name: cloudflare
+    package: agent-skill-cloudflare-cloudflare
+    lock_hash: 6f0a70840cad114f020e5950874f255b22e669f07036cf4f81d8f733ae0233a0
+    dependencies:
+    - agent-skill-cloudflare-durable-objects ==0.0.1
+    - agent-skill-cloudflare-nextjs-on-cloudflare ==0.0.1
+  - path: skills/cloudflare-email-service
+    name: cloudflare-email-service
+    package: agent-skill-cloudflare-cloudflare-email-service
+    lock_hash: 166ed23ba8d915c24a674f50d6f6e8b3e1e7e8f26900c8b9461ea43748e86645
+  - path: skills/cloudflare-one
+    name: cloudflare-one
+    package: agent-skill-cloudflare-cloudflare-one
+    lock_hash: 9394299fdb45f0803d285c25f09bed8b471f21fe0bf4e78f3573620096f30939
+  - path: skills/cloudflare-one-migrations
+    name: cloudflare-one-migrations
+    package: agent-skill-cloudflare-cloudflare-one-migrations
+    lock_hash: 346ccd66789494f81ed9c42f1c1313dd4cf2f7bb79b6aae85001a25c6b649cb7
+  - path: skills/durable-objects
+    name: durable-objects
+    package: agent-skill-cloudflare-durable-objects
+    lock_hash: f328205f9d11381902a160ace4622cd1ac9602acba00b091f6d63f59a6869900
+  - path: skills/k2
+    name: k2
+    package: agent-skill-cloudflare-k2
+    lock_hash: 3e0d83ae8a95de6256c6dff7225dcf19aa33d271f634fa6c349403a4eff23235
+  - path: skills/nextjs-on-cloudflare
+    name: nextjs-on-cloudflare
+    package: agent-skill-cloudflare-nextjs-on-cloudflare
+    lock_hash: 15d2dc117c5bbe9f92cb7c42a8d55e4bcddb91c2f1e4705ad93736c7a219d99b
+  - path: skills/sandbox-migrate-to-next
+    name: sandbox-migrate-to-next
+    package: agent-skill-cloudflare-sandbox-migrate-to-next
+    lock_hash: a5f2f33672a6f6d93d946d61e3310bb7d1811b68a86f247b84ba571cde436859
+  - path: skills/sandbox-next
+    name: sandbox-next
+    package: agent-skill-cloudflare-sandbox-next
+    lock_hash: 92ccb32841208cc1915f796aa7b43dee9b5a7fc7467145e2f8d68f22dc73f460
+  - path: skills/sandbox-stable
+    name: sandbox-stable
+    package: agent-skill-cloudflare-sandbox-stable
+    lock_hash: 4c6ad34430c75b84e68edc9f721d5a54fdd8a1d6754807154b5f7bc45665d0a4
+  - path: skills/turnstile-spin
+    name: turnstile-spin
+    package: agent-skill-cloudflare-turnstile-spin
+    lock_hash: 767b0aec38033a8f17f958f85ce559952a70495291f13551bfa8cd28a237a8cf
+  - path: skills/web-perf
+    name: web-perf
+    package: agent-skill-cloudflare-web-perf
+    lock_hash: 72d0dd9706147e19bf3c1a36fdc02570f77685541d89d901a3a2f570824ba3cb
+  - path: skills/workers-best-practices
+    name: workers-best-practices
+    package: agent-skill-cloudflare-workers-best-practices
+    lock_hash: e1c30e93854345114dfa6a0a077363119eb99c03e5c64a8f2109349802e1f2aa
+  - path: skills/wrangler
+    name: wrangler
+    package: agent-skill-cloudflare-wrangler
+    lock_hash: 6d2bade1438d89034a750b1ddf30d0e5b62823306eccf85a5b25ccc4352ff8a9
+- repository: ertugrul-dmr/clean-code-skills
+  branch: main
+  commit: 1b6b3cc1264b8fbe921c65002d05a3bf90ede178
+  archive: true
+  license: MIT
+  license_file: LICENSE
+  skills:
+  - path: skills/typescript/typescript-clean-code
+    name: typescript-clean-code
+    package: agent-skill-ertugrul-dmr-typescript-clean-code
+    lock_hash: 307c13de1d4efa50c819c15a9f161acc4a5b579b84ed019d3a47c2cf0b9961d2
+- repository: Leonxlnx/taste-skill
+  branch: main
+  commit: 9b4bf937a1f69348126959c15d2f99a73e65699b
+  archive: true
+  license: LicenseRef-Mixed
+  license_file: LICENSE
+  skills:
+  - path: skills/taste-skill
+    name: design-taste-frontend
+    package: agent-skill-leonxlnx-design-taste-frontend
+    lock_hash: 23b3930015c478034b222e1a015da03a962c8ab48aee9fb4f3f69d977034feaa
+    additional_license_files:
+    - THIRD-PARTY-NOTICES.md
+    - LICENSE-UPSTREAM-MIT.txt
+    - LICENSE-LUCIDE-AND-FEATHER.txt
+    - LICENSE-VSCODE-ICONS-2016.txt
+    - LICENSE-VSCODE-ICONS-CURRENT.txt
+    - LICENSE-GILBARBARA-LOGOS-CC0.txt
+    - LICENSE-SIMPLE-ICONS-CC0.md

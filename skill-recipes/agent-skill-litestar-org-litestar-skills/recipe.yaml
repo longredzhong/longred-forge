@@ -1,0 +1,44 @@
+package:
+  name: agent-skill-litestar-org-litestar-skills
+  version: 0.0.2
+source:
+  url: https://github.com/litestar-org/litestar-skills/archive/669a363d66c9cd3ae68f1266076f74dad3cb7b17.tar.gz
+  sha256: 90f1bafeef2b80a2354771184b09fa07e267366347105153b22b4245bc9712d8
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills"
+
+    cp -R "$SRC_DIR/skills/." "$PREFIX/share/agent-skills/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-litestar-org-litestar-skills"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-litestar-org-litestar-skills/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/advanced-alchemy/SKILL.md
+    - share/agent-skills/litestar/SKILL.md
+    - share/agent-skills/litestar-autowire/SKILL.md
+    - share/agent-skills/litestar-build/SKILL.md
+    - share/agent-skills/litestar-deployment/SKILL.md
+    - share/agent-skills/litestar-docs/SKILL.md
+    - share/agent-skills/litestar-email/SKILL.md
+    - share/agent-skills/litestar-granian/SKILL.md
+    - share/agent-skills/litestar-htmx/SKILL.md
+    - share/agent-skills/litestar-mcp/SKILL.md
+    - share/agent-skills/litestar-queues/SKILL.md
+    - share/agent-skills/litestar-saq/SKILL.md
+    - share/agent-skills/litestar-security/SKILL.md
+    - share/agent-skills/litestar-styleguide/SKILL.md
+    - share/agent-skills/litestar-testing/SKILL.md
+    - share/agent-skills/litestar-vite/SKILL.md
+    - share/agent-skills/msgspec/SKILL.md
+    - share/agent-skills/polyfactory/SKILL.md
+    - share/agent-skills/pytest-databases/SKILL.md
+    - share/agent-skills/sqlspec/SKILL.md
+about:
+  summary: Agent skill litestar-skills
+  license: MIT
+  license_file: LICENSE
+  repository: https://github.com/litestar-org/litestar-skills

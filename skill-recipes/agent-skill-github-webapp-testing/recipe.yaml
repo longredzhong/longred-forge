@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-github-webapp-testing
+  version: 0.0.2
+source:
+  url: https://github.com/github/awesome-copilot/archive/96543145e9cb97711020b57b9d88f968062c4fc7.tar.gz
+  sha256: 81fa3eabc59e910a37a1c4932ebbb5c68bc8ed0eb05d0c6a737c37d64352cc69
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/webapp-testing"
+
+    cp -R "$SRC_DIR/skills/webapp-testing/." "$PREFIX/share/agent-skills/webapp-testing/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-github-webapp-testing"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-github-webapp-testing/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/webapp-testing/SKILL.md
+about:
+  summary: Agent skill webapp-testing
+  license: MIT
+  license_file: LICENSE
+  repository: https://github.com/github/awesome-copilot

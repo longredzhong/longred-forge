@@ -1,0 +1,24 @@
+package:
+  name: longred-skills
+  version: 0.1.1
+source:
+  path: ../../cli
+build:
+  number: 0
+  noarch: python
+  script: python -m pip install . --no-deps --no-build-isolation
+requirements:
+  host:
+    - python >=3.11
+    - pip
+    - setuptools >=70
+  run:
+    - python >=3.11
+    - httpx >=0.28,<0.29
+tests:
+  - script:
+      - longred-skills --help
+about:
+  summary: Manage Pixi-packaged agent skills
+  license: MIT
+  license_file: LICENSE

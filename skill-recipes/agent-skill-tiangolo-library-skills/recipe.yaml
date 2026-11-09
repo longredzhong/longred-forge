@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-tiangolo-library-skills
+  version: 0.0.1
+source:
+  url: https://github.com/tiangolo/library-skills/archive/114fa2c3b1a54177d3166669b7eae15a70d66467.tar.gz
+  sha256: 71db75a026af8e69513b0a0b3fdaeff0d0324eeeffcbb6c1d0963958c2ee34b2
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/library-skills"
+
+    cp -R "$SRC_DIR/ts/src/tool_skill/." "$PREFIX/share/agent-skills/library-skills/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-tiangolo-library-skills"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-tiangolo-library-skills/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/library-skills/SKILL.md
+about:
+  summary: Agent skill library-skills
+  license: MIT
+  license_file: LICENSE
+  repository: https://github.com/tiangolo/library-skills

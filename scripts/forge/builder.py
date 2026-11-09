@@ -2,8 +2,11 @@
 
 import hashlib
 import json
+import re
 import subprocess
 from pathlib import Path
+
+import yaml
 
 from .planner import render
 from .publisher import indexed, publish
@@ -19,7 +22,52 @@ def recipe_fingerprint(recipe: Path) -> str:
         digest.update(b'\0')
         digest.update(resource.read_bytes())
         digest.update(b'\0')
+    doc = yaml.safe_load(recipe.read_text(encoding='utf-8')) or {}
+    sources = doc.get('source', [])
+    if isinstance(sources, dict):
+        sources = [sources]
+    if not isinstance(sources, list):
+        sources = []
+    for source in sources:
+        if not isinstance(source, dict) or not isinstance(source.get('path'), str):
+            continue
+        local = (recipe.parent / source['path']).resolve()
+        if not local.is_relative_to(Path.cwd().resolve()):
+            raise ValueError('Local recipe source must be inside the workspace')
+        files = [local] if local.is_file() else sorted(local.rglob('*'))
+        if not local.exists():
+            raise ValueError(f'Local recipe source not found: {local}')
+        for resource in files:
+            if resource.is_symlink():
+                raise ValueError(f'Symlink in local recipe source: {resource}')
+            if not resource.is_file() or any(part in ('.git', '.pixi', '__pycache__') for part in resource.relative_to(local if local.is_dir() else local.parent).parts):
+                continue
+            digest.update(str(resource.relative_to(Path.cwd().resolve())).encode())
+            digest.update(b'\0')
+            digest.update(resource.read_bytes())
+            digest.update(b'\0')
     return digest.hexdigest()
+
+
+def existing_receipt_digest(recipe: Path, artifact, path: Path) -> str | None:
+    """Validate a local receipt when available; published packages need no local build."""
+    receipt = path.with_suffix('.receipt.json')
+    if not receipt.exists():
+        return None
+    try:
+        data = json.loads(receipt.read_text(encoding='utf-8'))
+        digest = data['sha256']
+        if (not isinstance(digest, str) or not re.fullmatch(r'[a-f0-9]{64}', digest)
+                or data != {'filename': artifact.filename, 'sha256': digest,
+                            'recipe_sha256': recipe_fingerprint(recipe)}):
+            raise ValueError('receipt fields differ')
+        if path.is_file():
+            with path.open('rb') as handle:
+                if hashlib.file_digest(handle, 'sha256').hexdigest() != digest:
+                    raise ValueError('artifact checksum differs')
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise RuntimeError(f'Build receipt mismatch: {path}; rebuild and use a new version if already published') from exc
+    return digest
 
 
 def build_recipe(recipe_yaml_path: Path, target_platform: str, channel: str,
@@ -35,7 +83,11 @@ def build_recipe(recipe_yaml_path: Path, target_platform: str, channel: str,
         outcomes = []
         for artifact in artifacts:
             if skip_existing and indexed(artifact, channel):
-                outcomes.append({'path': str(artifact.path(output)), 'status': 'already_exists'})
+                path = artifact.path(output)
+                digest = existing_receipt_digest(recipe_yaml_path, artifact, path)
+                if digest and not indexed(artifact, channel, digest):
+                    raise RuntimeError(f'Cannot verify indexed package: {artifact.filename}')
+                outcomes.append({'path': str(path), 'status': 'already_exists'})
                 continue
             path = artifact.path(output)
             if build_flag:

@@ -1,0 +1,93 @@
+name: Skills Forge
+
+on:
+  schedule:
+    - cron: '23 */3 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['skill-sources.yaml', 'skill-lock.yaml', 'skill-recipes/**', 'tool-recipes/**', 'cli/**', 'scripts/skills_update.py', 'scripts/skills_publish.py', 'scripts/forge/**', 'pixi.toml', 'pixi.lock', '.github/workflows/skills-forge.yml']
+  pull_request:
+    paths: ['skill-sources.yaml', 'skill-lock.yaml', 'skill-recipes/**', 'tool-recipes/**', 'cli/**', 'scripts/skills_update.py', 'scripts/skills_publish.py', 'scripts/forge/**', 'pixi.toml', 'pixi.lock', 'tests/**', '.github/workflows/skills-forge.yml']
+
+concurrency:
+  group: skills-forge-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          pixi-version: v0.81.0
+          activate-environment: true
+      - name: Lint and test
+        run: |
+          pixi run lint
+          pixi run test
+      - name: Restore source check cache
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: output/skills-cache
+          key: skills-repo-state-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: skills-repo-state-
+      - name: Check upstream repositories
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SKILLS_CACHE_DIR: output/skills-cache
+        run: pixi run skills-update
+      - name: Save source check cache
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: output/skills-cache
+          key: skills-repo-state-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Build skill packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          for recipe in skill-recipes/*/recipe.yaml tool-recipes/*/recipe.yaml; do
+            pixi run python scripts/build.py --recipe-path "$recipe" --channel longredzhong/longred-skills-forge --target-platforms linux-64 --skip-existing --no-upload
+          done
+      - name: Commit updated source locks
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add skill-lock.yaml skill-recipes/
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: update skill sources'
+            git push origin HEAD:main
+          fi
+      - name: Publish and verify channel index
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          PREFIX_TOKEN: ${{ secrets.SKILLS_PREFIX_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$PREFIX_TOKEN" || { echo 'SKILLS_PREFIX_TOKEN is required for publishing' >&2; exit 1; }
+          pixi run python scripts/skills_publish.py
+      - name: Retain build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skill-packages
+          path: |
+            output/noarch/*.conda
+            output/noarch/*.receipt.json
+          if-no-files-found: ignore
+          retention-days: 7

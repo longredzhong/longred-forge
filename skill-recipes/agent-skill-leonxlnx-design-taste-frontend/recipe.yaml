@@ -1,0 +1,46 @@
+package:
+  name: agent-skill-leonxlnx-design-taste-frontend
+  version: 0.0.1
+source:
+  url: https://github.com/Leonxlnx/taste-skill/archive/9b4bf937a1f69348126959c15d2f99a73e65699b.tar.gz
+  sha256: e307e4318df6048a40a65040c5c0e33ba21ea628e0c199fb6c2234f623ce3755
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/design-taste-frontend"
+
+    cp -R "$SRC_DIR/skills/taste-skill/." "$PREFIX/share/agent-skills/design-taste-frontend/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-leonxlnx-design-taste-frontend"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE"
+
+    cp "$RECIPE_DIR/THIRD-PARTY-NOTICES.md" "$PREFIX/share/licenses/agent-skill-leonxlnx-design-taste-frontend/THIRD-PARTY-NOTICES.md"
+
+    cp "$RECIPE_DIR/LICENSE-UPSTREAM-MIT.txt" "$PREFIX/share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE-UPSTREAM-MIT.txt"
+
+    cp "$RECIPE_DIR/LICENSE-LUCIDE-AND-FEATHER.txt" "$PREFIX/share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE-LUCIDE-AND-FEATHER.txt"
+
+    cp "$RECIPE_DIR/LICENSE-VSCODE-ICONS-2016.txt" "$PREFIX/share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE-VSCODE-ICONS-2016.txt"
+
+    cp "$RECIPE_DIR/LICENSE-VSCODE-ICONS-CURRENT.txt" "$PREFIX/share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE-VSCODE-ICONS-CURRENT.txt"
+
+    cp "$RECIPE_DIR/LICENSE-GILBARBARA-LOGOS-CC0.txt" "$PREFIX/share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE-GILBARBARA-LOGOS-CC0.txt"
+
+    cp "$RECIPE_DIR/LICENSE-SIMPLE-ICONS-CC0.md" "$PREFIX/share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE-SIMPLE-ICONS-CC0.md"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/design-taste-frontend/SKILL.md
+    - share/licenses/agent-skill-leonxlnx-design-taste-frontend/THIRD-PARTY-NOTICES.md
+    - share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE-UPSTREAM-MIT.txt
+    - share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE-LUCIDE-AND-FEATHER.txt
+    - share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE-VSCODE-ICONS-2016.txt
+    - share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE-VSCODE-ICONS-CURRENT.txt
+    - share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE-GILBARBARA-LOGOS-CC0.txt
+    - share/licenses/agent-skill-leonxlnx-design-taste-frontend/LICENSE-SIMPLE-ICONS-CC0.md
+about:
+  summary: Agent skill design-taste-frontend
+  license: LicenseRef-Mixed
+  license_file: LICENSE
+  repository: https://github.com/Leonxlnx/taste-skill

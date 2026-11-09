@@ -11,13 +11,17 @@ build = "python scripts/build.py"
 update = "python scripts/update.py"
 test = "python -m unittest discover -s tests -v"
 validate = "python scripts/validate.py"
-lint = "ruff check scripts tests recipes --select E9,F63,F7,F82 && actionlint -shellcheck="
+lint = "ruff check scripts tests recipes cli --select E9,F63,F7,F82 && actionlint -shellcheck="
+skills-check = "python scripts/skills_update.py"
+skills-update = "python scripts/skills_update.py --apply"
+skills = "python scripts/longred_skills.py"
 
 [dependencies]
 ruff = ">=0.14,<0.15"
 rattler-build = ">=0.54.0,<0.55"
 python = ">=3.14.2,<3.15"
 actionlint = ">=1.7.12,<2"
+nodejs = ">=22,<25"
 
 [pypi-dependencies]
 httpx = ">=0.28.1, <0.29"

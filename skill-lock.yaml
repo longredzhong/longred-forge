@@ -1,0 +1,429 @@
+version: 1
+skills:
+  agent-skill-vercel-labs-find-skills:
+    identity:
+    - vercel-labs/skills
+    - main
+    - skills/find-skills
+    - find-skills
+    - MIT
+    - LICENSE
+    commit: cabe07254cddf16a3a650253f0ba03d543d8a86e
+    tree: 76a98a285cb0434f3d39e1a873823556330e398b
+    license_blob: eabe3008f6c0275929faa8b07d406e82717648cc
+    revision: 1
+    version: 0.0.1
+  agent-skill-github-github-actions-efficiency:
+    identity:
+    - github/awesome-copilot
+    - main
+    - skills/github-actions-efficiency
+    - github-actions-efficiency
+    - MIT
+    - LICENSE
+    - archive
+    commit: 96543145e9cb97711020b57b9d88f968062c4fc7
+    tree: a9041cbe0a768c8c11c26c2524e3a780035988f5
+    license_blob: 89bc5e962c9944cdb050887062afdaaf89be504a
+    revision: 2
+    version: 0.0.2
+  agent-skill-github-multi-stage-dockerfile:
+    identity:
+    - github/awesome-copilot
+    - main
+    - skills/multi-stage-dockerfile
+    - multi-stage-dockerfile
+    - MIT
+    - LICENSE
+    - archive
+    commit: 96543145e9cb97711020b57b9d88f968062c4fc7
+    tree: c48773c7887197168099307c60b5dab2a553259c
+    license_blob: 89bc5e962c9944cdb050887062afdaaf89be504a
+    revision: 2
+    version: 0.0.2
+  agent-skill-github-postgresql-code-review:
+    identity:
+    - github/awesome-copilot
+    - main
+    - skills/postgresql-code-review
+    - postgresql-code-review
+    - MIT
+    - LICENSE
+    - archive
+    commit: 96543145e9cb97711020b57b9d88f968062c4fc7
+    tree: 5e41d23340dfe6988fc87a727083d1cd30bc1b1c
+    license_blob: 89bc5e962c9944cdb050887062afdaaf89be504a
+    revision: 2
+    version: 0.0.2
+  agent-skill-github-webapp-testing:
+    identity:
+    - github/awesome-copilot
+    - main
+    - skills/webapp-testing
+    - webapp-testing
+    - MIT
+    - LICENSE
+    - archive
+    commit: 96543145e9cb97711020b57b9d88f968062c4fc7
+    tree: 2a897b3b3dd467a76ef44e985e2c87c35299ce9f
+    license_blob: 89bc5e962c9944cdb050887062afdaaf89be504a
+    revision: 2
+    version: 0.0.2
+  agent-skill-github-security-review:
+    identity:
+    - github/awesome-copilot
+    - main
+    - skills/security-review
+    - security-review
+    - MIT
+    - LICENSE
+    - archive
+    commit: 96543145e9cb97711020b57b9d88f968062c4fc7
+    tree: 2c6732e6c9d8d3877953324c7605e45458fead3d
+    license_blob: 89bc5e962c9944cdb050887062afdaaf89be504a
+    revision: 2
+    version: 0.0.2
+  agent-skill-litestar-org-litestar-skills:
+    identity:
+    - litestar-org/litestar-skills
+    - main
+    - skills
+    - litestar-skills
+    - MIT
+    - LICENSE
+    - archive
+    - bundle
+    commit: 669a363d66c9cd3ae68f1266076f74dad3cb7b17
+    tree: 868066c618bdbe9e247d28876176d3cc5430c124
+    license_blob: 6a9a2600b4821baac07080094d86c26691734368
+    revision: 2
+    version: 0.0.2
+  agent-skill-tiangolo-library-skills:
+    identity:
+    - tiangolo/library-skills
+    - main
+    - ts/src/tool_skill
+    - library-skills
+    - MIT
+    - LICENSE
+    - archive
+    commit: 114fa2c3b1a54177d3166669b7eae15a70d66467
+    tree: 1342e807a271d768cd7f824517db20d30e28373a
+    license_blob: 3834f2ba0bb6701fa0e31c3a0270375038f605ba
+    revision: 1
+    version: 0.0.1
+  agent-skill-cloudflare-agents-sdk:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/agents-sdk
+    - agents-sdk
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:f0f05a346b672f9f8672ec2b1d0acd1af4414351f7c2e53f2e6da5896c4e5c01
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: b006d3c80926638a34517284a7db501e97cc6bac
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: f0f05a346b672f9f8672ec2b1d0acd1af4414351f7c2e53f2e6da5896c4e5c01
+    source_lock_verified: f0f05a346b672f9f8672ec2b1d0acd1af4414351f7c2e53f2e6da5896c4e5c01
+  agent-skill-cloudflare-basin:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/basin
+    - basin
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:4b447ec8bd58635536c5630e0ef1223563b013676ffabfc02e8a2e0e5c436b98
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: 4ee627bf9043c5820a990d2e5e96107e1aa13968
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 4b447ec8bd58635536c5630e0ef1223563b013676ffabfc02e8a2e0e5c436b98
+    source_lock_verified: 4b447ec8bd58635536c5630e0ef1223563b013676ffabfc02e8a2e0e5c436b98
+  agent-skill-cloudflare-cloudflare:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/cloudflare
+    - cloudflare
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:6f0a70840cad114f020e5950874f255b22e669f07036cf4f81d8f733ae0233a0
+    - dependencies:["agent-skill-cloudflare-durable-objects ==0.0.1", "agent-skill-cloudflare-nextjs-on-cloudflare
+      ==0.0.1"]
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: f9aa5dc020f8b8d5291611a22616efc8b1bcde77
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 2
+    version: 0.0.2
+    source_lock_hash: 6f0a70840cad114f020e5950874f255b22e669f07036cf4f81d8f733ae0233a0
+    source_lock_verified: 6f0a70840cad114f020e5950874f255b22e669f07036cf4f81d8f733ae0233a0
+  agent-skill-cloudflare-cloudflare-email-service:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/cloudflare-email-service
+    - cloudflare-email-service
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:166ed23ba8d915c24a674f50d6f6e8b3e1e7e8f26900c8b9461ea43748e86645
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: 8206f3fa7266dc1d9868680643da217705328ac0
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 166ed23ba8d915c24a674f50d6f6e8b3e1e7e8f26900c8b9461ea43748e86645
+    source_lock_verified: 166ed23ba8d915c24a674f50d6f6e8b3e1e7e8f26900c8b9461ea43748e86645
+  agent-skill-cloudflare-cloudflare-one:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/cloudflare-one
+    - cloudflare-one
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:9394299fdb45f0803d285c25f09bed8b471f21fe0bf4e78f3573620096f30939
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: ef8688a923076a0dead74f056b975a3bbdf3cacb
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 9394299fdb45f0803d285c25f09bed8b471f21fe0bf4e78f3573620096f30939
+    source_lock_verified: 9394299fdb45f0803d285c25f09bed8b471f21fe0bf4e78f3573620096f30939
+  agent-skill-cloudflare-cloudflare-one-migrations:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/cloudflare-one-migrations
+    - cloudflare-one-migrations
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:346ccd66789494f81ed9c42f1c1313dd4cf2f7bb79b6aae85001a25c6b649cb7
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: 46158eb5ae00b6d20f53abede28134a2530d4724
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 346ccd66789494f81ed9c42f1c1313dd4cf2f7bb79b6aae85001a25c6b649cb7
+    source_lock_verified: 346ccd66789494f81ed9c42f1c1313dd4cf2f7bb79b6aae85001a25c6b649cb7
+  agent-skill-cloudflare-durable-objects:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/durable-objects
+    - durable-objects
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:f328205f9d11381902a160ace4622cd1ac9602acba00b091f6d63f59a6869900
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: d0fcb442473e60f8dba76e023412de50d70b41aa
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: f328205f9d11381902a160ace4622cd1ac9602acba00b091f6d63f59a6869900
+    source_lock_verified: f328205f9d11381902a160ace4622cd1ac9602acba00b091f6d63f59a6869900
+  agent-skill-cloudflare-k2:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/k2
+    - k2
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:3e0d83ae8a95de6256c6dff7225dcf19aa33d271f634fa6c349403a4eff23235
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: c3cce9b74fa246ca0ad922a114e6cb2ddead0aeb
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 3e0d83ae8a95de6256c6dff7225dcf19aa33d271f634fa6c349403a4eff23235
+    source_lock_verified: 3e0d83ae8a95de6256c6dff7225dcf19aa33d271f634fa6c349403a4eff23235
+  agent-skill-cloudflare-nextjs-on-cloudflare:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/nextjs-on-cloudflare
+    - nextjs-on-cloudflare
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:15d2dc117c5bbe9f92cb7c42a8d55e4bcddb91c2f1e4705ad93736c7a219d99b
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: 7246fd78e60cba1cd482c7046f9df1439969c8df
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 15d2dc117c5bbe9f92cb7c42a8d55e4bcddb91c2f1e4705ad93736c7a219d99b
+    source_lock_verified: 15d2dc117c5bbe9f92cb7c42a8d55e4bcddb91c2f1e4705ad93736c7a219d99b
+  agent-skill-cloudflare-sandbox-migrate-to-next:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/sandbox-migrate-to-next
+    - sandbox-migrate-to-next
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:a5f2f33672a6f6d93d946d61e3310bb7d1811b68a86f247b84ba571cde436859
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: fbb50d51d487d4c9336b59db22eb40059cf4df66
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: a5f2f33672a6f6d93d946d61e3310bb7d1811b68a86f247b84ba571cde436859
+    source_lock_verified: a5f2f33672a6f6d93d946d61e3310bb7d1811b68a86f247b84ba571cde436859
+  agent-skill-cloudflare-sandbox-next:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/sandbox-next
+    - sandbox-next
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:92ccb32841208cc1915f796aa7b43dee9b5a7fc7467145e2f8d68f22dc73f460
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: 2a346c68340576c7e584744258c046cc0200170b
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 92ccb32841208cc1915f796aa7b43dee9b5a7fc7467145e2f8d68f22dc73f460
+    source_lock_verified: 92ccb32841208cc1915f796aa7b43dee9b5a7fc7467145e2f8d68f22dc73f460
+  agent-skill-cloudflare-sandbox-stable:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/sandbox-stable
+    - sandbox-stable
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:4c6ad34430c75b84e68edc9f721d5a54fdd8a1d6754807154b5f7bc45665d0a4
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: d39279f5fad5d9de6fb8888bb3a934577e80489c
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 4c6ad34430c75b84e68edc9f721d5a54fdd8a1d6754807154b5f7bc45665d0a4
+    source_lock_verified: 4c6ad34430c75b84e68edc9f721d5a54fdd8a1d6754807154b5f7bc45665d0a4
+  agent-skill-cloudflare-turnstile-spin:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/turnstile-spin
+    - turnstile-spin
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:767b0aec38033a8f17f958f85ce559952a70495291f13551bfa8cd28a237a8cf
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: a82846b57643fd8d92a40443d1dca3867a3a4932
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 767b0aec38033a8f17f958f85ce559952a70495291f13551bfa8cd28a237a8cf
+    source_lock_verified: 767b0aec38033a8f17f958f85ce559952a70495291f13551bfa8cd28a237a8cf
+  agent-skill-cloudflare-web-perf:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/web-perf
+    - web-perf
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:72d0dd9706147e19bf3c1a36fdc02570f77685541d89d901a3a2f570824ba3cb
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: c4c15a909ae86c00d4fbf841238bbf56eb505ac8
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 72d0dd9706147e19bf3c1a36fdc02570f77685541d89d901a3a2f570824ba3cb
+    source_lock_verified: 72d0dd9706147e19bf3c1a36fdc02570f77685541d89d901a3a2f570824ba3cb
+  agent-skill-cloudflare-workers-best-practices:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/workers-best-practices
+    - workers-best-practices
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:e1c30e93854345114dfa6a0a077363119eb99c03e5c64a8f2109349802e1f2aa
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: 46b2eac6a1a81c6bfbc01164f93f0432ee3d9751
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: e1c30e93854345114dfa6a0a077363119eb99c03e5c64a8f2109349802e1f2aa
+    source_lock_verified: e1c30e93854345114dfa6a0a077363119eb99c03e5c64a8f2109349802e1f2aa
+  agent-skill-cloudflare-wrangler:
+    identity:
+    - cloudflare/skills
+    - main
+    - skills/wrangler
+    - wrangler
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - lock_hash:6d2bade1438d89034a750b1ddf30d0e5b62823306eccf85a5b25ccc4352ff8a9
+    commit: 41e0d19858946d18af9ee2c2feebbe2e11d829ff
+    tree: 2dab1373cf45bcde6db84354711b7406127a239a
+    license_blob: 7a4a3ea2424c09fbe48d455aed1eaa94d9124835
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 6d2bade1438d89034a750b1ddf30d0e5b62823306eccf85a5b25ccc4352ff8a9
+    source_lock_verified: 6d2bade1438d89034a750b1ddf30d0e5b62823306eccf85a5b25ccc4352ff8a9
+  agent-skill-ertugrul-dmr-typescript-clean-code:
+    identity:
+    - ertugrul-dmr/clean-code-skills
+    - main
+    - skills/typescript/typescript-clean-code
+    - typescript-clean-code
+    - MIT
+    - LICENSE
+    - archive
+    - lock_hash:307c13de1d4efa50c819c15a9f161acc4a5b579b84ed019d3a47c2cf0b9961d2
+    commit: 1b6b3cc1264b8fbe921c65002d05a3bf90ede178
+    tree: e9864939e1593acb09a00edc688760a0e3ea6f28
+    license_blob: b77bf2ab726c6e7cb5a81a9d3b7dc38266ebfd3d
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 307c13de1d4efa50c819c15a9f161acc4a5b579b84ed019d3a47c2cf0b9961d2
+    source_lock_verified: 307c13de1d4efa50c819c15a9f161acc4a5b579b84ed019d3a47c2cf0b9961d2
+  agent-skill-leonxlnx-design-taste-frontend:
+    identity:
+    - Leonxlnx/taste-skill
+    - main
+    - skills/taste-skill
+    - design-taste-frontend
+    - LicenseRef-Mixed
+    - LICENSE
+    - archive
+    - lock_hash:23b3930015c478034b222e1a015da03a962c8ab48aee9fb4f3f69d977034feaa
+    - 'additional_license_files:{"LICENSE-GILBARBARA-LOGOS-CC0.txt": "36ffd9dc085d529a7e60e1276d73ae5a030b020313e6c5408593a6ae2af39673",
+      "LICENSE-LUCIDE-AND-FEATHER.txt": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+      "LICENSE-SIMPLE-ICONS-CC0.md": "9046848b63a5c92bff14e4accca80bd987e0623b74adf9226ce5198d312b79d5",
+      "LICENSE-UPSTREAM-MIT.txt": "4575a543ab88dad12ccea7d97e563d0bce5b448b06072e65d3264497dad326df",
+      "LICENSE-VSCODE-ICONS-2016.txt": "c0878418702a1c58790ffbe6b0a4663e62dfd76b693face439a516c80b7514e8",
+      "LICENSE-VSCODE-ICONS-CURRENT.txt": "6871eaa1f7a51fbc5f482bec82c3d30a0c61b6889865a03f998c2be9860bdb20",
+      "THIRD-PARTY-NOTICES.md": "c1e3f7b7ab1e693e51277739e6fa85c70774cec5212413d9d60f19a56afbe739"}'
+    commit: 9b4bf937a1f69348126959c15d2f99a73e65699b
+    tree: 5743b6eb4d005c5bbe51aa4ecae701eb052d6198
+    license_blob: 48a2f6640b81ff8eca9ce7f6a96337692713ef5b
+    revision: 1
+    version: 0.0.1
+    source_lock_hash: 23b3930015c478034b222e1a015da03a962c8ab48aee9fb4f3f69d977034feaa
+    source_lock_verified: 23b3930015c478034b222e1a015da03a962c8ab48aee9fb4f3f69d977034feaa
