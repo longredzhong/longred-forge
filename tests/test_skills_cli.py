@@ -26,7 +26,7 @@ class SkillsCLITests(unittest.TestCase):
                 longred_skills.main()
             link = root / '.agents/skills/example'
             self.assertTrue(link.is_symlink())
-            self.assertEqual(link.resolve(), skill)
+            self.assertTrue(link.samefile(skill))
             self.assertFalse((subdir / '.agents').exists())
 
     def test_pyproject_workspace_and_explicit_agent(self):
@@ -42,7 +42,7 @@ class SkillsCLITests(unittest.TestCase):
                 with self.subTest(agent=agent), patch.object(Path, 'cwd', return_value=subdir), \
                         patch('sys.argv', ['longred-skills', 'sync', '--agent', agent]):
                     longred_skills.main()
-                self.assertEqual((root / f'.{agent}/skills/example').resolve(), skill)
+                self.assertTrue((root / f'.{agent}/skills/example').samefile(skill))
 
     def test_add_from_subdirectory_runs_pixi_at_workspace_root(self):
         with tempfile.TemporaryDirectory() as tmp:
