@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['skill-sources.yaml', 'skill-lock.yaml', 'skill-recipes/**', 'tool-recipes/**', 'cli/**', 'scripts/skills_update.py', 'scripts/skills_publish.py', 'scripts/forge/**', 'pixi.toml', 'pixi.lock', '.github/workflows/skills-forge.yml']
+    paths: ['skill-sources.yaml', 'skill-lock.yaml', 'skill-recipes/**', 'scripts/skills_update.py', 'scripts/skills_publish.py', 'scripts/forge/**', 'pixi.toml', 'pixi.lock', '.github/workflows/skills-forge.yml']
   pull_request:
-    paths: ['skill-sources.yaml', 'skill-lock.yaml', 'skill-recipes/**', 'tool-recipes/**', 'cli/**', 'scripts/skills_update.py', 'scripts/skills_publish.py', 'scripts/forge/**', 'pixi.toml', 'pixi.lock', 'tests/**', '.github/workflows/skills-forge.yml']
+    paths: ['skill-sources.yaml', 'skill-lock.yaml', 'skill-recipes/**', 'scripts/skills_update.py', 'scripts/skills_publish.py', 'scripts/forge/**', 'pixi.toml', 'pixi.lock', 'tests/**', '.github/workflows/skills-forge.yml']
 
 concurrency:
   group: skills-forge-${{ github.ref }}
@@ -57,7 +57,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for recipe in skill-recipes/*/recipe.yaml tool-recipes/*/recipe.yaml; do
+          for recipe in skill-recipes/*/recipe.yaml; do
             pixi run python scripts/build.py --recipe-path "$recipe" --channel longredzhong/longred-skills-forge --target-platforms linux-64 --skip-existing --no-upload
           done
       - name: Commit updated source locks

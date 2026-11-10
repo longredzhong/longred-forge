@@ -11,13 +11,69 @@ import longred_skills
 
 
 class SkillsCLITests(unittest.TestCase):
+    def test_sync_from_subdirectory_uses_workspace_and_default_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "example"\n')
+            subdir = root / 'src' / 'nested'
+            subdir.mkdir(parents=True)
+            skill = root / '.pixi/envs/default/share/agent-skills/example'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('skill')
+            with patch.object(Path, 'cwd', return_value=subdir), \
+                    patch('sys.argv', ['longred-skills', 'sync']):
+                longred_skills.main()
+                longred_skills.main()
+            link = root / '.agents/skills/example'
+            self.assertTrue(link.is_symlink())
+            self.assertEqual(link.resolve(), skill)
+            self.assertFalse((subdir / '.agents').exists())
+
+    def test_pyproject_workspace_and_explicit_agent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pyproject.toml').write_text('[tool.pixi.workspace]\nname = "example"\n')
+            subdir = root / 'src'
+            subdir.mkdir()
+            skill = root / '.pixi/envs/default/share/agent-skills/example'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('skill')
+            for agent in ('codex', 'claude'):
+                with self.subTest(agent=agent), patch.object(Path, 'cwd', return_value=subdir), \
+                        patch('sys.argv', ['longred-skills', 'sync', '--agent', agent]):
+                    longred_skills.main()
+                self.assertEqual((root / f'.{agent}/skills/example').resolve(), skill)
+
+    def test_add_from_subdirectory_runs_pixi_at_workspace_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "example"\n')
+            subdir = root / 'src'
+            subdir.mkdir()
+            def pixi(command, **kwargs):
+                self.assertEqual(kwargs['cwd'], root)
+                if command[1] == 'add':
+                    skill = root / '.pixi/envs/default/share/agent-skills/example'
+                    skill.mkdir(parents=True)
+                    (skill / 'SKILL.md').write_text('skill')
+            with patch.object(Path, 'cwd', return_value=subdir), \
+                    patch('sys.argv', ['longred-skills', 'add', 'agent-skill-example']), \
+                    patch.object(longred_skills.subprocess, 'run', side_effect=pixi):
+                longred_skills.main()
+            self.assertTrue((root / '.agents/skills/example').is_symlink())
+
+    def test_list_rejects_invalid_environment(self):
+        with patch('sys.argv', ['longred-skills', 'list', '-e', '../outside']):
+            with self.assertRaisesRegex(ValueError, 'Invalid environment'):
+                longred_skills.main()
+
     def test_existing_skill_conflict_fails_before_pixi_mutates_project(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             src = root / '.pixi/envs/default/share/agent-skills/example'
             src.mkdir(parents=True)
             (src / 'SKILL.md').write_text('installed')
-            user = root / '.codex/skills/example'
+            user = root / '.agents/skills/example'
             user.mkdir(parents=True)
             (user / 'SKILL.md').write_text('user data')
             with patch.object(Path, 'cwd', return_value=root), \
@@ -31,7 +87,7 @@ class SkillsCLITests(unittest.TestCase):
     def test_newly_installed_skill_conflict_reports_pixi_changes(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            user = root / '.codex/skills/new-skill'
+            user = root / '.agents/skills/new-skill'
             user.mkdir(parents=True)
             (user / 'SKILL.md').write_text('user data')
             def pixi(*args, **kwargs):
@@ -58,14 +114,14 @@ class SkillsCLITests(unittest.TestCase):
     def test_non_directory_agent_root_fails_before_pixi(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / '.codex').write_text('user data')
+            (root / '.agents').write_text('user data')
             with patch.object(Path, 'cwd', return_value=root), \
                     patch('sys.argv', ['longred-skills', 'add', 'agent-skill-example']), \
                     patch.object(longred_skills.subprocess, 'run') as run:
                 with self.assertRaisesRegex(FileExistsError, 'configuration directory conflicts'):
                     longred_skills.main()
             run.assert_not_called()
-            self.assertEqual((root / '.codex').read_text(), 'user data')
+            self.assertEqual((root / '.agents').read_text(), 'user data')
 
 
 if __name__ == '__main__':

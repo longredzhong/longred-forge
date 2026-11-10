@@ -74,7 +74,7 @@ def main():
         raise RuntimeError('PREFIX_API_KEY/PREFIX_TOKEN is required')
     pending = []
     records = channel_records()
-    recipes = sorted(Path('skill-recipes').glob('*/recipe.yaml')) + sorted(Path('tool-recipes').glob('*/recipe.yaml'))
+    recipes = sorted(Path('skill-recipes').glob('*/recipe.yaml'))
     for recipe in recipes:
         for artifact in render(recipe, 'linux-64'):
             if artifact.filename in records:

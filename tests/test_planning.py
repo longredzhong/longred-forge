@@ -17,6 +17,10 @@ class PlanningTests(unittest.TestCase):
         with patch.object(planner.subprocess, 'run', return_value=Mock(stdout='scripts/forge/builder.py\n')):
             self.assertEqual(planner.changed_recipes('base'), sorted(Path('recipes').glob('*/recipe.yaml')))
 
+    def test_cli_change_selects_manager_recipe(self):
+        with patch.object(planner.subprocess, 'run', return_value=Mock(stdout='cli/longred_skills/__init__.py\n')):
+            self.assertEqual(planner.changed_recipes('base'), [Path('recipes/longred-skills/recipe.yaml')])
+
     def test_docs_only_change_is_empty(self):
         with patch.object(planner.subprocess, 'run', return_value=Mock(stdout='README.md\n')):
             self.assertEqual(planner.changed_recipes('base'), [])

@@ -18,6 +18,17 @@ pixi add -c https://prefix.dev/longred-forge <package-name>
 
 ## 📦 Available Packages
 
+### longred-skills
+
+Manage Pixi-packaged agent skills and expose them in a project's `.agents/skills` directory.
+Install the manager from this channel:
+
+```bash
+pixi global install -c https://prefix.dev/longred-forge -c conda-forge longred-skills
+```
+
+Skill packages remain in the separate skills channel; see [Longred Skills Forge](SKILLS-FORGE.md) for usage.
+
 ### hatchet-cli
 
 The Hatchet CLI for managing workflows and background tasks. Hatchet is an open-source platform for running background tasks and durable workflows at scale.

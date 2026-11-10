@@ -1,6 +1,8 @@
 # Longred Skills Forge
 
-The channel is `https://prefix.dev/longredzhong/longred-skills-forge`.
+Skill packages are published to `https://prefix.dev/longredzhong/longred-skills-forge`.
+The `longred-skills` manager is published separately to the main
+`https://prefix.dev/longred-forge` channel.
 The initial catalog contains `find-skills` from `vercel-labs/skills` plus five
 skills from `github/awesome-copilot`, distributed under their upstream MIT
 licenses. The lock records the exact Git commit, skill subtree, license blob,
@@ -26,19 +28,19 @@ The `cloudflare` skill package declares its `durable-objects` and
 `nextjs-on-cloudflare` sibling skills as exact runtime dependencies, so relative
 references resolve inside the same Pixi environment.
 
-Once both packages are indexed, install the manager with:
+Once the manager is indexed in the main channel, install it with:
 
 ```sh
-pixi global install -c https://prefix.dev/longredzhong/longred-skills-forge -c conda-forge longred-skills
+pixi global install -c https://prefix.dev/longred-forge -c conda-forge longred-skills
 ```
 
 In a project that already has a Pixi workspace:
 
 ```sh
 longred-skills find find-skills
-longred-skills add agent-skill-vercel-labs-find-skills --agent codex
+longred-skills add agent-skill-vercel-labs-find-skills
 longred-skills list
-longred-skills sync --agent codex
+longred-skills sync
 
 # The entire Litestar group, including cross-referenced skills
 longred-skills add agent-skill-litestar-org-litestar-skills --agent codex
@@ -48,9 +50,13 @@ longred-skills add agent-skill-leonxlnx-design-taste-frontend --agent codex
 ```
 
 `add` adds the channel and package to the selected Pixi environment, resolves
-the lockfile, and creates relative symlinks under `.codex/skills` or
-`.claude/skills`. `sync` can be rerun after `pixi install --locked`. Existing
-files or links to another target cause an error and are never overwritten.
+the lockfile, and creates relative symlinks under `.agents/skills` by default.
+Pass `--agent codex` or `--agent claude` to use `.codex/skills` or
+`.claude/skills`. Commands locate the nearest Pixi workspace when run from a
+subdirectory, including workspaces configured in `pyproject.toml`. Existing
+links in agent-specific directories are left in place when switching targets;
+remove obsolete links manually after checking them. `sync` can be rerun after
+`pixi install --locked`. Existing files or links to another target cause an error and are never overwritten.
 Already installed skills are checked for destination conflicts before `add`
 changes the Pixi project. If a conflict is only discoverable after installing
 a new package, the command reports that the manifest, lockfile and environment
@@ -58,8 +64,9 @@ may already have changed; resolve the conflict and rerun `sync`.
 Windows requires permission to create directory symlinks. The CLI currently
 supports project scope, package-name search, `add`, `list`, and `sync`; remote
 repository import, removal, global skill management and update commands are not
-implemented yet. Use Pixi's own update and removal commands in the meantime;
-remove obsolete links manually only after checking their targets.
+implemented yet. Skill sources must first be added to the reviewed GitHub source
+catalog and published as Pixi packages. Use Pixi's own update and removal commands
+in the meantime; remove obsolete links manually only after checking their targets.
 
 ## Maintaining the catalog
 
@@ -100,7 +107,7 @@ Pixi search with the exact channel URL, filename, and SHA-256. A package shown i
 the Prefix.dev UI alone does not prove it can be resolved by Pixi.
 
 The manager is versioned separately in `cli/pyproject.toml` and
-`tool-recipes/longred-skills/recipe.yaml`. Update both versions whenever the
+`recipes/longred-skills/recipe.yaml`. Update both versions whenever the
 manager changes; a published package filename must not be overwritten. Build
 receipts include the local `cli/` source so source changes between build and
 publish invalidate the receipt.

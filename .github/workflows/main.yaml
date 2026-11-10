@@ -7,6 +7,7 @@ on:
       - master
     paths:
       - "recipes/**"
+      - "cli/**"
       - "scripts/**"
       - "tests/**"
       - "pixi.toml"
@@ -15,6 +16,7 @@ on:
   pull_request:
     paths:
       - "recipes/**"
+      - "cli/**"
       - "scripts/**"
       - "tests/**"
       - "pixi.*"

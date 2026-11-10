@@ -5,13 +5,28 @@ import os
 import re
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import httpx
 
 CHANNEL = 'https://prefix.dev/longredzhong/longred-skills-forge'
-AGENTS = {'codex': '.codex/skills', 'claude': '.claude/skills'}
+AGENTS = {'agents': '.agents/skills', 'codex': '.codex/skills', 'claude': '.claude/skills'}
 NAME = re.compile(r'[a-z0-9]+(?:-[a-z0-9]+)*\Z')
+
+
+def project_root(start):
+    """Find the nearest Pixi workspace, including workspaces in pyproject.toml."""
+    for directory in (start, *start.parents):
+        if (directory / 'pixi.toml').is_file():
+            return directory
+        manifest = directory / 'pyproject.toml'
+        if manifest.is_file():
+            with manifest.open('rb') as f:
+                data = tomllib.load(f)
+            if 'pixi' in data.get('tool', {}):
+                return directory
+    return start
 
 
 def plan_sync(root, environment, agent, selected=None, allow_empty=False):
@@ -75,9 +90,11 @@ def main():
             p.add_argument('--skill')
         p.add_argument('-e', '--environment', default='default')
         if command != 'list':
-            p.add_argument('-a', '--agent', choices=AGENTS, default='codex')
+            p.add_argument('-a', '--agent', choices=AGENTS, default='agents')
     args = parser.parse_args()
-    root = Path.cwd()
+    if args.command != 'find' and not NAME.fullmatch(args.environment):
+        raise ValueError('Invalid environment name')
+    root = project_root(Path.cwd()) if args.command != 'find' else Path.cwd()
     if args.command == 'find':
         with httpx.Client(trust_env=False, follow_redirects=True, timeout=30) as client:
             response = client.get(CHANNEL + '/noarch/repodata.json')
@@ -93,9 +110,9 @@ def main():
         # installed skill names are known only after the solver installs them.
         plan_sync(root, args.environment, args.agent, allow_empty=True)
         try:
-            subprocess.run(['pixi', 'workspace', 'channel', 'add', '-e', args.environment, CHANNEL], check=True)
+            subprocess.run(['pixi', 'workspace', 'channel', 'add', '-e', args.environment, CHANNEL], check=True, cwd=root)
             subprocess.run(['pixi', 'add', '-e', args.environment, '--pinning-strategy', 'latest-up',
-                            f'{CHANNEL}::{args.package}'], check=True)
+                            f'{CHANNEL}::{args.package}'], check=True, cwd=root)
         except subprocess.CalledProcessError as exc:
             raise RuntimeError('Pixi could not add the package; the project channel may already have changed. '
                                'Inspect pixi.toml and pixi.lock before retrying.') from exc

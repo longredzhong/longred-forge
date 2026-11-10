@@ -47,4 +47,6 @@ def changed_recipes(base: str, head: str = 'HEAD') -> list[Path]:
     if any(p.parts[0] in ('scripts', 'tests', '.github') or p.name in ('pixi.toml', 'pixi.lock') for p in paths):
         return sorted(Path('recipes').glob('*/recipe.yaml'))
     names = {p.parts[1] for p in paths if len(p.parts) >= 3 and p.parts[0] == 'recipes'}
+    if any(p.parts[0] == 'cli' for p in paths):
+        names.add('longred-skills')
     return sorted(p for name in names if (p := Path('recipes') / name / 'recipe.yaml').is_file())

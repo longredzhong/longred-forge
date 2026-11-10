@@ -1,6 +1,6 @@
 package:
   name: longred-skills
-  version: 0.1.1
+  version: 0.1.2
 source:
   path: ../../cli
 build:
@@ -22,3 +22,6 @@ about:
   summary: Manage Pixi-packaged agent skills
   license: MIT
   license_file: LICENSE
+extra:
+  update:
+    manual: true

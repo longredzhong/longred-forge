@@ -159,6 +159,12 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
         raw = f.read()
     doc = yaml.safe_load(raw)
 
+    extra = doc.get("extra") or {}
+    update_config = (extra.get("update") or {}) if isinstance(extra, dict) else {}
+    if isinstance(update_config, dict) and update_config.get("manual") is True:
+        print(f"Skipping manually maintained recipe: {recipe_path}")
+        return "skipped"
+
     # Determine owner/repo from recipe if not provided
     repo_url = None
     about = doc.get("about") or {}
@@ -174,8 +180,6 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
     if not owner or not repo:
         raise RuntimeError("Owner/repo not set and not found in recipe")
 
-    extra = doc.get("extra") or {}
-    update_config = (extra.get("update") or {}) if isinstance(extra, dict) else {}
     major = None
     if isinstance(update_config, dict) and "major" in update_config:
         major = update_config["major"]

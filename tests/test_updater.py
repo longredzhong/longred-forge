@@ -17,6 +17,16 @@ from scripts.forge.http import HTTPClient
 from scripts.forge import upstream
 
 
+class ManualRecipeTests(unittest.TestCase):
+    def test_manual_recipe_is_skipped_without_upstream_lookup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            recipe = Path(tmp) / 'recipe.yaml'
+            recipe.write_text('extra:\n  update:\n    manual: true\n', encoding='utf-8')
+            with patch.object(update, 'get_latest_release') as lookup:
+                self.assertEqual(update.update_single_recipe(str(recipe), None, None, {}, None, True, False), 'skipped')
+            lookup.assert_not_called()
+
+
 class HTTPTests(unittest.TestCase):
     def client(self, handler, **kwargs):
         return HTTPClient(transport=httpx.MockTransport(handler), sleep=lambda _: None, **kwargs)
