@@ -30,8 +30,10 @@ class FakeGitHub:
         self.calls.append(url)
         if '/git/ref/' in url:
             return {'object': {'sha': self.commit}}
+        if '/git/commits/' in url:
+            return {'tree': {'sha': 'e' * 40}}
         if '/git/trees/' in url:
-            return {'truncated': self.truncated, 'tree': [
+            return {'sha': 'e' * 40, 'truncated': self.truncated, 'tree': [
                 {'path': 'LICENSE', 'type': 'blob', 'sha': self.license_sha},
                 {'path': 'skills/demo', 'type': 'tree', 'sha': self.tree_sha},
                 {'path': 'skills/demo/SKILL.md', 'type': 'blob', 'sha': 'd' * 40}, *self.extra]}
@@ -108,6 +110,20 @@ class SkillsForgeTests(unittest.TestCase):
         self.client.extra = [{'path': 'skills/demo/escape', 'mode': '120000'}]
         with self.assertRaisesRegex(ValueError, 'Symlink'):
             self.check()
+
+    def test_root_skill_requires_archive_and_checks_complete_tree(self):
+        repo = self.config['repositories'][0]
+        repo['skills'][0]['path'] = '.'
+        with self.assertRaisesRegex(ValueError, 'Root skills require'):
+            self.check()
+        repo['archive'] = True
+        self.client.extra = [{'path': 'SKILL.md', 'type': 'blob', 'sha': 'd' * 40}]
+        lock, recipes = self.check()
+        self.assertEqual(lock['skills']['agent-skill-example-demo']['tree'], 'e' * 40)
+        self.assertIn('$SRC_DIR/./.', recipes['agent-skill-example-demo']['build']['script'])
+        self.client.extra.append({'path': 'escape', 'mode': '120000'})
+        with self.assertRaisesRegex(ValueError, 'Symlink'):
+            self.check(lock)
 
     def test_license_change_requires_review(self):
         lock, _ = self.check()

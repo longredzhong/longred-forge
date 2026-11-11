@@ -17,13 +17,20 @@ fixed to commits that match its original `skills-lock.json` contents. Their
 source lock hashes are recorded and verified against the complete upstream
 skill directories using the `npx skills` hashing algorithm. Node.js supplies
 the same `localeCompare` ordering and is installed by the Pixi environment.
-Turnpike's `design-taste-frontend` is also pinned to its matching source
-snapshot. It contains mixed-license assets: its original attribution and
-credits remain in the skill directory, and additional third-party license texts
-are installed under `share/licenses/agent-skill-leonxlnx-design-taste-frontend/`.
-The configured `commit` prevents automatic drift to the current upstream branch.
-Updating a pinned source requires an intentional configuration change and new
-validation.
+`design-taste-frontend` follows the upstream main branch. Its previously pinned
+Turnpike snapshot has been replaced by the current skill; existing consumers
+that need the old behavior should retain their previous lock. Its mixed-license
+notices remain in the package. `impeccable` packages upstream's `.agents` build,
+including its references, launcher and third-party notice; its native engine is
+obtained separately by the upstream launcher. The upstream Claude-specific
+build has different instructions and is not provided by this package.
+`simplify-codebase` is a repository-root skill, packaged from a commit archive.
+
+Package versions such as `0.0.2` are monotonic catalog revisions, not upstream
+release versions. The lock records the exact source commit and skill tree. A
+skill tree, license or packaging identity change increments the package revision;
+a repository commit that leaves those unchanged does not. Inspect upstream
+release tags and skill metadata separately when reporting upstream versions.
 The `cloudflare` skill package declares its `durable-objects` and
 `nextjs-on-cloudflare` sibling skills as exact runtime dependencies, so relative
 references resolve inside the same Pixi environment.
@@ -89,6 +96,7 @@ still be large. The updater queries each repository once for its ref;
 when the ref or configuration changes, it also retrieves its recursive tree.
 The workflow persists an optional repository cache; missing or invalid cache
 causes a full tree check; a full check is repeated at least every 24 hours.
+Root skills require archives and are tracked by the full repository tree.
 It refuses truncated trees and source symlinks
 or submodules, and validates new or changed SKILL.md frontmatter.
 

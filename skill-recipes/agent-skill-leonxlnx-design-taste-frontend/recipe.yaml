@@ -1,9 +1,9 @@
 package:
   name: agent-skill-leonxlnx-design-taste-frontend
-  version: 0.0.1
+  version: 0.0.2
 source:
-  url: https://github.com/Leonxlnx/taste-skill/archive/9b4bf937a1f69348126959c15d2f99a73e65699b.tar.gz
-  sha256: e307e4318df6048a40a65040c5c0e33ba21ea628e0c199fb6c2234f623ce3755
+  url: https://github.com/Leonxlnx/taste-skill/archive/f6b76575f949707b4e3c37cd86cb44b0b98643e8.tar.gz
+  sha256: abd5691275f8ce7593962e83e5c4f7654b545c7712d7d71bb08b21ed75828bb6
 build:
   number: 0
   noarch: generic
@@ -42,5 +42,5 @@ tests:
 about:
   summary: Agent skill design-taste-frontend
   license: LicenseRef-Mixed
-  license_file: LICENSE
   repository: https://github.com/Leonxlnx/taste-skill
+  license_file: LICENSE

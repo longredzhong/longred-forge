@@ -412,7 +412,6 @@ skills:
     - LicenseRef-Mixed
     - LICENSE
     - archive
-    - lock_hash:23b3930015c478034b222e1a015da03a962c8ab48aee9fb4f3f69d977034feaa
     - 'additional_license_files:{"LICENSE-GILBARBARA-LOGOS-CC0.txt": "36ffd9dc085d529a7e60e1276d73ae5a030b020313e6c5408593a6ae2af39673",
       "LICENSE-LUCIDE-AND-FEATHER.txt": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
       "LICENSE-SIMPLE-ICONS-CC0.md": "9046848b63a5c92bff14e4accca80bd987e0623b74adf9226ce5198d312b79d5",
@@ -420,13 +419,11 @@ skills:
       "LICENSE-VSCODE-ICONS-2016.txt": "c0878418702a1c58790ffbe6b0a4663e62dfd76b693face439a516c80b7514e8",
       "LICENSE-VSCODE-ICONS-CURRENT.txt": "6871eaa1f7a51fbc5f482bec82c3d30a0c61b6889865a03f998c2be9860bdb20",
       "THIRD-PARTY-NOTICES.md": "c1e3f7b7ab1e693e51277739e6fa85c70774cec5212413d9d60f19a56afbe739"}'
-    commit: 9b4bf937a1f69348126959c15d2f99a73e65699b
-    tree: 5743b6eb4d005c5bbe51aa4ecae701eb052d6198
+    commit: f6b76575f949707b4e3c37cd86cb44b0b98643e8
+    tree: 90f92ba7a3ce514cf85a2809583712dbd14106ea
     license_blob: 48a2f6640b81ff8eca9ce7f6a96337692713ef5b
-    revision: 1
-    version: 0.0.1
-    source_lock_hash: 23b3930015c478034b222e1a015da03a962c8ab48aee9fb4f3f69d977034feaa
-    source_lock_verified: 23b3930015c478034b222e1a015da03a962c8ab48aee9fb4f3f69d977034feaa
+    revision: 2
+    version: 0.0.2
   agent-skill-longredzhong-forgejo-cli:
     identity:
     - longredzhong/forgejo-cli-skill
@@ -438,5 +435,34 @@ skills:
     commit: 899daad934c2517541492b38b4a39136717e2957
     tree: 595ef3969df004e5889a1baa6e924d45e2c32838
     license_blob: null
+    revision: 1
+    version: 0.0.1
+  agent-skill-pbakaus-impeccable:
+    identity:
+    - pbakaus/impeccable
+    - main
+    - .agents/skills/impeccable
+    - impeccable
+    - Apache-2.0
+    - LICENSE
+    - archive
+    - 'additional_license_files:{"NOTICE.md": "c60a093c2845fd9fb82f9c6f742ece31f379f8190b535309d32d66c45ccffdcb"}'
+    commit: c1e0e5492fbb524f5df84d635ecfae7dc438ec45
+    tree: e92e2e77c815097cd5fa05c8eaee2a5399d92757
+    license_blob: bb3f6d23b1f8025514a62a12b51b47d73e3c9aa9
+    revision: 1
+    version: 0.0.1
+  agent-skill-tt-a1i-simplify-codebase:
+    identity:
+    - tt-a1i/simplify-codebase
+    - main
+    - .
+    - simplify-codebase
+    - MIT
+    - LICENSE
+    - archive
+    commit: 5da55efcb52db690e7406f06f827a23b15da2706
+    tree: 87876842c2968da7e7a079b600a1d763c7d5c069
+    license_blob: d2042c20a6e4c6b1050543776ca5470151eda412
     revision: 1
     version: 0.0.1

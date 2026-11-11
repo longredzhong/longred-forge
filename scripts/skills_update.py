@@ -214,6 +214,11 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
         if tree.get('truncated'):
             raise RuntimeError(f'Git tree truncated for {repo}; refusing partial update')
         entries = {entry['path']: entry for entry in tree['tree']}
+        root_tree = None
+        if any(item.get('path') == '.' for item in repository['skills']):
+            root_tree = client.json(f'{base}/git/commits/{commit}', headers).get('tree', {}).get('sha')
+            if not isinstance(root_tree, str) or not SHA.fullmatch(root_tree):
+                raise ValueError(f'Invalid root tree SHA for {repo}')
         license_entry = entries.get(license_file, {}) if license_file else {'sha': None}
         if license_file and (license_entry.get('type') != 'blob' or license_entry.get('mode') == '120000'):
             raise ValueError(f'License file missing in {repo}')
@@ -222,7 +227,12 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
         if type(repository.get('archive', False)) is not bool:
             raise ValueError('Invalid archive setting')
         for item in repository['skills']:
-            path = safe_path(item['path'])
+            path = item['path']
+            if path == '.':
+                if not repository.get('archive', False) or item.get('bundle') or item.get('lock_hash'):
+                    raise ValueError('Root skills require an archive and cannot be bundled or hash-locked')
+            else:
+                path = safe_path(path)
             name, package = item['name'], item['package']
             bundle = item.get('bundle', False)
             if type(bundle) is not bool:
@@ -238,7 +248,7 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
             if package in seen:
                 raise ValueError(f'Duplicate package: {package}')
             seen.add(package)
-            skill = entries.get(path, {})
+            skill = {'type': 'tree', 'sha': root_tree} if path == '.' else entries.get(path, {})
             if skill.get('type') != 'tree' or not SHA.fullmatch(skill.get('sha', '')):
                 raise ValueError(f'Skill directory or SKILL.md missing: {repo}/{path}')
             if bundle:
@@ -250,11 +260,11 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
                     raise ValueError(f'Invalid or empty skill bundle: {repo}/{path}')
             else:
                 names = [name]
-            markers = [(n, entries.get(f'{path}/{n}/SKILL.md' if bundle else path + '/SKILL.md', {})) for n in names]
+            markers = [(n, entries.get(f'{path}/{n}/SKILL.md' if bundle else ('SKILL.md' if path == '.' else path + '/SKILL.md'), {})) for n in names]
             if any(marker.get('type') != 'blob' for _, marker in markers):
                 raise ValueError(f'Skill directory or SKILL.md missing: {repo}/{path}')
             for key, entry in entries.items():
-                if key.startswith(path + '/') and entry.get('mode') in ('120000', '160000'):
+                if (path == '.' or key.startswith(path + '/')) and entry.get('mode') in ('120000', '160000'):
                     raise ValueError(f'Symlink or submodule is not supported: {repo}/{key}')
             old = result.get(package, {})
             if (source_lock_hash and old.get('source_lock_hash') == source_lock_hash

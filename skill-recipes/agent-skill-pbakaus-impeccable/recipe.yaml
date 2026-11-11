@@ -1,0 +1,28 @@
+package:
+  name: agent-skill-pbakaus-impeccable
+  version: 0.0.1
+source:
+  url: https://github.com/pbakaus/impeccable/archive/c1e0e5492fbb524f5df84d635ecfae7dc438ec45.tar.gz
+  sha256: 83752f90ceda0d4c330c9bda632c7812109164340dacc56018b38131f820ade1
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/impeccable"
+
+    cp -R "$SRC_DIR/.agents/skills/impeccable/." "$PREFIX/share/agent-skills/impeccable/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-pbakaus-impeccable"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-pbakaus-impeccable/LICENSE"
+
+    cp "$RECIPE_DIR/NOTICE.md" "$PREFIX/share/licenses/agent-skill-pbakaus-impeccable/NOTICE.md"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/impeccable/SKILL.md
+    - share/licenses/agent-skill-pbakaus-impeccable/NOTICE.md
+about:
+  summary: Agent skill impeccable
+  license: Apache-2.0
+  repository: https://github.com/pbakaus/impeccable
+  license_file: LICENSE

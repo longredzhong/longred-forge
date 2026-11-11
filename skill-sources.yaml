@@ -135,7 +135,6 @@ repositories:
     lock_hash: 307c13de1d4efa50c819c15a9f161acc4a5b579b84ed019d3a47c2cf0b9961d2
 - repository: Leonxlnx/taste-skill
   branch: main
-  commit: 9b4bf937a1f69348126959c15d2f99a73e65699b
   archive: true
   license: LicenseRef-Mixed
   license_file: LICENSE
@@ -143,7 +142,6 @@ repositories:
   - path: skills/taste-skill
     name: design-taste-frontend
     package: agent-skill-leonxlnx-design-taste-frontend
-    lock_hash: 23b3930015c478034b222e1a015da03a962c8ab48aee9fb4f3f69d977034feaa
     additional_license_files:
     - THIRD-PARTY-NOTICES.md
     - LICENSE-UPSTREAM-MIT.txt
@@ -159,3 +157,23 @@ repositories:
   - path: skills/forgejo-cli
     name: forgejo-cli
     package: agent-skill-longredzhong-forgejo-cli
+- repository: pbakaus/impeccable
+  branch: main
+  archive: true
+  license: Apache-2.0
+  license_file: LICENSE
+  skills:
+  - path: .agents/skills/impeccable
+    name: impeccable
+    package: agent-skill-pbakaus-impeccable
+    additional_license_files:
+    - NOTICE.md
+- repository: tt-a1i/simplify-codebase
+  branch: main
+  archive: true
+  license: MIT
+  license_file: LICENSE
+  skills:
+  - path: .
+    name: simplify-codebase
+    package: agent-skill-tt-a1i-simplify-codebase

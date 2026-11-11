@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-tt-a1i-simplify-codebase
+  version: 0.0.1
+source:
+  url: https://github.com/tt-a1i/simplify-codebase/archive/5da55efcb52db690e7406f06f827a23b15da2706.tar.gz
+  sha256: f9ff9f139144246c7ec37e35ade204fa8dc536a9bf5635056b76f5b0e0599fe6
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/simplify-codebase"
+
+    cp -R "$SRC_DIR/./." "$PREFIX/share/agent-skills/simplify-codebase/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-tt-a1i-simplify-codebase"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-tt-a1i-simplify-codebase/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/simplify-codebase/SKILL.md
+about:
+  summary: Agent skill simplify-codebase
+  license: MIT
+  repository: https://github.com/tt-a1i/simplify-codebase
+  license_file: LICENSE
