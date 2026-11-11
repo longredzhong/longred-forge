@@ -26,3 +26,9 @@ nodejs = ">=22,<25"
 [pypi-dependencies]
 httpx = ">=0.28.1, <0.29"
 PyYAML = ">=6.0, <7.0"
+
+[environments.default]
+channels = ["https://prefix.dev/longredzhong/longred-skills-forge"]
+
+[environments.default.dependencies]
+agent-skill-vercel-labs-find-skills = { version = ">=0.0.1", channel = "https://prefix.dev/longredzhong/longred-skills-forge" }
