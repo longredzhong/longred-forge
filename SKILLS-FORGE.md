@@ -61,10 +61,16 @@ Already installed skills are checked for destination conflicts before `add`
 changes the Pixi project. If a conflict is only discoverable after installing
 a new package, the command reports that the manifest, lockfile and environment
 may already have changed; resolve the conflict and rerun `sync`.
-Windows requires permission to create directory symlinks. The CLI currently
-supports project scope, package-name search, `add`, `list`, and `sync`; remote
-repository import, removal, global skill management and update commands are not
-implemented yet. Skill sources must first be added to the reviewed GitHub source
+Use `longred-skills add --global PACKAGE` to install into a persistent workspace
+under `~/.local/share/longred-skills/default` and link into `~/.agents/skills`.
+Run `longred-skills sync --global --agent claude` to link the same installed
+skills into `~/.claude/skills`; `list --global` lists installed skills. Named
+`--environment` values select separate global workspaces. Existing destination
+conflicts are never overwritten, including links from another environment.
+
+Windows requires permission to create directory symlinks. The CLI supports
+package-name search, `add`, `list`, and `sync` in project and global scopes;
+remote repository import, removal and update commands are not implemented yet. Skill sources must first be added to the reviewed GitHub source
 catalog and published as Pixi packages. Use Pixi's own update and removal commands
 in the meantime; remove obsolete links manually only after checking their targets.
 
