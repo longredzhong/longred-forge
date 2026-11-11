@@ -152,3 +152,10 @@ repositories:
     - LICENSE-VSCODE-ICONS-CURRENT.txt
     - LICENSE-GILBARBARA-LOGOS-CC0.txt
     - LICENSE-SIMPLE-ICONS-CC0.md
+- repository: longredzhong/forgejo-cli-skill
+  branch: main
+  license: UNLICENSED
+  skills:
+  - path: skills/forgejo-cli
+    name: forgejo-cli
+    package: agent-skill-longredzhong-forgejo-cli

@@ -130,10 +130,13 @@ def render_recipe(repository, item, commit, version, archive_sha=None, bundled_n
     # All interpolated values are validated before reaching a shell or URL.
     target = '$PREFIX/share/agent-skills' if bundled_names is not None else f'$PREFIX/share/agent-skills/{name}'
     script = (f'mkdir -p "{target}"\n'
-              f'cp -R "$SRC_DIR/{path}/." "{target}/"\n'
-              f'mkdir -p "$PREFIX/share/licenses/{package}"\n'
-              f'cp "$SRC_DIR/{repository["license_file"]}" "$PREFIX/share/licenses/{package}/LICENSE"')
+              f'cp -R "$SRC_DIR/{path}/." "{target}/"')
+    if repository.get('license_file'):
+        script += (f'\nmkdir -p "$PREFIX/share/licenses/{package}"'
+                   f'\ncp "$SRC_DIR/{repository["license_file"]}" "$PREFIX/share/licenses/{package}/LICENSE"')
     license_files = item.get('additional_license_files', [])
+    if license_files and not repository.get('license_file'):
+        script += f'\nmkdir -p "$PREFIX/share/licenses/{package}"'
     for filename in license_files:
         script += f'\ncp "$RECIPE_DIR/{filename}" "$PREFIX/share/licenses/{package}/{filename}"'
     source = ({'url': f'https://github.com/{repository["repository"]}/archive/{commit}.tar.gz', 'sha256': archive_sha}
@@ -142,9 +145,10 @@ def render_recipe(repository, item, commit, version, archive_sha=None, bundled_n
               'source': source,
               'build': {'number': 0, 'noarch': 'generic', 'script': script},
               'tests': [{'package_contents': {'files': [f'share/agent-skills/{n}/SKILL.md' for n in (bundled_names if bundled_names is not None else [name])] + [f'share/licenses/{package}/{filename}' for filename in license_files]}}],
-              'about': {'summary': f'Agent skill {name}', 'license': repository['license'],
-                        'license_file': repository['license_file'],
+              'about': {'summary': f'Agent skill {name}', 'license': 'LicenseRef-Unlicensed' if repository['license'] == 'UNLICENSED' else repository['license'],
                         'repository': 'https://github.com/' + repository['repository']}}
+    if repository.get('license_file'):
+        recipe['about']['license_file'] = repository['license_file']
     if item.get('dependencies'):
         recipe['requirements'] = {'run': item['dependencies']}
     return recipe
@@ -167,7 +171,11 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
         if repo in repositories:
             raise ValueError(f'Duplicate repository configuration: {repo}')
         repositories.add(repo)
-        safe_path(repository['license_file'])
+        license_file = repository.get('license_file')
+        if license_file:
+            safe_path(license_file)
+        elif repository['license'] != 'UNLICENSED':
+            raise ValueError('License file required unless UNLICENSED')
         if not re.fullmatch(r'[A-Za-z0-9.+-]+', repository['license']):
             raise ValueError('Invalid license')
         base = f'https://api.github.com/repos/{repo}'
@@ -206,8 +214,8 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
         if tree.get('truncated'):
             raise RuntimeError(f'Git tree truncated for {repo}; refusing partial update')
         entries = {entry['path']: entry for entry in tree['tree']}
-        license_entry = entries.get(repository['license_file'], {})
-        if license_entry.get('type') != 'blob' or license_entry.get('mode') == '120000':
+        license_entry = entries.get(license_file, {}) if license_file else {'sha': None}
+        if license_file and (license_entry.get('type') != 'blob' or license_entry.get('mode') == '120000'):
             raise ValueError(f'License file missing in {repo}')
         archive_sha = None
         locked_files = None
@@ -254,7 +262,7 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
                 raise ValueError(f'Source tree changed for locked skill {package}; verify and update the lock hash')
             if old.get('license_blob') and old['license_blob'] != license_entry['sha'] and not accept_license_change:
                 raise ValueError(f'License changed for {repo}; review before updating {package}')
-            identity = [repo, branch, path, name, repository['license'], repository['license_file']]
+            identity = [repo, branch, path, name, repository['license'], license_file]
             if repository.get('archive', False):
                 identity.append('archive')
             if bundle:

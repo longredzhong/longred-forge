@@ -427,3 +427,16 @@ skills:
     version: 0.0.1
     source_lock_hash: 23b3930015c478034b222e1a015da03a962c8ab48aee9fb4f3f69d977034feaa
     source_lock_verified: 23b3930015c478034b222e1a015da03a962c8ab48aee9fb4f3f69d977034feaa
+  agent-skill-longredzhong-forgejo-cli:
+    identity:
+    - longredzhong/forgejo-cli-skill
+    - main
+    - skills/forgejo-cli
+    - forgejo-cli
+    - UNLICENSED
+    - null
+    commit: 899daad934c2517541492b38b4a39136717e2957
+    tree: 595ef3969df004e5889a1baa6e924d45e2c32838
+    license_blob: null
+    revision: 1
+    version: 0.0.1

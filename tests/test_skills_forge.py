@@ -118,6 +118,19 @@ class SkillsForgeTests(unittest.TestCase):
         self.assertEqual(newer['skills']['agent-skill-example-demo']['version'], '0.0.2')
         self.assertTrue(recipes)
 
+    def test_unlicensed_skill_without_license_file(self):
+        repository = self.config['repositories'][0]
+        repository['license'] = 'UNLICENSED'
+        del repository['license_file']
+        lock, recipes = self.check()
+        recipe = recipes['agent-skill-example-demo']
+        self.assertIsNone(lock['skills']['agent-skill-example-demo']['license_blob'])
+        self.assertNotIn('license_file', recipe['about'])
+        self.assertNotIn('share/licenses', recipe['build']['script'])
+        repository['license'] = 'MIT'
+        with self.assertRaisesRegex(ValueError, 'License file required'):
+            self.check()
+
     def test_additional_license_changes_bump_version_and_invalidate_cache_and_receipt(self):
         item = self.config['repositories'][0]['skills'][0]
         item['additional_license_files'] = ['THIRD-PARTY-NOTICES.txt']

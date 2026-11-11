@@ -1,0 +1,20 @@
+package:
+  name: agent-skill-longredzhong-forgejo-cli
+  version: 0.0.1
+source:
+  git: https://github.com/longredzhong/forgejo-cli-skill.git
+  rev: 899daad934c2517541492b38b4a39136717e2957
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/forgejo-cli"
+
+    cp -R "$SRC_DIR/skills/forgejo-cli/." "$PREFIX/share/agent-skills/forgejo-cli/"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/forgejo-cli/SKILL.md
+about:
+  summary: Agent skill forgejo-cli
+  license: LicenseRef-Unlicensed
+  repository: https://github.com/longredzhong/forgejo-cli-skill

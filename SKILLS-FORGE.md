@@ -79,7 +79,8 @@ in the meantime; remove obsolete links manually only after checking their target
 Add explicitly reviewed repositories and skills to `skill-sources.yaml`. Only
 GitHub HTTPS repositories, simple branch names, and safe relative paths are
 currently supported. Verify redistribution rights and the applicable license
-before adding each entry. Additional license files can be placed in the package's
+before adding each entry. Explicitly authorized UNLICENSED sources may omit
+`license_file`; this does not grant downstream reuse rights. Additional license files can be placed in the package's
 recipe directory and listed under `additional_license_files`; their contents
 participate in package versioning and are installed alongside the upstream license.
 Setting `archive: true` pins a GitHub source archive
