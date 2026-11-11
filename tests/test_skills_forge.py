@@ -282,6 +282,18 @@ class SkillsForgeTests(unittest.TestCase):
         self.assertEqual(newer['skills']['agent-skill-example-demo']['version'], '0.0.2')
         self.assertEqual(recipes['agent-skill-example-demo']['requirements']['run'], ['agent-skill-example-other ==0.0.1'])
 
+    def test_minimum_dependency_accepts_newer_revision(self):
+        items = self.config['repositories'][0]['skills']
+        items[0]['dependencies'] = ['agent-skill-example-other >=0.0.1']
+        items.append({'path': 'skills/demo', 'name': 'demo', 'package': 'agent-skill-example-other'})
+        lock, _ = self.check()
+        self.client.tree_sha = 'f' * 40
+        newer, _ = self.check(lock)
+        self.assertEqual(newer['skills']['agent-skill-example-other']['version'], '0.0.2')
+        items[0]['dependencies'] = ['agent-skill-example-other >=0.0.3']
+        with self.assertRaisesRegex(ValueError, 'Unresolved skill dependency'):
+            self.check(newer)
+
     def test_shell_metacharacters_and_removed_packages_are_rejected(self):
         bad = copy.deepcopy(self.config)
         bad['repositories'][0]['skills'][0]['path'] = 'skills/$(touch-bad)'

@@ -177,3 +177,69 @@ repositories:
   - path: .
     name: simplify-codebase
     package: agent-skill-tt-a1i-simplify-codebase
+- repository: mattpocock/skills
+  branch: main
+  archive: true
+  license: MIT
+  license_file: LICENSE
+  skills:
+  - path: skills/productivity/grilling
+    name: grilling
+    package: agent-skill-mattpocock-grilling
+  - path: skills/productivity/grill-me
+    name: grill-me
+    package: agent-skill-mattpocock-grill-me
+    dependencies:
+    - agent-skill-mattpocock-grilling >=0.0.1
+  - path: skills/engineering/domain-modeling
+    name: domain-modeling
+    package: agent-skill-mattpocock-domain-modeling
+  - path: skills/engineering/grill-with-docs
+    name: grill-with-docs
+    package: agent-skill-mattpocock-grill-with-docs
+    dependencies:
+    - agent-skill-mattpocock-grilling >=0.0.1
+    - agent-skill-mattpocock-domain-modeling >=0.0.1
+  - path: skills/engineering/codebase-design
+    name: codebase-design
+    package: agent-skill-mattpocock-codebase-design
+  - path: skills/engineering/improve-codebase-architecture
+    name: improve-codebase-architecture
+    package: agent-skill-mattpocock-improve-codebase-architecture
+    dependencies:
+    - agent-skill-mattpocock-grilling >=0.0.1
+    - agent-skill-mattpocock-domain-modeling >=0.0.1
+    - agent-skill-mattpocock-codebase-design >=0.0.1
+  - path: skills/engineering/diagnosing-bugs
+    name: diagnosing-bugs
+    package: agent-skill-mattpocock-diagnosing-bugs
+  - path: skills/engineering/code-review
+    name: code-review
+    package: agent-skill-mattpocock-code-review
+- repository: vercel-labs/agent-browser
+  branch: main
+  archive: true
+  license: Apache-2.0
+  license_file: LICENSE
+  skills:
+  - path: skills/agent-browser
+    name: agent-browser
+    package: agent-skill-vercel-labs-agent-browser
+- repository: supabase/agent-skills
+  branch: main
+  archive: true
+  license: MIT
+  license_file: LICENSE
+  skills:
+  - path: skills/supabase-postgres-best-practices
+    name: supabase-postgres-best-practices
+    package: agent-skill-supabase-postgres-best-practices
+- repository: anthropics/skills
+  branch: main
+  archive: true
+  license: Apache-2.0
+  license_file: skills/frontend-design/LICENSE.txt
+  skills:
+  - path: skills/frontend-design
+    name: frontend-design
+    package: agent-skill-anthropics-frontend-design

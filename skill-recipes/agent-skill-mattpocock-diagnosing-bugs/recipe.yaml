@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-mattpocock-diagnosing-bugs
+  version: 0.0.1
+source:
+  url: https://github.com/mattpocock/skills/archive/4ae2317ddb22b046e26455e4f9c9b3aaaf62212d.tar.gz
+  sha256: 75b8a2ddccef7fc11059373dff29900934fc46bcb7bfdcfb034a699ce2cb0176
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/diagnosing-bugs"
+
+    cp -R "$SRC_DIR/skills/engineering/diagnosing-bugs/." "$PREFIX/share/agent-skills/diagnosing-bugs/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-mattpocock-diagnosing-bugs"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-mattpocock-diagnosing-bugs/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/diagnosing-bugs/SKILL.md
+about:
+  summary: Agent skill diagnosing-bugs
+  license: MIT
+  repository: https://github.com/mattpocock/skills
+  license_file: LICENSE

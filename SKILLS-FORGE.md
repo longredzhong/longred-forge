@@ -31,6 +31,15 @@ release versions. The lock records the exact source commit and skill tree. A
 skill tree, license or packaging identity change increments the package revision;
 a repository commit that leaves those unchanged does not. Inspect upstream
 release tags and skill metadata separately when reporting upstream versions.
+Popular skills are selected from the skills.sh all-time leaderboard and locked
+at reviewed upstream commits. Matt Pocock's interview and architecture commands
+install their referenced sibling skills as dependencies. `agent-browser` is an
+upstream discovery stub: its separately installed, version-matched CLI supplies
+the actual guides and browser runtime. Anthropic's frontend-design license is
+stored inside its skill directory. The Supabase Postgres skill includes its rules.
+Minimum-version skill dependencies accept newer package revisions; exact-version
+dependencies continue to require the specified revision.
+
 The `cloudflare` skill package declares its `durable-objects` and
 `nextjs-on-cloudflare` sibling skills as exact runtime dependencies, so relative
 references resolve inside the same Pixi environment.

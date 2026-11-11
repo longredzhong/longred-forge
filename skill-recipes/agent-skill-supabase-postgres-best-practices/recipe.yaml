@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-supabase-postgres-best-practices
+  version: 0.0.1
+source:
+  url: https://github.com/supabase/agent-skills/archive/c9be0e931b7930f7d02126d04774d904c381e7d7.tar.gz
+  sha256: 7777281b83dca37b3d886c07d3f9de2b1332d167d2d341081485a1cfd840fc10
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/supabase-postgres-best-practices"
+
+    cp -R "$SRC_DIR/skills/supabase-postgres-best-practices/." "$PREFIX/share/agent-skills/supabase-postgres-best-practices/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-supabase-postgres-best-practices"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-supabase-postgres-best-practices/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/supabase-postgres-best-practices/SKILL.md
+about:
+  summary: Agent skill supabase-postgres-best-practices
+  license: MIT
+  repository: https://github.com/supabase/agent-skills
+  license_file: LICENSE

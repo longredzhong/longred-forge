@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-anthropics-frontend-design
+  version: 0.0.1
+source:
+  url: https://github.com/anthropics/skills/archive/2c5958ecac7cee2b583967a2c4981d0f4a75c579.tar.gz
+  sha256: 3783fe4e778029522bf3da866948353cc0c86204a6139c812907f5aebdaf78ef
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/frontend-design"
+
+    cp -R "$SRC_DIR/skills/frontend-design/." "$PREFIX/share/agent-skills/frontend-design/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-anthropics-frontend-design"
+
+    cp "$SRC_DIR/skills/frontend-design/LICENSE.txt" "$PREFIX/share/licenses/agent-skill-anthropics-frontend-design/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/frontend-design/SKILL.md
+about:
+  summary: Agent skill frontend-design
+  license: Apache-2.0
+  repository: https://github.com/anthropics/skills
+  license_file: skills/frontend-design/LICENSE.txt

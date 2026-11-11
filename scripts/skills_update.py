@@ -241,7 +241,7 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
             if source_lock_hash is not None and (not isinstance(source_lock_hash, str) or not re.fullmatch(r'[a-f0-9]{64}', source_lock_hash)):
                 raise ValueError('Invalid source lock hash')
             dependencies = item.get('dependencies', [])
-            if not isinstance(dependencies, list) or any(not isinstance(dep, str) or not re.fullmatch(r'agent-skill-[a-z0-9]+(?:-[a-z0-9]+)* ==[0-9]+\.[0-9]+\.[0-9]+', dep) for dep in dependencies):
+            if not isinstance(dependencies, list) or any(not isinstance(dep, str) or not re.fullmatch(r'agent-skill-[a-z0-9]+(?:-[a-z0-9]+)* (?:==|>=)[0-9]+\.[0-9]+\.[0-9]+', dep) for dep in dependencies):
                 raise ValueError('Invalid skill dependencies')
             if not NAME.fullmatch(name) or len(name) > 64 or not NAME.fullmatch(package) or not package.startswith('agent-skill-'):
                 raise ValueError('Invalid skill or package name')
@@ -331,8 +331,14 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
     for repository in config['repositories']:
         for item in repository['skills']:
             for dependency in item.get('dependencies', []):
-                dep_name, dep_version = dependency.split(' ==', 1)
-                if dep_name == item['package'] or dep_name not in seen or result.get(dep_name, {}).get('version') != dep_version:
+                dep_name, constraint = dependency.split(' ', 1)
+                op, dep_version = constraint[:2], constraint[2:]
+                installed = result.get(dep_name, {}).get('version', '')
+                valid = bool(re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', installed))
+                if valid:
+                    valid = (installed == dep_version if op == '==' else
+                             tuple(map(int, installed.split('.'))) >= tuple(map(int, dep_version.split('.'))))
+                if dep_name == item['package'] or dep_name not in seen or not valid:
                     raise ValueError(f'Unresolved skill dependency for {item["package"]}: {dependency}')
     if cache is not None:
         cache.clear()

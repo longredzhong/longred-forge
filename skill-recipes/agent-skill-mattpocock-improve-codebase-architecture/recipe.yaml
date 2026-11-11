@@ -1,0 +1,30 @@
+package:
+  name: agent-skill-mattpocock-improve-codebase-architecture
+  version: 0.0.1
+source:
+  url: https://github.com/mattpocock/skills/archive/4ae2317ddb22b046e26455e4f9c9b3aaaf62212d.tar.gz
+  sha256: 75b8a2ddccef7fc11059373dff29900934fc46bcb7bfdcfb034a699ce2cb0176
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/improve-codebase-architecture"
+
+    cp -R "$SRC_DIR/skills/engineering/improve-codebase-architecture/." "$PREFIX/share/agent-skills/improve-codebase-architecture/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-mattpocock-improve-codebase-architecture"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-mattpocock-improve-codebase-architecture/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/improve-codebase-architecture/SKILL.md
+about:
+  summary: Agent skill improve-codebase-architecture
+  license: MIT
+  repository: https://github.com/mattpocock/skills
+  license_file: LICENSE
+requirements:
+  run:
+  - agent-skill-mattpocock-grilling >=0.0.1
+  - agent-skill-mattpocock-domain-modeling >=0.0.1
+  - agent-skill-mattpocock-codebase-design >=0.0.1

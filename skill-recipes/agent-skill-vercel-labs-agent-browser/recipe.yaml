@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-vercel-labs-agent-browser
+  version: 0.0.1
+source:
+  url: https://github.com/vercel-labs/agent-browser/archive/2f1649cefb82f417abbb2712f5397439d010698e.tar.gz
+  sha256: 4091cdd05917afb980eaccc341b8e06237a1f6a7310ca961279b022da8518e27
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/agent-browser"
+
+    cp -R "$SRC_DIR/skills/agent-browser/." "$PREFIX/share/agent-skills/agent-browser/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-vercel-labs-agent-browser"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-vercel-labs-agent-browser/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/agent-browser/SKILL.md
+about:
+  summary: Agent skill agent-browser
+  license: Apache-2.0
+  repository: https://github.com/vercel-labs/agent-browser
+  license_file: LICENSE

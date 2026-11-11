@@ -466,3 +466,162 @@ skills:
     license_blob: d2042c20a6e4c6b1050543776ca5470151eda412
     revision: 1
     version: 0.0.1
+  agent-skill-mattpocock-grilling:
+    identity:
+    - mattpocock/skills
+    - main
+    - skills/productivity/grilling
+    - grilling
+    - MIT
+    - LICENSE
+    - archive
+    commit: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
+    tree: f551b6e0d219fdda0b6abf277f8f915b3127d1e9
+    license_blob: f1dd2c09108dde1a5f56097cee8461b3ea834499
+    revision: 1
+    version: 0.0.1
+  agent-skill-mattpocock-grill-me:
+    identity:
+    - mattpocock/skills
+    - main
+    - skills/productivity/grill-me
+    - grill-me
+    - MIT
+    - LICENSE
+    - archive
+    - dependencies:["agent-skill-mattpocock-grilling >=0.0.1"]
+    commit: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
+    tree: 3df14e2d3a89459bf300614be9247e3ce74798f8
+    license_blob: f1dd2c09108dde1a5f56097cee8461b3ea834499
+    revision: 1
+    version: 0.0.1
+  agent-skill-mattpocock-domain-modeling:
+    identity:
+    - mattpocock/skills
+    - main
+    - skills/engineering/domain-modeling
+    - domain-modeling
+    - MIT
+    - LICENSE
+    - archive
+    commit: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
+    tree: ea30ee454ba264543dbe40737973b1a5afb9f0e6
+    license_blob: f1dd2c09108dde1a5f56097cee8461b3ea834499
+    revision: 1
+    version: 0.0.1
+  agent-skill-mattpocock-grill-with-docs:
+    identity:
+    - mattpocock/skills
+    - main
+    - skills/engineering/grill-with-docs
+    - grill-with-docs
+    - MIT
+    - LICENSE
+    - archive
+    - dependencies:["agent-skill-mattpocock-domain-modeling >=0.0.1", "agent-skill-mattpocock-grilling
+      >=0.0.1"]
+    commit: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
+    tree: eedaf2562c83155115e9c649fa3ecaac2e10e81d
+    license_blob: f1dd2c09108dde1a5f56097cee8461b3ea834499
+    revision: 1
+    version: 0.0.1
+  agent-skill-mattpocock-codebase-design:
+    identity:
+    - mattpocock/skills
+    - main
+    - skills/engineering/codebase-design
+    - codebase-design
+    - MIT
+    - LICENSE
+    - archive
+    commit: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
+    tree: 4cbe1c131e1ea54109cb1e4e5f3c505810db6606
+    license_blob: f1dd2c09108dde1a5f56097cee8461b3ea834499
+    revision: 1
+    version: 0.0.1
+  agent-skill-mattpocock-improve-codebase-architecture:
+    identity:
+    - mattpocock/skills
+    - main
+    - skills/engineering/improve-codebase-architecture
+    - improve-codebase-architecture
+    - MIT
+    - LICENSE
+    - archive
+    - dependencies:["agent-skill-mattpocock-codebase-design >=0.0.1", "agent-skill-mattpocock-domain-modeling
+      >=0.0.1", "agent-skill-mattpocock-grilling >=0.0.1"]
+    commit: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
+    tree: 587147dd230da299cc5e84971cb0a33f6676f8a6
+    license_blob: f1dd2c09108dde1a5f56097cee8461b3ea834499
+    revision: 1
+    version: 0.0.1
+  agent-skill-mattpocock-diagnosing-bugs:
+    identity:
+    - mattpocock/skills
+    - main
+    - skills/engineering/diagnosing-bugs
+    - diagnosing-bugs
+    - MIT
+    - LICENSE
+    - archive
+    commit: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
+    tree: 5fdd6cc53385395441910b026c72d71768e993d4
+    license_blob: f1dd2c09108dde1a5f56097cee8461b3ea834499
+    revision: 1
+    version: 0.0.1
+  agent-skill-mattpocock-code-review:
+    identity:
+    - mattpocock/skills
+    - main
+    - skills/engineering/code-review
+    - code-review
+    - MIT
+    - LICENSE
+    - archive
+    commit: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
+    tree: a8ef561571acbb611de8ff19ba6da75b197c63a8
+    license_blob: f1dd2c09108dde1a5f56097cee8461b3ea834499
+    revision: 1
+    version: 0.0.1
+  agent-skill-vercel-labs-agent-browser:
+    identity:
+    - vercel-labs/agent-browser
+    - main
+    - skills/agent-browser
+    - agent-browser
+    - Apache-2.0
+    - LICENSE
+    - archive
+    commit: 2f1649cefb82f417abbb2712f5397439d010698e
+    tree: 29ba9c12789b1c54ab76ad40e2472e646d141b85
+    license_blob: 8226d363f88a734e52cc79ead7a5588cc55e76f7
+    revision: 1
+    version: 0.0.1
+  agent-skill-supabase-postgres-best-practices:
+    identity:
+    - supabase/agent-skills
+    - main
+    - skills/supabase-postgres-best-practices
+    - supabase-postgres-best-practices
+    - MIT
+    - LICENSE
+    - archive
+    commit: c9be0e931b7930f7d02126d04774d904c381e7d7
+    tree: 27bde25111c4cd5e6f803fc9db5fbffe27bb26cf
+    license_blob: d3c9e94fbc6c28f66ecb5a01407d543c99c811b6
+    revision: 1
+    version: 0.0.1
+  agent-skill-anthropics-frontend-design:
+    identity:
+    - anthropics/skills
+    - main
+    - skills/frontend-design
+    - frontend-design
+    - Apache-2.0
+    - skills/frontend-design/LICENSE.txt
+    - archive
+    commit: 2c5958ecac7cee2b583967a2c4981d0f4a75c579
+    tree: d79e2a5bb4df4a386c2adcdd9ab8709bba28c3f6
+    license_blob: f433b1a53f5b830a205fd2df78e2b34974656c7b
+    revision: 1
+    version: 0.0.1
