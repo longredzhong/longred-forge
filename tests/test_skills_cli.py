@@ -62,6 +62,36 @@ class SkillsCLITests(unittest.TestCase):
                 longred_skills.main()
             self.assertTrue((root / '.agents/skills/example').is_symlink())
 
+    def test_global_targets_use_persistent_workspace_from_any_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            workspace = home / '.local/share/longred-skills/default'
+            skill = workspace / '.pixi/envs/default/share/agent-skills/example'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('skill')
+            elsewhere = home / 'project'
+            elsewhere.mkdir()
+            for agent in ('agents', 'claude'):
+                with self.subTest(agent=agent), patch.object(Path, 'home', return_value=home), \
+                        patch.object(Path, 'cwd', return_value=elsewhere), \
+                        patch('sys.argv', ['longred-skills', 'sync', '--global', '--agent', agent]):
+                    longred_skills.main()
+                    longred_skills.main()
+                self.assertTrue((home / f'.{agent}/skills/example').samefile(skill))
+            self.assertFalse((elsewhere / '.agents').exists())
+
+    def test_global_conflict_fails_before_workspace_creation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            (home / '.agents').write_text('existing')
+            with patch.object(Path, 'home', return_value=home), \
+                    patch('sys.argv', ['longred-skills', 'add', '--global', 'agent-skill-example']), \
+                    patch.object(longred_skills.subprocess, 'run') as run:
+                with self.assertRaises(FileExistsError):
+                    longred_skills.main()
+            run.assert_not_called()
+            self.assertFalse((home / '.local').exists())
+
     def test_list_rejects_invalid_environment(self):
         with patch('sys.argv', ['longred-skills', 'list', '-e', '../outside']):
             with self.assertRaisesRegex(ValueError, 'Invalid environment'):
