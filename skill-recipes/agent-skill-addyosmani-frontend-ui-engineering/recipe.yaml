@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-addyosmani-frontend-ui-engineering
+  version: 0.0.1
+source:
+  url: https://github.com/addyosmani/agent-skills/archive/301b02b12bff98e4688e6984af6556802322bbde.tar.gz
+  sha256: 5e6faf152ae7e1a0ce26047b1dc2098a3704fdd1fe35d5a78c72a7f377b1f56b
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/frontend-ui-engineering"
+
+    cp -R "$SRC_DIR/skills/frontend-ui-engineering/." "$PREFIX/share/agent-skills/frontend-ui-engineering/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-addyosmani-frontend-ui-engineering"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-addyosmani-frontend-ui-engineering/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/frontend-ui-engineering/SKILL.md
+about:
+  summary: Agent skill frontend-ui-engineering
+  license: MIT
+  repository: https://github.com/addyosmani/agent-skills
+  license_file: LICENSE

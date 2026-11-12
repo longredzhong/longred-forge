@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-k-dense-exploratory-data-analysis
+  version: 0.0.1
+source:
+  url: https://github.com/K-Dense-AI/scientific-agent-skills/archive/2d2065fb4520fa3f3f2bcf61cff26ec8b7eba4b5.tar.gz
+  sha256: 00a95c22e7c673ae31a49777e1ebda98f284d2a8b806abd773a9adaf238685bb
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/exploratory-data-analysis"
+
+    cp -R "$SRC_DIR/skills/exploratory-data-analysis/." "$PREFIX/share/agent-skills/exploratory-data-analysis/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-k-dense-exploratory-data-analysis"
+
+    cp "$SRC_DIR/LICENSE.md" "$PREFIX/share/licenses/agent-skill-k-dense-exploratory-data-analysis/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/exploratory-data-analysis/SKILL.md
+about:
+  summary: Agent skill exploratory-data-analysis
+  license: MIT
+  repository: https://github.com/K-Dense-AI/scientific-agent-skills
+  license_file: LICENSE.md

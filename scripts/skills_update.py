@@ -154,6 +154,21 @@ def render_recipe(repository, item, commit, version, archive_sha=None, bundled_n
     return recipe
 
 
+def validate_dependencies(config, result, seen):
+    """Check cross-package constraints after all source revisions are resolved."""
+    for repository in config['repositories']:
+        for item in repository['skills']:
+            for dependency in item.get('dependencies', []):
+                dep_name, constraint = dependency.split(' ', 1)
+                op, dep_version = constraint[:2], constraint[2:]
+                installed = result.get(dep_name, {}).get('version', '')
+                valid = bool(re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', installed))
+                if valid:
+                    valid = (installed == dep_version if op == '==' else
+                             tuple(map(int, installed.split('.'))) >= tuple(map(int, dep_version.split('.'))))
+                if dep_name == item['package'] or dep_name not in seen or not valid:
+                    raise ValueError(f'Unresolved skill dependency for {item["package"]}: {dependency}')
+
 def check(config, previous, client, headers, accept_license_change=False, cache=None):
     if config.get('version') != 1 or previous.get('version') != 1:
         raise ValueError('Unsupported source or lock version')
@@ -328,18 +343,7 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
     removed = set(result) - seen
     if removed:
         raise ValueError(f'Removed packages require an explicit migration: {sorted(removed)}')
-    for repository in config['repositories']:
-        for item in repository['skills']:
-            for dependency in item.get('dependencies', []):
-                dep_name, constraint = dependency.split(' ', 1)
-                op, dep_version = constraint[:2], constraint[2:]
-                installed = result.get(dep_name, {}).get('version', '')
-                valid = bool(re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', installed))
-                if valid:
-                    valid = (installed == dep_version if op == '==' else
-                             tuple(map(int, installed.split('.'))) >= tuple(map(int, dep_version.split('.'))))
-                if dep_name == item['package'] or dep_name not in seen or not valid:
-                    raise ValueError(f'Unresolved skill dependency for {item["package"]}: {dependency}')
+    validate_dependencies(config, result, seen)
     if cache is not None:
         cache.clear()
         cache.update(pending_cache)

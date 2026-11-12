@@ -243,3 +243,46 @@ repositories:
   - path: skills/frontend-design
     name: frontend-design
     package: agent-skill-anthropics-frontend-design
+- repository: addyosmani/agent-skills
+  branch: main
+  archive: true
+  license: MIT
+  license_file: LICENSE
+  skills:
+  - path: skills/frontend-ui-engineering
+    name: frontend-ui-engineering
+    package: agent-skill-addyosmani-frontend-ui-engineering
+- repository: wshobson/agents
+  branch: main
+  archive: true
+  license: MIT
+  license_file: LICENSE
+  skills:
+  - path: plugins/python-development/skills
+    name: python-development
+    package: agent-skill-wshobson-python-development
+    bundle: true
+- repository: K-Dense-AI/scientific-agent-skills
+  branch: main
+  archive: true
+  license: MIT
+  license_file: LICENSE.md
+  skills:
+  - path: skills/exploratory-data-analysis
+    name: exploratory-data-analysis
+    package: agent-skill-k-dense-exploratory-data-analysis
+  - path: skills/scientific-visualization
+    name: scientific-visualization
+    package: agent-skill-k-dense-scientific-visualization
+- repository: hiamberhuang/presentation-agent-skills
+  branch: main
+  archive: true
+  license: MIT
+  license_file: LICENSE
+  skills:
+  - path: skills
+    name: presentation-agent-skills
+    package: agent-skill-hiamberhuang-presentation-agent-skills
+    bundle: true
+    additional_license_files:
+    - THIRD_PARTY_NOTICES.md

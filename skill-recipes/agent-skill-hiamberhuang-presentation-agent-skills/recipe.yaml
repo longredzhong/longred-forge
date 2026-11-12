@@ -1,0 +1,32 @@
+package:
+  name: agent-skill-hiamberhuang-presentation-agent-skills
+  version: 0.0.1
+source:
+  url: https://github.com/hiamberhuang/presentation-agent-skills/archive/9e868af4104d1c07828701d4c36486bfa3ff75d7.tar.gz
+  sha256: ec86be39aeb10e86e8259899084e97cc953786885d4f92e4b241242704b36c06
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills"
+
+    cp -R "$SRC_DIR/skills/." "$PREFIX/share/agent-skills/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-hiamberhuang-presentation-agent-skills"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-hiamberhuang-presentation-agent-skills/LICENSE"
+
+    cp "$RECIPE_DIR/THIRD_PARTY_NOTICES.md" "$PREFIX/share/licenses/agent-skill-hiamberhuang-presentation-agent-skills/THIRD_PARTY_NOTICES.md"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/consulting-deck-expert/SKILL.md
+    - share/agent-skills/ppt-pixel-restore/SKILL.md
+    - share/agent-skills/pptx-generator/SKILL.md
+    - share/agent-skills/presentation-qa/SKILL.md
+    - share/agent-skills/slide-visual-director/SKILL.md
+    - share/licenses/agent-skill-hiamberhuang-presentation-agent-skills/THIRD_PARTY_NOTICES.md
+about:
+  summary: Agent skill presentation-agent-skills
+  license: MIT
+  repository: https://github.com/hiamberhuang/presentation-agent-skills
+  license_file: LICENSE

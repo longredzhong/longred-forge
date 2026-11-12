@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['skill-sources.yaml', 'skill-lock.yaml', 'skill-recipes/**', 'scripts/skills_update.py', 'scripts/skills_publish.py', 'scripts/forge/**', 'pixi.toml', 'pixi.lock', '.github/workflows/skills-forge.yml']
+    paths: ['skill-sources.yaml', 'skill-lock.yaml', 'skill-recipes/**', 'scripts/skills_update.py', 'scripts/skills_verify_lock.py', 'scripts/skills_publish.py', 'scripts/forge/**', 'pixi.toml', 'pixi.lock', 'tests/**', 'SKILLS-FORGE.md', 'docs/skills-maintenance.md', '.github/workflows/skills-forge.yml']
   pull_request:
-    paths: ['skill-sources.yaml', 'skill-lock.yaml', 'skill-recipes/**', 'scripts/skills_update.py', 'scripts/skills_publish.py', 'scripts/forge/**', 'pixi.toml', 'pixi.lock', 'tests/**', '.github/workflows/skills-forge.yml']
+    paths: ['skill-sources.yaml', 'skill-lock.yaml', 'skill-recipes/**', 'scripts/skills_update.py', 'scripts/skills_verify_lock.py', 'scripts/skills_publish.py', 'scripts/forge/**', 'pixi.toml', 'pixi.lock', 'tests/**', 'SKILLS-FORGE.md', 'docs/skills-maintenance.md', '.github/workflows/skills-forge.yml']
 
 concurrency:
   group: skills-forge-${{ github.ref }}
@@ -20,6 +20,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: write
     steps:
@@ -32,6 +33,7 @@ jobs:
         run: |
           pixi run lint
           pixi run test
+          pixi run python scripts/skills_verify_lock.py
       - name: Restore source check cache
         if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         uses: actions/cache/restore@v4

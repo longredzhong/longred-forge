@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from scripts import longred_skills, skills_publish, skills_update
+from scripts import longred_skills, skills_publish, skills_update, skills_verify_lock
 from scripts.forge import builder
 from scripts.forge.planner import Artifact
 
@@ -66,6 +66,24 @@ class SkillsForgeTests(unittest.TestCase):
 
     def check(self, lock=None):
         return skills_update.check(self.config, lock or {'version': 1, 'skills': {}}, self.client, {})
+
+    def test_recipe_lock_verification_detects_version_and_source_drift(self):
+        import yaml
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            recipe = root / 'agent-skill-example-demo' / 'recipe.yaml'
+            recipe.parent.mkdir()
+            lock = {'skills': {'agent-skill-example-demo': {'version': '0.0.1', 'commit': 'a' * 40}}}
+            data = {'package': {'name': 'agent-skill-example-demo', 'version': '0.0.1'},
+                    'source': {'rev': 'a' * 40}}
+            recipe.write_text(yaml.safe_dump(data))
+            self.assertEqual(skills_verify_lock.verify(lock, root), [])
+            data['source']['rev'] = 'b' * 40
+            data['package']['version'] = '0.0.2'
+            recipe.write_text(yaml.safe_dump(data))
+            self.assertEqual(len(skills_verify_lock.verify(lock, root)), 2)
+            recipe.unlink()
+            self.assertEqual(len(skills_verify_lock.verify(lock, root)), 1)
 
     def test_commit_only_change_does_not_rebuild_but_tree_change_does(self):
         lock, recipes = self.check()
