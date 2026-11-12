@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-hatchet-dev-hatchet-cli
+  version: 0.0.1
+source:
+  git: https://github.com/hatchet-dev/hatchet.git
+  rev: 90abc499b6fcf6d3ab0426ea87cb22ebd937dd09
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/hatchet-cli"
+
+    cp -R "$SRC_DIR/cmd/hatchet-cli/cli/skill-assets/hatchet-cli/." "$PREFIX/share/agent-skills/hatchet-cli/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-hatchet-dev-hatchet-cli"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-hatchet-dev-hatchet-cli/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/hatchet-cli/SKILL.md
+about:
+  summary: Agent skill hatchet-cli
+  license: MIT
+  repository: https://github.com/hatchet-dev/hatchet
+  license_file: LICENSE

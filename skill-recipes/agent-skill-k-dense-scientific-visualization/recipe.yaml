@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-k-dense-scientific-visualization
+  version: 0.0.1
+source:
+  url: https://github.com/K-Dense-AI/scientific-agent-skills/archive/2d2065fb4520fa3f3f2bcf61cff26ec8b7eba4b5.tar.gz
+  sha256: 00a95c22e7c673ae31a49777e1ebda98f284d2a8b806abd773a9adaf238685bb
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/scientific-visualization"
+
+    cp -R "$SRC_DIR/skills/scientific-visualization/." "$PREFIX/share/agent-skills/scientific-visualization/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-k-dense-scientific-visualization"
+
+    cp "$SRC_DIR/LICENSE.md" "$PREFIX/share/licenses/agent-skill-k-dense-scientific-visualization/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/scientific-visualization/SKILL.md
+about:
+  summary: Agent skill scientific-visualization
+  license: MIT
+  repository: https://github.com/K-Dense-AI/scientific-agent-skills
+  license_file: LICENSE.md

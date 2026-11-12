@@ -15,6 +15,9 @@ lint = "ruff check scripts tests recipes cli --select E9,F63,F7,F82 && actionlin
 skills-check = "python scripts/skills_update.py"
 skills-update = "python scripts/skills_update.py --apply"
 skills = "python scripts/longred_skills.py"
+setup = "pixi install --locked && python scripts/longred_skills.py sync -a all"
+skills-sync = "python scripts/longred_skills.py sync -a all"
+skills-prune = "python scripts/longred_skills.py sync --prune -a all"
 
 [dependencies]
 ruff = ">=0.14,<0.15"

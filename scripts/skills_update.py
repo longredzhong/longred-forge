@@ -149,14 +149,80 @@ def render_recipe(repository, item, commit, version, archive_sha=None, bundled_n
                         'repository': 'https://github.com/' + repository['repository']}}
     if repository.get('license_file'):
         recipe['about']['license_file'] = repository['license_file']
-    if item.get('dependencies'):
-        recipe['requirements'] = {'run': item['dependencies']}
+    run_deps = list(item.get('dependencies', [])) + list(item.get('runtime_dependencies', []))
+    if run_deps:
+        recipe['requirements'] = {'run': run_deps}
     return recipe
 
 
+def validate_sources(config):
+    """Validate schema and structure of skill-sources.yaml before network requests."""
+    if not isinstance(config, dict) or config.get('version') != 1:
+        raise ValueError('Unsupported or invalid source configuration version')
+    repositories = config.get('repositories')
+    if not isinstance(repositories, list) or not repositories:
+        raise ValueError('Source configuration must contain a non-empty repositories list')
+    seen_repos = set()
+    seen_pkgs = set()
+    for repo_entry in repositories:
+        if not isinstance(repo_entry, dict):
+            raise ValueError('Each repository entry must be a dictionary')
+        repo = repo_entry.get('repository')
+        if not isinstance(repo, str) or not REPO.fullmatch(repo) or any(x in ('.', '..') for x in repo.split('/')):
+            raise ValueError(f'Invalid GitHub repository: {repo}')
+        if repo in seen_repos:
+            raise ValueError(f'Duplicate repository configuration: {repo}')
+        seen_repos.add(repo)
+        branch = repo_entry.get('branch')
+        if not isinstance(branch, str) or not re.fullmatch(r'[A-Za-z0-9_.-]+', branch) or branch in ('.', '..'):
+            raise ValueError(f'Invalid branch for {repo}: {branch}')
+        license_name = repo_entry.get('license')
+        if not isinstance(license_name, str) or not re.fullmatch(r'[A-Za-z0-9.+-]+', license_name):
+            raise ValueError(f'Invalid license identifier for {repo}: {license_name}')
+        license_file = repo_entry.get('license_file')
+        if license_file:
+            safe_path(license_file)
+        elif license_name != 'UNLICENSED':
+            raise ValueError(f'License file required for {repo} unless UNLICENSED')
+        skills = repo_entry.get('skills')
+        if not isinstance(skills, list) or not skills:
+            raise ValueError(f'Repository {repo} must contain a non-empty skills list')
+        for item in skills:
+            if not isinstance(item, dict):
+                raise ValueError(f'Skill entry in {repo} must be a dictionary')
+            name = item.get('name')
+            package = item.get('package')
+            if not isinstance(name, str) or not NAME.fullmatch(name) or len(name) > 64:
+                raise ValueError(f'Invalid skill name: {name}')
+            if not isinstance(package, str) or not NAME.fullmatch(package) or not package.startswith('agent-skill-'):
+                raise ValueError(f'Invalid package name: {package}')
+            if package in seen_pkgs:
+                raise ValueError(f'Duplicate package: {package}')
+            seen_pkgs.add(package)
+            runtime_deps = item.get('runtime_dependencies', [])
+            if not isinstance(runtime_deps, list) or any(not isinstance(d, str) for d in runtime_deps):
+                raise ValueError(f'Invalid runtime_dependencies in {package}')
+
+
+def validate_dependencies(config, result, seen):
+    """Check cross-package constraints after all source revisions are resolved."""
+    for repository in config['repositories']:
+        for item in repository['skills']:
+            for dependency in item.get('dependencies', []):
+                dep_name, constraint = dependency.split(' ', 1)
+                op, dep_version = constraint[:2], constraint[2:]
+                installed = result.get(dep_name, {}).get('version', '')
+                valid = bool(re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', installed))
+                if valid:
+                    valid = (installed == dep_version if op == '==' else
+                             tuple(map(int, installed.split('.'))) >= tuple(map(int, dep_version.split('.'))))
+                if dep_name == item['package'] or dep_name not in seen or not valid:
+                    raise ValueError(f'Unresolved skill dependency for {item["package"]}: {dependency}')
+
 def check(config, previous, client, headers, accept_license_change=False, cache=None):
-    if config.get('version') != 1 or previous.get('version') != 1:
+    if previous.get('version') != 1:
         raise ValueError('Unsupported source or lock version')
+    validate_sources(config)
     result = dict(previous.get('skills', {}))
     recipes = {}
     seen = set()
@@ -271,6 +337,19 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
                     and old.get('tree') and old['tree'] != skill['sha']):
                 raise ValueError(f'Source tree changed for locked skill {package}; verify and update the lock hash')
             if old.get('license_blob') and old['license_blob'] != license_entry['sha'] and not accept_license_change:
+                report_dir = Path('output')
+                report_dir.mkdir(parents=True, exist_ok=True)
+                report_file = report_dir / 'license-review.md'
+                report_entry = (
+                    f"### License changed for `{repo}`\n"
+                    f"- Package: `{package}`\n"
+                    f"- Previous license blob SHA: `{old.get('license_blob')}`\n"
+                    f"- New license blob SHA: `{license_entry.get('sha')}`\n"
+                    f"- Action required: Verify the new license in `{repo}/{license_file}`, "
+                    f"then run with `--accept-license-change`.\n\n"
+                )
+                with open(report_file, 'a', encoding='utf-8') as rf:
+                    rf.write(report_entry)
                 raise ValueError(f'License changed for {repo}; review before updating {package}')
             identity = [repo, branch, path, name, repository['license'], license_file]
             if repository.get('archive', False):
@@ -281,6 +360,9 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
                 identity.append('lock_hash:' + source_lock_hash)
             if dependencies:
                 identity.append('dependencies:' + json.dumps(sorted(dependencies)))
+            runtime_deps = item.get('runtime_dependencies', [])
+            if runtime_deps:
+                identity.append('runtime_dependencies:' + json.dumps(sorted(runtime_deps)))
             if local_licenses[package]:
                 identity.append('additional_license_files:' + json.dumps(local_licenses[package], sort_keys=True))
             unchanged = old.get('identity') == identity and old.get('tree') == skill['sha'] and old.get('license_blob') == license_entry['sha']
@@ -328,18 +410,7 @@ def check(config, previous, client, headers, accept_license_change=False, cache=
     removed = set(result) - seen
     if removed:
         raise ValueError(f'Removed packages require an explicit migration: {sorted(removed)}')
-    for repository in config['repositories']:
-        for item in repository['skills']:
-            for dependency in item.get('dependencies', []):
-                dep_name, constraint = dependency.split(' ', 1)
-                op, dep_version = constraint[:2], constraint[2:]
-                installed = result.get(dep_name, {}).get('version', '')
-                valid = bool(re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', installed))
-                if valid:
-                    valid = (installed == dep_version if op == '==' else
-                             tuple(map(int, installed.split('.'))) >= tuple(map(int, dep_version.split('.'))))
-                if dep_name == item['package'] or dep_name not in seen or not valid:
-                    raise ValueError(f'Unresolved skill dependency for {item["package"]}: {dependency}')
+    validate_dependencies(config, result, seen)
     if cache is not None:
         cache.clear()
         cache.update(pending_cache)

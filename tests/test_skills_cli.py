@@ -1,4 +1,5 @@
 """Verify add does not hide conflicts or partial Pixi changes."""
+import os
 import subprocess
 import sys
 import tempfile
@@ -152,6 +153,147 @@ class SkillsCLITests(unittest.TestCase):
                     longred_skills.main()
             run.assert_not_called()
             self.assertEqual((root / '.agents').read_text(), 'user data')
+
+    def test_multi_agent_all_links_all_registered_agents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "test"\n')
+            skill = root / '.pixi/envs/default/share/agent-skills/example'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('skill')
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'sync', '--agent', 'all']):
+                longred_skills.main()
+            for agent, path in longred_skills.AGENTS.items():
+                link = root / path / 'example'
+                self.assertTrue(link.is_symlink(), f"Expected symlink for {agent}")
+                self.assertTrue(link.samefile(skill))
+
+    def test_comma_separated_agents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "test"\n')
+            skill = root / '.pixi/envs/default/share/agent-skills/example'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('skill')
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'sync', '--agent', 'claude,cursor']):
+                longred_skills.main()
+            self.assertTrue((root / '.claude/skills/example').is_symlink())
+            self.assertTrue((root / '.cursor/skills/example').is_symlink())
+            self.assertFalse((root / '.agents/skills/example').exists())
+
+    def test_remove_uninstalls_and_prunes_symlinks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "test"\n')
+            skill = root / '.pixi/envs/default/share/agent-skills/example'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('skill')
+            link = root / '.agents/skills/example'
+            link.parent.mkdir(parents=True)
+            link.symlink_to(os.path.relpath(skill, link.parent), target_is_directory=True)
+
+            def pixi_remove(cmd, **kwargs):
+                self.assertEqual(cmd, ['pixi', 'remove', '-e', 'default', 'agent-skill-example'])
+                # simulate pixi deleting the package folder
+                (skill / 'SKILL.md').unlink()
+                skill.rmdir()
+
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'remove', 'agent-skill-example']), \
+                    patch.object(longred_skills.subprocess, 'run', side_effect=pixi_remove):
+                longred_skills.main()
+
+            self.assertFalse(link.exists())
+            self.assertFalse(link.is_symlink())
+
+    def test_dangling_symlinks_pruned_safely(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "test"\n')
+            source = root / '.pixi/envs/default/share/agent-skills'
+            source.mkdir(parents=True)
+
+            # Dangling link pointing to non-existent skill in .pixi
+            target = root / '.agents/skills'
+            target.mkdir(parents=True)
+            dangling = target / 'stale-skill'
+            dangling.symlink_to(os.path.relpath(source / 'stale-skill', dangling.parent), target_is_directory=True)
+
+            # User-created external symlink pointing outside pixi
+            external = root / 'my-local-skill'
+            external.mkdir()
+            (external / 'SKILL.md').write_text('local')
+            user_link = target / 'my-local-skill'
+            user_link.symlink_to(os.path.relpath(external, user_link.parent), target_is_directory=True)
+
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'sync', '--prune']):
+                # When source is empty, sync with allow_empty won't crash if prune is handled
+                longred_skills.prune_dangling(root, root, 'default', ['agents'])
+
+            self.assertFalse(dangling.is_symlink())
+            self.assertTrue(user_link.is_symlink())
+            self.assertTrue(user_link.exists())
+
+    def test_friendly_name_resolution(self):
+        fake_repodata = {
+            'packages.conda': {
+                'p1': {'name': 'agent-skill-vercel-labs-find-skills', 'version': '0.0.1'},
+                'p2': {'name': 'agent-skill-tiangolo-library-skills', 'version': '0.0.1'},
+            }
+        }
+        # Direct canonical name
+        self.assertEqual(
+            longred_skills.resolve_package_name('agent-skill-vercel-labs-find-skills', repodata=fake_repodata),
+            'agent-skill-vercel-labs-find-skills'
+        )
+        # Suffix matching
+        self.assertEqual(
+            longred_skills.resolve_package_name('find-skills', repodata=fake_repodata),
+            'agent-skill-vercel-labs-find-skills'
+        )
+        # Ambiguous matching
+        with self.assertRaisesRegex(ValueError, 'Ambiguous skill name'):
+            longred_skills.resolve_package_name('skills', repodata=fake_repodata)
+
+    def test_info_installed_skill(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            skill = root / '.pixi/envs/default/share/agent-skills/demo'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('---\nname: Demo Skill\ndescription: A demo skill\n---\nPrompt body\n')
+            link = root / '.agents/skills/demo'
+            link.parent.mkdir(parents=True)
+            link.symlink_to(os.path.relpath(skill, link.parent), target_is_directory=True)
+
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'info', 'demo']), \
+                    patch('builtins.print') as mock_print:
+                longred_skills.main()
+                printed = ' '.join(call.args[0] for call in mock_print.call_args_list if call.args)
+                self.assertIn('Skill:        demo', printed)
+                self.assertIn('Display Name: Demo Skill', printed)
+                self.assertIn('Description:  A demo skill', printed)
+                self.assertIn('Agents:       agents', printed)
+
+    def test_list_verbose_shows_linked_agents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            skill = root / '.pixi/envs/default/share/agent-skills/demo'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('skill')
+            link = root / '.agents/skills/demo'
+            link.parent.mkdir(parents=True)
+            link.symlink_to(os.path.relpath(skill, link.parent), target_is_directory=True)
+
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'list', '-v']), \
+                    patch('builtins.print') as mock_print:
+                longred_skills.main()
+                printed = [call.args[0] for call in mock_print.call_args_list if call.args]
+                self.assertIn('demo (linked: agents)', printed)
 
 
 if __name__ == '__main__':

@@ -11,7 +11,14 @@ from pathlib import Path
 import httpx
 
 CHANNEL = 'https://prefix.dev/longredzhong/longred-skills-forge'
-AGENTS = {'agents': '.agents/skills', 'codex': '.codex/skills', 'claude': '.claude/skills'}
+AGENTS = {
+    'agents': '.agents/skills',
+    'claude': '.claude/skills',
+    'codex': '.codex/skills',
+    'cursor': '.cursor/skills',
+    'cline': '.cline/skills',
+    'windsurf': '.windsurf/skills',
+}
 NAME = re.compile(r'[a-z0-9]+(?:-[a-z0-9]+)*\Z')
 
 
@@ -27,6 +34,71 @@ def project_root(start):
             if 'pixi' in data.get('tool', {}):
                 return directory
     return start
+
+
+def global_workspace_root(environment: str) -> tuple[Path, Path]:
+    """Determine global target root (home) and workspace root following XDG / OS conventions."""
+    target_root = Path.home()
+    xdg = os.environ.get('XDG_DATA_HOME')
+    real_home = Path(os.path.expanduser('~'))
+    if xdg and target_root == real_home:
+        base = Path(xdg)
+    else:
+        base = target_root / '.local' / 'share'
+    workspace_root = base / 'longred-skills' / environment
+    return target_root, workspace_root
+
+
+def resolve_agents(agent_arg: str | None) -> list[str]:
+    """Resolve agent argument (e.g. 'all', 'claude', 'agents,claude') into a list of agent names."""
+    if not agent_arg or agent_arg == 'agents':
+        return ['agents']
+    if agent_arg == 'all':
+        return list(AGENTS.keys())
+    selected = [a.strip() for a in agent_arg.split(',') if a.strip()]
+    for agent in selected:
+        if agent not in AGENTS:
+            valid = ', '.join(list(AGENTS.keys()) + ['all'])
+            raise ValueError(f"Unknown agent: '{agent}'. Valid choices: {valid}")
+    return selected
+
+
+def prune_dangling(target_root, root, environment, agents):
+    """Safely prune symlinks in agent directories that point to deleted or stale skills in this Pixi environment."""
+    source = root / '.pixi' / 'envs' / environment / 'share' / 'agent-skills'
+    valid_skills = set()
+    if source.is_dir():
+        valid_skills = {p.name for p in source.iterdir() if p.is_dir() and (p / 'SKILL.md').is_file()}
+    pruned = []
+    for agent in agents:
+        target = target_root / AGENTS[agent]
+        if not target.is_dir():
+            continue
+        for item in list(target.iterdir()):
+            if not item.is_symlink():
+                continue
+            try:
+                raw_target = os.readlink(item)
+            except OSError:
+                continue
+
+            norm_dest = Path(os.path.normpath(item.parent / raw_target))
+            is_under_source = False
+            try:
+                norm_dest.relative_to(source)
+                is_under_source = True
+            except ValueError:
+                try:
+                    item.resolve().relative_to(source.resolve())
+                    is_under_source = True
+                except (ValueError, OSError):
+                    pass
+
+            if is_under_source and (not norm_dest.exists() or item.name not in valid_skills):
+                item.unlink()
+                pruned.append((agent, item.name))
+                print(f'pruned: {item} (target removed)')
+    return pruned
 
 
 def plan_sync(root, environment, agent, selected=None, allow_empty=False, target_root=None):
@@ -67,56 +139,221 @@ def plan_sync(root, environment, agent, selected=None, allow_empty=False, target
     return skills, actions
 
 
-def sync(root, environment, agent, selected=None, target_root=None):
-    skills, actions = plan_sync(root, environment, agent, selected, target_root=target_root)
-    target = (target_root or root) / AGENTS[agent]
-    target.mkdir(parents=True, exist_ok=True)
-    for skill, dest in actions:
-        dest.symlink_to(os.path.relpath(skill, dest.parent), target_is_directory=True)
-        print(f'linked: {dest} -> {skill}')
-    print(f'{len(skills)} skill(s) available for {agent}')
+def sync(root, environment, agent_choice, selected=None, target_root=None, prune=True):
+    """Synchronize installed skills to one or more agent directories."""
+    agents = resolve_agents(agent_choice)
+    effective_target_root = target_root or root
+    for agent in agents:
+        skills, actions = plan_sync(root, environment, agent, selected, target_root=target_root)
+        target = effective_target_root / AGENTS[agent]
+        target.mkdir(parents=True, exist_ok=True)
+        for skill, dest in actions:
+            try:
+                dest.symlink_to(os.path.relpath(skill, dest.parent), target_is_directory=True)
+                print(f'linked: {dest} -> {skill}')
+            except OSError as exc:
+                if sys.platform == 'win32' and getattr(exc, 'winerror', None) == 1314:
+                    raise OSError(
+                        f'Failed to create symlink {dest}: Windows requires Developer Mode '
+                        'or administrator privileges to create directory symlinks. '
+                        'Please enable Developer Mode in Windows Settings.'
+                    ) from exc
+                raise
+        print(f'{len(skills)} skill(s) available for {agent}')
+
+    if prune and not selected:
+        prune_dangling(effective_target_root, root, environment, agents)
+
+
+def fetch_repodata():
+    """Fetch remote repository metadata from the published channel."""
+    with httpx.Client(trust_env=False, follow_redirects=True, timeout=30) as client:
+        response = client.get(CHANNEL + '/noarch/repodata.json')
+        response.raise_for_status()
+        return response.json()
+
+
+def resolve_package_name(input_name: str, repodata=None) -> str:
+    """Resolve friendly names (e.g. 'find-skills') to canonical 'agent-skill-*' package names."""
+    if NAME.fullmatch(input_name) and input_name.startswith('agent-skill-'):
+        return input_name
+    # Try friendly prefix or suffix matching
+    if repodata is None:
+        try:
+            repodata = fetch_repodata()
+        except Exception:
+            repodata = {}
+    packages = repodata.get('packages.conda', {}) | repodata.get('packages', {})
+    known_names = {p['name'] for p in packages.values() if p['name'].startswith('agent-skill-')}
+
+    # Direct match: agent-skill-<input_name>
+    candidate = f'agent-skill-{input_name}'
+    if candidate in known_names:
+        return candidate
+
+    # Suffix match: e.g. 'find-skills' -> 'agent-skill-vercel-labs-find-skills'
+    suffix = f'-{input_name}'
+    matches = sorted({name for name in known_names if name.endswith(suffix)})
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        raise ValueError(f"Ambiguous skill name '{input_name}'. Matching packages: {', '.join(matches)}")
+
+    # Broad substring match
+    substring_matches = sorted({name for name in known_names if input_name.lower() in name.lower()})
+    if len(substring_matches) == 1:
+        return substring_matches[0]
+    if len(substring_matches) > 1:
+        raise ValueError(f"Ambiguous skill name '{input_name}'. Matching packages: {', '.join(substring_matches)}")
+
+    raise ValueError(f"Expected an agent-skill-* package name or known skill name, got '{input_name}'")
+
+
+def find_skills(query: str):
+    """Search published skills by package name and description/summary."""
+    data = fetch_repodata()
+    packages = data.get('packages.conda', {}) | data.get('packages', {})
+    q = query.lower()
+    matches = {}
+    for p in packages.values():
+        name = p.get('name', '')
+        if not name.startswith('agent-skill-'):
+            continue
+        summary = p.get('summary', '') or p.get('about', {}).get('summary', '')
+        if not q or q in name.lower() or q in summary.lower():
+            version = p.get('version', '')
+            matches[name] = (version, summary)
+
+    if not matches:
+        print('No matching skills')
+        return
+
+    # Check terminal formatting: print aligned table
+    max_len = max(len(name) for name in matches)
+    for name in sorted(matches):
+        version, summary = matches[name]
+        ver_str = f'v{version}' if version else ''
+        if summary:
+            print(f'{name:<{max_len}}  {ver_str:<8}  {summary}')
+        else:
+            print(f'{name:<{max_len}}  {ver_str}')
+
+
+def show_info(name: str, root: Path, environment: str, target_root: Path | None):
+    """Show detailed metadata and agent link status for an installed skill or channel package."""
+    effective_target_root = target_root or root
+    source = root / '.pixi' / 'envs' / environment / 'share' / 'agent-skills'
+    skill_dir = None
+    if source.is_dir():
+        cand = source / name
+        if cand.is_dir() and (cand / 'SKILL.md').is_file():
+            skill_dir = cand
+        else:
+            # Check by package name or subdirectories
+            for p in source.iterdir():
+                if p.is_dir() and (p / 'SKILL.md').is_file():
+                    if p.name == name or name.endswith(f'-{p.name}'):
+                        skill_dir = p
+                        break
+
+    if skill_dir:
+        skill_file = skill_dir / 'SKILL.md'
+        frontmatter = {}
+        content = skill_file.read_text(encoding='utf-8', errors='replace')
+        if content.startswith('---'):
+            parts = content.split('---', 2)
+            if len(parts) >= 3:
+                for line in parts[1].splitlines():
+                    if ':' in line:
+                        k, v = line.split(':', 1)
+                        frontmatter[k.strip()] = v.strip().strip('"\'')
+
+        linked_agents = []
+        for agent_key, agent_subpath in AGENTS.items():
+            agent_link = effective_target_root / agent_subpath / skill_dir.name
+            try:
+                if agent_link.is_symlink() and (agent_link.samefile(skill_dir) or agent_link.resolve() == skill_dir.resolve()):
+                    linked_agents.append(agent_key)
+            except OSError:
+                pass
+
+        print(f'Skill:        {skill_dir.name}')
+        if frontmatter.get('name'):
+            print(f'Display Name: {frontmatter.get("name")}')
+        if frontmatter.get('description'):
+            print(f'Description:  {frontmatter.get("description")}')
+        print(f'Path:         {skill_dir}')
+        print(f'Agents:       {", ".join(linked_agents) if linked_agents else "none"}')
+        return
+
+    # Check remote repodata if not installed locally
+    resolved_package = resolve_package_name(name)
+    data = fetch_repodata()
+    packages = data.get('packages.conda', {}) | data.get('packages', {})
+    found = [p for p in packages.values() if p.get('name') == resolved_package]
+    if found:
+        latest = sorted(found, key=lambda x: str(x.get('version', '0')))[-1]
+        print(f'Package:      {latest.get("name")}')
+        print(f'Version:      {latest.get("version")}')
+        print(f'Summary:      {latest.get("summary", "No summary provided")}')
+        print(f'License:      {latest.get("license", "Unknown")}')
+        deps = latest.get('depends', [])
+        if deps:
+            print(f'Dependencies: {", ".join(deps)}')
+        print('Status:       Available in channel (not installed in current environment)')
+    else:
+        print(f"Skill or package '{name}' not found.")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
-    find = sub.add_parser('find', help='Search published skill package names')
+    find = sub.add_parser('find', help='Search published skill package names and summaries')
     find.add_argument('query', nargs='?', default='')
-    for command in ('add', 'sync', 'list'):
+
+    for command in ('add', 'remove', 'update', 'sync', 'list', 'info'):
         p = sub.add_parser(command)
-        if command == 'add':
+        if command in ('add', 'remove', 'info'):
             p.add_argument('package')
-        if command == 'sync':
+        elif command == 'update':
+            p.add_argument('package', nargs='?', default=None)
+        elif command == 'sync':
             p.add_argument('--skill')
+            p.add_argument('--prune', action='store_true', default=True,
+                           help='Clean up stale symlinks pointing to deleted skills (default: true)')
+        elif command == 'list':
+            p.add_argument('-v', '--verbose', action='store_true', help='Show detailed agent link status')
+
         p.add_argument('-e', '--environment', default='default')
         p.add_argument('-g', '--global', dest='global_scope', action='store_true',
                        help='Use the persistent global skill workspace and home directory')
-        if command != 'list':
-            p.add_argument('-a', '--agent', choices=AGENTS, default='agents')
+        if command not in ('find', 'info', 'list'):
+            p.add_argument('-a', '--agent', default='agents',
+                           help='Target agent(s): agents, claude, codex, cursor, cline, windsurf, or all')
+
     args = parser.parse_args()
     if args.command != 'find' and not NAME.fullmatch(args.environment):
         raise ValueError('Invalid environment name')
+
     root = project_root(Path.cwd()) if args.command != 'find' and not args.global_scope else Path.cwd()
     target_root = None
     if args.command != 'find' and args.global_scope:
-        target_root = Path.home()
-        root = target_root / '.local' / 'share' / 'longred-skills' / args.environment
+        target_root, root = global_workspace_root(args.environment)
         # Each named global workspace has a separate default Pixi environment.
         args.environment = 'default'
+
     if args.command == 'find':
-        with httpx.Client(trust_env=False, follow_redirects=True, timeout=30) as client:
-            response = client.get(CHANNEL + '/noarch/repodata.json')
-            response.raise_for_status()
-            data = response.json()
-        packages = data.get('packages.conda', {}) | data.get('packages', {})
-        names = sorted({p['name'] for p in packages.values() if p['name'].startswith('agent-skill-') and args.query.lower() in p['name'].lower()})
-        print('\n'.join(names) if names else 'No matching skills')
+        find_skills(args.query)
+
+    elif args.command == 'info':
+        show_info(args.package, root, args.environment, target_root=target_root)
+
     elif args.command == 'add':
-        if not NAME.fullmatch(args.package) or not args.package.startswith('agent-skill-'):
-            raise ValueError('Expected an agent-skill-* package name')
-        # Existing skills can be checked before Pixi changes the project; newly
-        # installed skill names are known only after the solver installs them.
-        plan_sync(root, args.environment, args.agent, allow_empty=True, target_root=target_root)
+        pkg = resolve_package_name(args.package)
+        agents = resolve_agents(args.agent)
+        # Existing skills can be checked before Pixi changes the project
+        for agent in agents:
+            plan_sync(root, args.environment, agent, allow_empty=True, target_root=target_root)
         if target_root is not None:
             root.mkdir(parents=True, exist_ok=True)
             manifest = root / 'pixi.toml'
@@ -126,24 +363,60 @@ def main():
         try:
             subprocess.run(['pixi', 'workspace', 'channel', 'add', '-e', args.environment, CHANNEL], check=True, cwd=root)
             subprocess.run(['pixi', 'add', '-e', args.environment, '--pinning-strategy', 'latest-up',
-                            f'{CHANNEL}::{args.package}'], check=True, cwd=root)
+                            f'{CHANNEL}::{pkg}'], check=True, cwd=root)
         except subprocess.CalledProcessError as exc:
             raise RuntimeError('Pixi could not add the package; the project channel may already have changed. '
                                'Inspect pixi.toml and pixi.lock before retrying.') from exc
         try:
             sync(root, args.environment, args.agent, target_root=target_root)
         except (ValueError, OSError) as exc:
-            raise RuntimeError(f'Pixi added {args.package}, but agent synchronization failed: {exc}. '
+            raise RuntimeError(f'Pixi added {pkg}, but agent synchronization failed: {exc}. '
                                'The manifest, lockfile, and environment may have changed; resolve the conflict '
                                'and run longred-skills sync.') from exc
+
+    elif args.command == 'remove':
+        pkg = resolve_package_name(args.package)
+        agents = resolve_agents(args.agent)
+        try:
+            subprocess.run(['pixi', 'remove', '-e', args.environment, pkg], check=True, cwd=root)
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError(f'Pixi could not remove package {pkg}') from exc
+        prune_dangling(target_root or root, root, args.environment, agents)
+        print(f'Removed {pkg} and pruned associated agent links')
+
+    elif args.command == 'update':
+        cmd = ['pixi', 'update', '-e', args.environment]
+        if args.package:
+            pkg = resolve_package_name(args.package)
+            cmd.append(pkg)
+        try:
+            subprocess.run(cmd, check=True, cwd=root)
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError('Pixi update failed') from exc
+        sync(root, args.environment, args.agent, target_root=target_root)
+
     elif args.command == 'sync':
-        sync(root, args.environment, args.agent, args.skill, target_root=target_root)
-    else:
+        sync(root, args.environment, args.agent, args.skill, target_root=target_root, prune=args.prune)
+
+    else:  # list
         source = root / '.pixi' / 'envs' / args.environment / 'share' / 'agent-skills'
         if source.is_dir():
+            effective_target_root = target_root or root
             for skill in sorted(source.iterdir()):
                 if skill.is_dir() and (skill / 'SKILL.md').is_file():
-                    print(skill.name)
+                    if getattr(args, 'verbose', False):
+                        linked = []
+                        for agent_key, agent_path in AGENTS.items():
+                            link = effective_target_root / agent_path / skill.name
+                            try:
+                                if link.is_symlink() and (link.samefile(skill) or link.resolve() == skill.resolve()):
+                                    linked.append(agent_key)
+                            except OSError:
+                                pass
+                        links_str = f" (linked: {', '.join(linked)})" if linked else " (not linked)"
+                        print(f'{skill.name}{links_str}')
+                    else:
+                        print(skill.name)
 
 
 def run():

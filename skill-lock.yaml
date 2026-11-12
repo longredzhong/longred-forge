@@ -625,3 +625,89 @@ skills:
     license_blob: f433b1a53f5b830a205fd2df78e2b34974656c7b
     revision: 1
     version: 0.0.1
+  agent-skill-addyosmani-frontend-ui-engineering:
+    identity:
+    - addyosmani/agent-skills
+    - main
+    - skills/frontend-ui-engineering
+    - frontend-ui-engineering
+    - MIT
+    - LICENSE
+    - archive
+    commit: 301b02b12bff98e4688e6984af6556802322bbde
+    tree: 984efc18829fe11fad1bb58fa73c28be8aeb2100
+    license_blob: d67778ada6b9cda6227e9130da182c13e73c8b2e
+    revision: 1
+    version: 0.0.1
+  agent-skill-wshobson-python-development:
+    identity:
+    - wshobson/agents
+    - main
+    - plugins/python-development/skills
+    - python-development
+    - MIT
+    - LICENSE
+    - archive
+    - bundle
+    commit: 9c61ab243def98f72da12abd41cfcf5bcd91af9d
+    tree: c021597b859a450d131b153d9a1e14014fb64369
+    license_blob: 326f0a55c96e672fedf9d807ca043c00df05ba0e
+    revision: 1
+    version: 0.0.1
+  agent-skill-k-dense-exploratory-data-analysis:
+    identity:
+    - K-Dense-AI/scientific-agent-skills
+    - main
+    - skills/exploratory-data-analysis
+    - exploratory-data-analysis
+    - MIT
+    - LICENSE.md
+    - archive
+    commit: 2d2065fb4520fa3f3f2bcf61cff26ec8b7eba4b5
+    tree: 05078b0b57ce5387f8883e6ae1273f11f8329115
+    license_blob: eb246475fd5a66b9bb56176f3a718984632dd98d
+    revision: 1
+    version: 0.0.1
+  agent-skill-k-dense-scientific-visualization:
+    identity:
+    - K-Dense-AI/scientific-agent-skills
+    - main
+    - skills/scientific-visualization
+    - scientific-visualization
+    - MIT
+    - LICENSE.md
+    - archive
+    commit: 2d2065fb4520fa3f3f2bcf61cff26ec8b7eba4b5
+    tree: 292eaa2adb46c1ee678f090efec7780c50b91419
+    license_blob: eb246475fd5a66b9bb56176f3a718984632dd98d
+    revision: 1
+    version: 0.0.1
+  agent-skill-hiamberhuang-presentation-agent-skills:
+    identity:
+    - hiamberhuang/presentation-agent-skills
+    - main
+    - skills
+    - presentation-agent-skills
+    - MIT
+    - LICENSE
+    - archive
+    - bundle
+    - 'additional_license_files:{"THIRD_PARTY_NOTICES.md": "3d26a11cc02cc5a8822c7f573508c401c7b21697014b42aa6d40feae3f54bcd0"}'
+    commit: 9e868af4104d1c07828701d4c36486bfa3ff75d7
+    tree: 1dd28c88dc9845ebe1259b8936a5d9d1550ecaac
+    license_blob: bc026461facd734578ef071ccf50393d518cc856
+    revision: 1
+    version: 0.0.1
+  agent-skill-hatchet-dev-hatchet-cli:
+    identity:
+    - hatchet-dev/hatchet
+    - main
+    - cmd/hatchet-cli/cli/skill-assets/hatchet-cli
+    - hatchet-cli
+    - MIT
+    - LICENSE
+    commit: 90abc499b6fcf6d3ab0426ea87cb22ebd937dd09
+    tree: 27b77c5079a61638522c92d5bd86567fd203a72b
+    license_blob: 29a2ac2aa87cd720c21e4f72e19f6777e1cdf6d5
+    revision: 1
+    version: 0.0.1

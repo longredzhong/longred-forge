@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from scripts import longred_skills, skills_publish, skills_update
+from scripts import longred_skills, skills_publish, skills_update, skills_verify_lock
 from scripts.forge import builder
 from scripts.forge.planner import Artifact
 
@@ -66,6 +66,24 @@ class SkillsForgeTests(unittest.TestCase):
 
     def check(self, lock=None):
         return skills_update.check(self.config, lock or {'version': 1, 'skills': {}}, self.client, {})
+
+    def test_recipe_lock_verification_detects_version_and_source_drift(self):
+        import yaml
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            recipe = root / 'agent-skill-example-demo' / 'recipe.yaml'
+            recipe.parent.mkdir()
+            lock = {'skills': {'agent-skill-example-demo': {'version': '0.0.1', 'commit': 'a' * 40}}}
+            data = {'package': {'name': 'agent-skill-example-demo', 'version': '0.0.1'},
+                    'source': {'rev': 'a' * 40}}
+            recipe.write_text(yaml.safe_dump(data))
+            self.assertEqual(skills_verify_lock.verify(lock, root), [])
+            data['source']['rev'] = 'b' * 40
+            data['package']['version'] = '0.0.2'
+            recipe.write_text(yaml.safe_dump(data))
+            self.assertEqual(len(skills_verify_lock.verify(lock, root)), 2)
+            recipe.unlink()
+            self.assertEqual(len(skills_verify_lock.verify(lock, root)), 1)
 
     def test_commit_only_change_does_not_rebuild_but_tree_change_does(self):
         lock, recipes = self.check()
@@ -379,6 +397,44 @@ class SkillsForgeTests(unittest.TestCase):
         with patch.object(skills_publish.subprocess, 'run', return_value=Mock(returncode=0, stdout=json.dumps({'noarch': [entry]}))):
             with self.assertRaisesRegex(RuntimeError, 'checksum differs'):
                 skills_publish.pixi_indexed(pending)
+
+    def test_validate_sources_rejects_malformed_config(self):
+        # Invalid version
+        with self.assertRaisesRegex(ValueError, 'Unsupported or invalid source'):
+            skills_update.validate_sources({'version': 2, 'repositories': []})
+        # Empty repositories
+        with self.assertRaisesRegex(ValueError, 'non-empty repositories list'):
+            skills_update.validate_sources({'version': 1, 'repositories': []})
+        # Invalid repo name
+        with self.assertRaisesRegex(ValueError, 'Invalid GitHub repository'):
+            skills_update.validate_sources({'version': 1, 'repositories': [{'repository': '../bad'}]})
+
+    def test_runtime_dependencies_rendered_and_tracked(self):
+        lock, _ = self.check()
+        self.config['repositories'][0]['skills'][0]['runtime_dependencies'] = ['python >=3.11', 'nodejs >=20']
+        newer, recipes = self.check(lock)
+        # Bumps revision because identity changed
+        self.assertEqual(newer['skills']['agent-skill-example-demo']['version'], '0.0.2')
+        recipe = recipes['agent-skill-example-demo']
+        self.assertIn('requirements', recipe)
+        self.assertEqual(recipe['requirements']['run'], ['python >=3.11', 'nodejs >=20'])
+
+    def test_license_change_generates_review_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            old_cwd = os.getcwd()
+            os.chdir(tmp)
+            try:
+                lock, _ = self.check()
+                self.client.license_sha = 'z' * 40
+                with self.assertRaisesRegex(ValueError, 'License changed'):
+                    skills_update.check(self.config, lock, self.client, {})
+                report = Path('output/license-review.md')
+                self.assertTrue(report.is_file())
+                content = report.read_text(encoding='utf-8')
+                self.assertIn('agent-skill-example-demo', content)
+                self.assertIn('Previous license blob SHA', content)
+            finally:
+                os.chdir(old_cwd)
 
 
 if __name__ == '__main__':

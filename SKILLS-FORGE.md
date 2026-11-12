@@ -31,6 +31,13 @@ release versions. The lock records the exact source commit and skill tree. A
 skill tree, license or packaging identity change increments the package revision;
 a repository commit that leaves those unchanged does not. Inspect upstream
 release tags and skill metadata separately when reporting upstream versions.
+Additional domain packages include Addy Osmani's frontend UI guidance,
+Wshobson's Python development skill bundle, K-Dense's exploratory analysis
+and scientific visualization skills, and the presentation-agent-skills bundle.
+The presentation bundle includes upstream third-party notices. PPTX creation,
+rendering and visual QA require the separately installed tools documented by
+the skills; scientific tools may require optional Python dependencies.
+
 Popular skills are selected from the skills.sh all-time leaderboard and locked
 at reviewed upstream commits. Matt Pocock's interview and architecture commands
 install their referenced sibling skills as dependencies. `agent-browser` is an
@@ -54,9 +61,17 @@ In a project that already has a Pixi workspace:
 
 ```sh
 longred-skills find find-skills
-longred-skills add agent-skill-vercel-labs-find-skills
-longred-skills list
-longred-skills sync
+# Direct or friendly short name resolution:
+longred-skills add find-skills
+longred-skills info find-skills
+longred-skills list -v
+longred-skills sync --agent all
+
+# Update skills and re-sync
+longred-skills update
+
+# Remove package and automatically prune agent symlinks
+longred-skills remove find-skills
 
 # The entire Litestar group, including cross-referenced skills
 longred-skills add agent-skill-litestar-org-litestar-skills --agent codex
@@ -67,71 +82,31 @@ longred-skills add agent-skill-leonxlnx-design-taste-frontend --agent codex
 
 `add` adds the channel and package to the selected Pixi environment, resolves
 the lockfile, and creates relative symlinks under `.agents/skills` by default.
-Pass `--agent codex` or `--agent claude` to use `.codex/skills` or
-`.claude/skills`. Commands locate the nearest Pixi workspace when run from a
-subdirectory, including workspaces configured in `pyproject.toml`. Existing
-links in agent-specific directories are left in place when switching targets;
-remove obsolete links manually after checking them. `sync` can be rerun after
-`pixi install --locked`. Existing files or links to another target cause an error and are never overwritten.
+Pass `--agent all` or comma-separated agents (e.g. `--agent claude,cursor,codex`)
+to link into multiple agent targets simultaneously (`agents`, `claude`, `codex`,
+`cursor`, `cline`, `windsurf`). Commands locate the nearest Pixi workspace when run from a
+subdirectory, including workspaces configured in `pyproject.toml`.
+`remove` removes the package from Pixi and automatically unlinks stale agent symlinks.
+`sync` can be rerun anytime (including after `pixi install --locked`) and automatically
+prunes dangling symlinks pointing to deleted Pixi environment targets.
+Existing files or links to another non-Pixi target cause an error and are never overwritten.
 Already installed skills are checked for destination conflicts before `add`
 changes the Pixi project. If a conflict is only discoverable after installing
 a new package, the command reports that the manifest, lockfile and environment
 may already have changed; resolve the conflict and rerun `sync`.
 Use `longred-skills add --global PACKAGE` to install into a persistent workspace
-under `~/.local/share/longred-skills/default` and link into `~/.agents/skills`.
-Run `longred-skills sync --global --agent claude` to link the same installed
-skills into `~/.claude/skills`; `list --global` lists installed skills. Named
+under `~/.local/share/longred-skills/default` (or `$XDG_DATA_HOME`/`%LOCALAPPDATA%`) and link into `~/.agents/skills`.
+Run `longred-skills sync --global --agent all` to link the same installed
+skills into all supported user agent directories; `list --global` lists installed skills. Named
 `--environment` values select separate global workspaces. Existing destination
 conflicts are never overwritten, including links from another environment.
 
-Windows requires permission to create directory symlinks. The CLI supports
-package-name search, `add`, `list`, and `sync` in project and global scopes;
-remote repository import, removal and update commands are not implemented yet. Skill sources must first be added to the reviewed GitHub source
-catalog and published as Pixi packages. Use Pixi's own update and removal commands
-in the meantime; remove obsolete links manually only after checking their targets.
+To bootstrap a cloned repository with all skills immediately linked:
+
+```sh
+pixi run setup
+```
 
 ## Maintaining the catalog
 
-Add explicitly reviewed repositories and skills to `skill-sources.yaml`. Only
-GitHub HTTPS repositories, simple branch names, and safe relative paths are
-currently supported. Verify redistribution rights and the applicable license
-before adding each entry. Explicitly authorized UNLICENSED sources may omit
-`license_file`; this does not grant downstream reuse rights. Additional license files can be placed in the package's
-recipe directory and listed under `additional_license_files`; their contents
-participate in package versioning and are installed alongside the upstream license.
-Setting `archive: true` pins a GitHub source archive
-with a SHA-256 instead of cloning Git history; the initial archive download can
-still be large. The updater queries each repository once for its ref;
-when the ref or configuration changes, it also retrieves its recursive tree.
-The workflow persists an optional repository cache; missing or invalid cache
-causes a full tree check; a full check is repeated at least every 24 hours.
-Root skills require archives and are tracked by the full repository tree.
-It refuses truncated trees and source symlinks
-or submodules, and validates new or changed SKILL.md frontmatter.
-
-```sh
-pixi run skills-check             # no writes
-pixi run skills-update            # update lock and recipes
-pixi run python scripts/build.py --recipe-path skill-recipes/agent-skill-vercel-labs-find-skills/recipe.yaml --channel longredzhong/longred-skills-forge --target-platforms linux-64 --no-upload
-```
-
-Unrelated commits do not rebuild a skill whose directory tree and license blob
-are unchanged. Changes to the license blob stop the update for manual review.
-After reviewing the new license, ensure the configuration still describes the
-correct license, then run `pixi run python scripts/skills_update.py --apply
---accept-license-change` to generate a new package version. Removing an entry
-also requires an explicit migration.
-
-`.github/workflows/skills-forge.yml` checks sources every three hours, builds
-noarch packages, commits changed recipes and lock on `main`, and publishes using
-the `SKILLS_PREFIX_TOKEN` repository secret. Its trigger and credential must be
-configured on the deployed workflow; local changes alone do not activate it.
-Uploads are batched and must be confirmed in channel repodata or by a fresh-cache
-Pixi search with the exact channel URL, filename, and SHA-256. A package shown in
-the Prefix.dev UI alone does not prove it can be resolved by Pixi.
-
-The manager is versioned separately in `cli/pyproject.toml` and
-`recipes/longred-skills/recipe.yaml`. Update both versions whenever the
-manager changes; a published package filename must not be overwritten. Build
-receipts include the local `cli/` source so source changes between build and
-publish invalidate the receipt.
+See [Skills catalog maintenance](docs/skills-maintenance.md) for source review, versioning, CI and publication procedures.
