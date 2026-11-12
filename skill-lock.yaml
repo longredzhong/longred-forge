@@ -592,11 +592,11 @@ skills:
     - Apache-2.0
     - LICENSE
     - archive
-    commit: 2f1649cefb82f417abbb2712f5397439d010698e
-    tree: 29ba9c12789b1c54ab76ad40e2472e646d141b85
+    commit: f88c40b7ed7c2344af54b804b440b11169f98906
+    tree: cd4185523189fb04c1d24bea0100b6aa2ce7421e
     license_blob: 8226d363f88a734e52cc79ead7a5588cc55e76f7
-    revision: 1
-    version: 0.0.1
+    revision: 2
+    version: 0.0.2
   agent-skill-supabase-postgres-best-practices:
     identity:
     - supabase/agent-skills
