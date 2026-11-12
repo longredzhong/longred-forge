@@ -47,5 +47,6 @@ wheels/
 .cursor/skills/
 .cline/skills/
 .windsurf/skills/
+.github/skills/
 
 **/generated/*
