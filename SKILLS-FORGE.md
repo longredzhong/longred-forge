@@ -61,9 +61,17 @@ In a project that already has a Pixi workspace:
 
 ```sh
 longred-skills find find-skills
-longred-skills add agent-skill-vercel-labs-find-skills
-longred-skills list
-longred-skills sync
+# Direct or friendly short name resolution:
+longred-skills add find-skills
+longred-skills info find-skills
+longred-skills list -v
+longred-skills sync --agent all
+
+# Update skills and re-sync
+longred-skills update
+
+# Remove package and automatically prune agent symlinks
+longred-skills remove find-skills
 
 # The entire Litestar group, including cross-referenced skills
 longred-skills add agent-skill-litestar-org-litestar-skills --agent codex
@@ -74,28 +82,30 @@ longred-skills add agent-skill-leonxlnx-design-taste-frontend --agent codex
 
 `add` adds the channel and package to the selected Pixi environment, resolves
 the lockfile, and creates relative symlinks under `.agents/skills` by default.
-Pass `--agent codex` or `--agent claude` to use `.codex/skills` or
-`.claude/skills`. Commands locate the nearest Pixi workspace when run from a
-subdirectory, including workspaces configured in `pyproject.toml`. Existing
-links in agent-specific directories are left in place when switching targets;
-remove obsolete links manually after checking them. `sync` can be rerun after
-`pixi install --locked`. Existing files or links to another target cause an error and are never overwritten.
+Pass `--agent all` or comma-separated agents (e.g. `--agent claude,cursor,codex`)
+to link into multiple agent targets simultaneously (`agents`, `claude`, `codex`,
+`cursor`, `cline`, `windsurf`). Commands locate the nearest Pixi workspace when run from a
+subdirectory, including workspaces configured in `pyproject.toml`.
+`remove` removes the package from Pixi and automatically unlinks stale agent symlinks.
+`sync` can be rerun anytime (including after `pixi install --locked`) and automatically
+prunes dangling symlinks pointing to deleted Pixi environment targets.
+Existing files or links to another non-Pixi target cause an error and are never overwritten.
 Already installed skills are checked for destination conflicts before `add`
 changes the Pixi project. If a conflict is only discoverable after installing
 a new package, the command reports that the manifest, lockfile and environment
 may already have changed; resolve the conflict and rerun `sync`.
 Use `longred-skills add --global PACKAGE` to install into a persistent workspace
-under `~/.local/share/longred-skills/default` and link into `~/.agents/skills`.
-Run `longred-skills sync --global --agent claude` to link the same installed
-skills into `~/.claude/skills`; `list --global` lists installed skills. Named
+under `~/.local/share/longred-skills/default` (or `$XDG_DATA_HOME`/`%LOCALAPPDATA%`) and link into `~/.agents/skills`.
+Run `longred-skills sync --global --agent all` to link the same installed
+skills into all supported user agent directories; `list --global` lists installed skills. Named
 `--environment` values select separate global workspaces. Existing destination
 conflicts are never overwritten, including links from another environment.
 
-Windows requires permission to create directory symlinks. The CLI supports
-package-name search, `add`, `list`, and `sync` in project and global scopes;
-remote repository import, removal and update commands are not implemented yet. Skill sources must first be added to the reviewed GitHub source
-catalog and published as Pixi packages. Use Pixi's own update and removal commands
-in the meantime; remove obsolete links manually only after checking their targets.
+To bootstrap a cloned repository with all skills immediately linked:
+
+```sh
+pixi run setup
+```
 
 ## Maintaining the catalog
 

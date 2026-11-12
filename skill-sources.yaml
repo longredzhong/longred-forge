@@ -286,3 +286,11 @@ repositories:
     bundle: true
     additional_license_files:
     - THIRD_PARTY_NOTICES.md
+- repository: hatchet-dev/hatchet
+  branch: main
+  license: MIT
+  license_file: LICENSE
+  skills:
+  - path: cmd/hatchet-cli/cli/skill-assets/hatchet-cli
+    name: hatchet-cli
+    package: agent-skill-hatchet-dev-hatchet-cli

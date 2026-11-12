@@ -698,3 +698,16 @@ skills:
     license_blob: bc026461facd734578ef071ccf50393d518cc856
     revision: 1
     version: 0.0.1
+  agent-skill-hatchet-dev-hatchet-cli:
+    identity:
+    - hatchet-dev/hatchet
+    - main
+    - cmd/hatchet-cli/cli/skill-assets/hatchet-cli
+    - hatchet-cli
+    - MIT
+    - LICENSE
+    commit: 90abc499b6fcf6d3ab0426ea87cb22ebd937dd09
+    tree: 27b77c5079a61638522c92d5bd86567fd203a72b
+    license_blob: 29a2ac2aa87cd720c21e4f72e19f6777e1cdf6d5
+    revision: 1
+    version: 0.0.1

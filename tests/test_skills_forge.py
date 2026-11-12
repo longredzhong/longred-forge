@@ -398,6 +398,44 @@ class SkillsForgeTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'checksum differs'):
                 skills_publish.pixi_indexed(pending)
 
+    def test_validate_sources_rejects_malformed_config(self):
+        # Invalid version
+        with self.assertRaisesRegex(ValueError, 'Unsupported or invalid source'):
+            skills_update.validate_sources({'version': 2, 'repositories': []})
+        # Empty repositories
+        with self.assertRaisesRegex(ValueError, 'non-empty repositories list'):
+            skills_update.validate_sources({'version': 1, 'repositories': []})
+        # Invalid repo name
+        with self.assertRaisesRegex(ValueError, 'Invalid GitHub repository'):
+            skills_update.validate_sources({'version': 1, 'repositories': [{'repository': '../bad'}]})
+
+    def test_runtime_dependencies_rendered_and_tracked(self):
+        lock, _ = self.check()
+        self.config['repositories'][0]['skills'][0]['runtime_dependencies'] = ['python >=3.11', 'nodejs >=20']
+        newer, recipes = self.check(lock)
+        # Bumps revision because identity changed
+        self.assertEqual(newer['skills']['agent-skill-example-demo']['version'], '0.0.2')
+        recipe = recipes['agent-skill-example-demo']
+        self.assertIn('requirements', recipe)
+        self.assertEqual(recipe['requirements']['run'], ['python >=3.11', 'nodejs >=20'])
+
+    def test_license_change_generates_review_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            old_cwd = os.getcwd()
+            os.chdir(tmp)
+            try:
+                lock, _ = self.check()
+                self.client.license_sha = 'z' * 40
+                with self.assertRaisesRegex(ValueError, 'License changed'):
+                    skills_update.check(self.config, lock, self.client, {})
+                report = Path('output/license-review.md')
+                self.assertTrue(report.is_file())
+                content = report.read_text(encoding='utf-8')
+                self.assertIn('agent-skill-example-demo', content)
+                self.assertIn('Previous license blob SHA', content)
+            finally:
+                os.chdir(old_cwd)
+
 
 if __name__ == '__main__':
     unittest.main()
