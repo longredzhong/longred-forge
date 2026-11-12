@@ -52,7 +52,7 @@ def get_agent_dir(target_root: Path, agent_name: str, is_global: bool = False) -
 
 
 def project_root(start: Path) -> Path:
-    """Find the nearest Pixi workspace, including workspaces in pyproject.toml."""
+    """Find the nearest Pixi workspace, supporting both pixi.toml and pyproject.toml."""
     for directory in (start, *start.parents):
         if (directory / 'pixi.toml').is_file():
             return directory
@@ -61,11 +61,21 @@ def project_root(start: Path) -> Path:
             try:
                 with manifest.open('rb') as f:
                     data = tomllib.load(f)
-                if 'pixi' in data.get('tool', {}):
+                tools = data.get('tool', {})
+                if 'pixi' in tools or 'longred-skills' in tools or (directory / 'pixi.lock').is_file():
                     return directory
             except Exception:
                 pass
     return start
+
+
+def get_manifest_path(root: Path) -> Path:
+    """Return the active manifest path for this workspace (pixi.toml or pyproject.toml)."""
+    if (root / 'pixi.toml').is_file():
+        return root / 'pixi.toml'
+    if (root / 'pyproject.toml').is_file():
+        return root / 'pyproject.toml'
+    return root / 'pixi.toml'
 
 
 def read_config(root: Path) -> dict:
@@ -79,12 +89,117 @@ def read_config(root: Path) -> dict:
                 cfg = data.get('tool', {}).get('longred-skills')
                 if isinstance(cfg, dict):
                     return cfg
+                # Support nested metadata in pyproject.toml: [tool.pixi.workspace.metadata.longred-skills]
+                pixi_cfg = data.get('tool', {}).get('pixi', {})
+                if isinstance(pixi_cfg, dict):
+                    meta = pixi_cfg.get('workspace', {}).get('metadata', {}).get('longred-skills')
+                    if isinstance(meta, dict):
+                        return meta
+                    meta2 = pixi_cfg.get('metadata', {}).get('longred-skills')
+                    if isinstance(meta2, dict):
+                        return meta2
+                # Support metadata in pixi.toml: [workspace.metadata.longred-skills]
                 meta = data.get('workspace', {}).get('metadata', {}).get('longred-skills')
                 if isinstance(meta, dict):
                     return meta
             except Exception:
                 pass
     return {}
+
+
+def init_project(root: Path, fmt: str | None = None):
+    """Initialize or update longred-skills configuration and Pixi tasks in pyproject.toml or pixi.toml."""
+    if fmt == 'pyproject' or (root / 'pyproject.toml').is_file():
+        manifest_path = root / 'pyproject.toml'
+        is_pyproject = True
+    elif (root / 'pixi.toml').is_file() or fmt == 'pixi':
+        manifest_path = root / 'pixi.toml'
+        is_pyproject = False
+    else:
+        is_pyproject = (fmt == 'pyproject')
+        manifest_path = root / ('pyproject.toml' if is_pyproject else 'pixi.toml')
+
+    if not manifest_path.is_file():
+        init_cmd = ['pixi', 'init', '--format', 'pyproject' if is_pyproject else 'pixi']
+        subprocess.run(init_cmd, check=True, cwd=root)
+
+    content = manifest_path.read_text(encoding='utf-8')
+    data = tomllib.loads(content)
+
+    modified = False
+    lines = content.splitlines()
+
+    # 1. Ensure [tool.longred-skills]
+    has_config = 'longred-skills' in data.get('tool', {})
+    if not has_config:
+        config_block = [
+            '',
+            '[tool.longred-skills]',
+            'agents = ["agents", "claude", "cursor"]',
+            'environment = "default"',
+            'prune = true',
+        ]
+        lines.extend(config_block)
+        modified = True
+
+    # 2. Ensure Pixi tasks
+    tasks_to_add = {
+        'setup': 'pixi install --locked && longred-skills hook install',
+        'skills-sync': 'longred-skills sync',
+        'skills-clean': 'longred-skills clean',
+        'skills-manage': 'longred-skills manage',
+    }
+
+    if is_pyproject:
+        existing_tasks = data.get('tool', {}).get('pixi', {}).get('tasks', {})
+        missing_tasks = {k: v for k, v in tasks_to_add.items() if k not in existing_tasks}
+        if missing_tasks:
+            if '[tool.pixi.tasks]' in content:
+                for i, line in enumerate(lines):
+                    if line.strip() == '[tool.pixi.tasks]':
+                        for task_k, task_v in reversed(list(missing_tasks.items())):
+                            lines.insert(i + 1, f'{task_k} = "{task_v}"')
+                        break
+            else:
+                lines.extend(['', '[tool.pixi.tasks]'] + [f'{k} = "{v}"' for k, v in missing_tasks.items()])
+            modified = True
+    else:
+        existing_tasks = data.get('tasks', {})
+        missing_tasks = {k: v for k, v in tasks_to_add.items() if k not in existing_tasks}
+        if missing_tasks:
+            if '[tasks]' in content:
+                for i, line in enumerate(lines):
+                    if line.strip() == '[tasks]':
+                        for task_k, task_v in reversed(list(missing_tasks.items())):
+                            lines.insert(i + 1, f'{task_k} = "{task_v}"')
+                        break
+            else:
+                lines.extend(['', '[tasks]'] + [f'{k} = "{v}"' for k, v in missing_tasks.items()])
+            modified = True
+
+    if modified:
+        manifest_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        print(f"Updated {manifest_path.name} with longred-skills configuration and Pixi tasks")
+
+    # 3. Update .gitignore
+    gitignore = root / '.gitignore'
+    gitignore_entries = [
+        '.agents/skills/',
+        '.claude/skills/',
+        '.cursor/skills/',
+        '.windsurf/skills/',
+        '.github/skills/',
+    ]
+    existing_ignore = gitignore.read_text(encoding='utf-8') if gitignore.is_file() else ''
+    to_append = [e for e in gitignore_entries if e not in existing_ignore]
+    if to_append:
+        with gitignore.open('a', encoding='utf-8') as f:
+            if existing_ignore and not existing_ignore.endswith('\n'):
+                f.write('\n')
+            f.write('# Agent skills\n')
+            for entry in to_append:
+                f.write(f'{entry}\n')
+        print("Updated .gitignore with agent skills directory patterns")
 
 
 def global_workspace_root(environment: str) -> tuple[Path, Path]:
@@ -294,7 +409,7 @@ def switch_environment(root: Path, target_env: str, agent_choice: str | None, ta
 def manage_interactive(root: Path, environment: str, agent_choice: str | None, target_root: Path | None = None):
     """Interactive TUI to select and toggle skills for target agent."""
     agents = resolve_agents(agent_choice)
-    agent = agents[0]  # manage primary agent
+    agent = agents[0]
     effective_target_root = target_root or root
     is_global = target_root is not None
     source = root / '.pixi' / 'envs' / environment / 'share' / 'agent-skills'
@@ -548,6 +663,10 @@ def main():
     find = sub.add_parser('find', help='Search published skill package names and summaries')
     find.add_argument('query', nargs='?', default='')
 
+    init_cmd = sub.add_parser('init', help='Initialize longred-skills configuration and Pixi tasks in pyproject.toml or pixi.toml')
+    init_cmd.add_argument('--format', choices=['pyproject', 'pixi'], default=None,
+                          help='Manifest format to initialize (default: auto-detect existing or pyproject/pixi)')
+
     for command in ('add', 'remove', 'update', 'sync', 'list', 'info', 'clean', 'switch', 'manage'):
         p = sub.add_parser(command)
         if command in ('add', 'remove', 'info'):
@@ -582,9 +701,9 @@ def main():
 
     args = parser.parse_args()
 
-    root = project_root(Path.cwd()) if args.command != 'find' and not getattr(args, 'global_scope', False) else Path.cwd()
+    root = project_root(Path.cwd()) if args.command not in ('find', 'init') and not getattr(args, 'global_scope', False) else Path.cwd()
     target_root = None
-    if args.command != 'find' and getattr(args, 'global_scope', False):
+    if args.command not in ('find', 'init') and getattr(args, 'global_scope', False):
         env_name = getattr(args, 'environment', None) or 'default'
         target_root, root = global_workspace_root(env_name)
         args.environment = 'default'
@@ -603,11 +722,14 @@ def main():
     if getattr(args, 'environment', None) is None:
         args.environment = config.get('environment') or config.get('default_environment') or 'default'
 
-    if args.command != 'find' and not NAME.fullmatch(args.environment):
+    if args.command not in ('find', 'init') and not NAME.fullmatch(args.environment):
         raise ValueError('Invalid environment name')
 
     if args.command == 'find':
         find_skills(args.query)
+
+    elif args.command == 'init':
+        init_project(Path.cwd(), fmt=args.format)
 
     elif args.command == 'info':
         show_info(args.package, root, args.environment, target_root=target_root)
@@ -623,9 +745,11 @@ def main():
             if not manifest.exists():
                 subprocess.run(['pixi', 'init', '--format', 'pixi', '--channel',
                                 'https://prefix.dev/conda-forge'], check=True, cwd=root)
+        manifest_file = get_manifest_path(root)
+        manifest_args = ['--manifest-path', str(manifest_file)] if manifest_file.name == 'pyproject.toml' and manifest_file.is_file() else []
         try:
-            subprocess.run(['pixi', 'workspace', 'channel', 'add', '-e', args.environment, CHANNEL], check=True, cwd=root)
-            subprocess.run(['pixi', 'add', '-e', args.environment, '--pinning-strategy', 'latest-up',
+            subprocess.run(['pixi', 'workspace', 'channel', 'add', *manifest_args, '-e', args.environment, CHANNEL], check=True, cwd=root)
+            subprocess.run(['pixi', 'add', *manifest_args, '-e', args.environment, '--pinning-strategy', 'latest-up',
                             f'{CHANNEL}::{pkg}'], check=True, cwd=root)
         except subprocess.CalledProcessError as exc:
             raise RuntimeError('Pixi could not add the package; the project channel may already have changed. '
@@ -639,8 +763,10 @@ def main():
 
     elif args.command == 'remove':
         pkg = resolve_package_name(args.package)
+        manifest_file = get_manifest_path(root)
+        manifest_args = ['--manifest-path', str(manifest_file)] if manifest_file.name == 'pyproject.toml' and manifest_file.is_file() else []
         try:
-            subprocess.run(['pixi', 'remove', '-e', args.environment, pkg], check=True, cwd=root)
+            subprocess.run(['pixi', 'remove', *manifest_args, '-e', args.environment, pkg], check=True, cwd=root)
         except subprocess.CalledProcessError as exc:
             raise RuntimeError(f'Pixi could not remove package {pkg}') from exc
         prune_agents = list(CANONICAL_AGENTS.keys()) if args.agent == 'agents' else resolve_agents(args.agent)
@@ -648,7 +774,9 @@ def main():
         print(f'Removed {pkg} and pruned associated agent links')
 
     elif args.command == 'update':
-        cmd = ['pixi', 'update', '-e', args.environment]
+        manifest_file = get_manifest_path(root)
+        manifest_args = ['--manifest-path', str(manifest_file)] if manifest_file.name == 'pyproject.toml' and manifest_file.is_file() else []
+        cmd = ['pixi', 'update', *manifest_args, '-e', args.environment]
         if args.package:
             pkg = resolve_package_name(args.package)
             cmd.append(pkg)

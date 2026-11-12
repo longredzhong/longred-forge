@@ -1,6 +1,6 @@
 package:
   name: longred-skills
-  version: 0.3.0
+  version: 0.3.1
 source:
   path: ../../cli
 build:

@@ -431,6 +431,100 @@ class SkillsCLITests(unittest.TestCase):
                 printed = [call.args[0] for call in mock_print.call_args_list if call.args]
                 self.assertIn('demo (linked: agents)', printed)
 
+    def test_pyproject_workspace_root_and_metadata_config(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pyproject.toml').write_text(
+                '[project]\nname = "test"\nversion = "0.1.0"\n'
+                '[tool.pixi.workspace]\nchannels = ["conda-forge"]\n'
+                '[tool.pixi.workspace.metadata.longred-skills]\n'
+                'agents = ["claude", "cursor"]\n'
+                'environment = "myenv"\n'
+            )
+            # project_root correctly finds root from a subdirectory
+            subdir = root / 'src' / 'module'
+            subdir.mkdir(parents=True)
+            self.assertEqual(longred_skills.project_root(subdir), root)
+
+            # read_config reads from tool.pixi.workspace.metadata.longred-skills
+            cfg = longred_skills.read_config(root)
+            self.assertEqual(cfg.get('agents'), ['claude', 'cursor'])
+            self.assertEqual(cfg.get('environment'), 'myenv')
+
+            # Test manifest path detection
+            self.assertEqual(longred_skills.get_manifest_path(root), root / 'pyproject.toml')
+
+    def test_init_pyproject_structure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pyproject.toml').write_text(
+                '[project]\nname = "test"\nversion = "0.1.0"\n'
+                '[tool.pixi.workspace]\nchannels = ["conda-forge"]\n'
+                '[tool.pixi.tasks]\n'
+            )
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'init']):
+                longred_skills.main()
+
+            content = (root / 'pyproject.toml').read_text()
+            self.assertIn('[tool.longred-skills]', content)
+            self.assertIn('setup = "pixi install --locked && longred-skills hook install"', content)
+            self.assertIn('skills-sync = "longred-skills sync"', content)
+            self.assertIn('skills-clean = "longred-skills clean"', content)
+            self.assertIn('skills-manage = "longred-skills manage"', content)
+
+            gitignore = (root / '.gitignore').read_text()
+            self.assertIn('.agents/skills/', gitignore)
+            self.assertIn('.claude/skills/', gitignore)
+            self.assertIn('.cursor/skills/', gitignore)
+
+    def test_init_pixi_structure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text(
+                '[workspace]\nname = "test"\nchannels = ["conda-forge"]\n'
+                '[tasks]\n'
+            )
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'init']):
+                longred_skills.main()
+
+            content = (root / 'pixi.toml').read_text()
+            self.assertIn('[tool.longred-skills]', content)
+            self.assertIn('setup = "pixi install --locked && longred-skills hook install"', content)
+            self.assertIn('skills-sync = "longred-skills sync"', content)
+
+    def test_pyproject_add_and_remove_uses_manifest_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pyproject.toml').write_text(
+                '[project]\nname = "test"\nversion = "0.1.0"\n'
+                '[tool.pixi.workspace]\nchannels = ["conda-forge"]\n'
+            )
+            manifest = root / 'pyproject.toml'
+            subdir = root / 'src'
+            subdir.mkdir()
+
+            executed_cmds = []
+
+            def fake_run(cmd, **kwargs):
+                executed_cmds.append(cmd)
+                if cmd[1] == 'add':
+                    skill = root / '.pixi/envs/default/share/agent-skills/example'
+                    skill.mkdir(parents=True)
+                    (skill / 'SKILL.md').write_text('skill')
+
+            with patch.object(Path, 'cwd', return_value=subdir), \
+                    patch('sys.argv', ['longred-skills', 'add', 'agent-skill-example']), \
+                    patch.object(longred_skills.subprocess, 'run', side_effect=fake_run):
+                longred_skills.main()
+
+            # Verify --manifest-path was passed pointing to pyproject.toml
+            add_cmd = next(c for c in executed_cmds if c[1] == 'add')
+            self.assertIn('--manifest-path', add_cmd)
+            self.assertEqual(add_cmd[add_cmd.index('--manifest-path') + 1], str(manifest))
+            self.assertTrue((root / '.agents/skills/example').is_symlink())
+
 
 if __name__ == '__main__':
     unittest.main()

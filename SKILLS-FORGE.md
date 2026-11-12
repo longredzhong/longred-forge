@@ -67,6 +67,9 @@ longred-skills info find-skills
 longred-skills list -v
 longred-skills sync --agent all
 
+# Initialize longred-skills config, Pixi tasks, and .gitignore in pixi.toml or pyproject.toml
+longred-skills init
+
 # Declarative management and hooks
 longred-skills clean
 longred-skills switch dev
