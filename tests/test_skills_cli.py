@@ -193,6 +193,9 @@ class SkillsCLITests(unittest.TestCase):
             link = root / '.agents/skills/example'
             link.parent.mkdir(parents=True)
             link.symlink_to(os.path.relpath(skill, link.parent), target_is_directory=True)
+            link_claude = root / '.claude/skills/example'
+            link_claude.parent.mkdir(parents=True)
+            link_claude.symlink_to(os.path.relpath(skill, link_claude.parent), target_is_directory=True)
 
             def pixi_remove(cmd, **kwargs):
                 self.assertEqual(cmd, ['pixi', 'remove', '-e', 'default', 'agent-skill-example'])
@@ -207,6 +210,8 @@ class SkillsCLITests(unittest.TestCase):
 
             self.assertFalse(link.exists())
             self.assertFalse(link.is_symlink())
+            self.assertFalse(link_claude.exists())
+            self.assertFalse(link_claude.is_symlink())
 
     def test_dangling_symlinks_pruned_safely(self):
         with tempfile.TemporaryDirectory() as tmp:

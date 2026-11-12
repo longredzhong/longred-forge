@@ -376,12 +376,13 @@ def main():
 
     elif args.command == 'remove':
         pkg = resolve_package_name(args.package)
-        agents = resolve_agents(args.agent)
         try:
             subprocess.run(['pixi', 'remove', '-e', args.environment, pkg], check=True, cwd=root)
         except subprocess.CalledProcessError as exc:
             raise RuntimeError(f'Pixi could not remove package {pkg}') from exc
-        prune_dangling(target_root or root, root, args.environment, agents)
+        # Prune across all agents by default when removing, or target specific agents
+        prune_agents = list(AGENTS.keys()) if args.agent == 'agents' else resolve_agents(args.agent)
+        prune_dangling(target_root or root, root, args.environment, prune_agents)
         print(f'Removed {pkg} and pruned associated agent links')
 
     elif args.command == 'update':
