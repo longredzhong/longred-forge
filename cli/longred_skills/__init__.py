@@ -43,9 +43,6 @@ def global_workspace_root(environment: str) -> tuple[Path, Path]:
     real_home = Path(os.path.expanduser('~'))
     if xdg and target_root == real_home:
         base = Path(xdg)
-    elif sys.platform == 'win32':
-        appdata = os.environ.get('LOCALAPPDATA')
-        base = Path(appdata) if appdata else target_root / 'AppData' / 'Local'
     else:
         base = target_root / '.local' / 'share'
     workspace_root = base / 'longred-skills' / environment
