@@ -274,8 +274,11 @@ def show_info(name: str, root: Path, environment: str, target_root: Path | None)
         linked_agents = []
         for agent_key, agent_subpath in AGENTS.items():
             agent_link = effective_target_root / agent_subpath / skill_dir.name
-            if agent_link.is_symlink() and agent_link.resolve() == skill_dir.resolve():
-                linked_agents.append(agent_key)
+            try:
+                if agent_link.is_symlink() and (agent_link.samefile(skill_dir) or agent_link.resolve() == skill_dir.resolve()):
+                    linked_agents.append(agent_key)
+            except OSError:
+                pass
 
         print(f'Skill:        {skill_dir.name}')
         if frontmatter.get('name'):
@@ -408,8 +411,11 @@ def main():
                         linked = []
                         for agent_key, agent_path in AGENTS.items():
                             link = effective_target_root / agent_path / skill.name
-                            if link.is_symlink() and link.resolve() == skill.resolve():
-                                linked.append(agent_key)
+                            try:
+                                if link.is_symlink() and (link.samefile(skill) or link.resolve() == skill.resolve()):
+                                    linked.append(agent_key)
+                            except OSError:
+                                pass
                         links_str = f" (linked: {', '.join(linked)})" if linked else " (not linked)"
                         print(f'{skill.name}{links_str}')
                     else:

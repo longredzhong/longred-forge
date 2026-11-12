@@ -1,4 +1,5 @@
 """Verify add does not hide conflicts or partial Pixi changes."""
+import os
 import subprocess
 import sys
 import tempfile
@@ -191,7 +192,7 @@ class SkillsCLITests(unittest.TestCase):
             (skill / 'SKILL.md').write_text('skill')
             link = root / '.agents/skills/example'
             link.parent.mkdir(parents=True)
-            link.symlink_to('../../.pixi/envs/default/share/agent-skills/example', target_is_directory=True)
+            link.symlink_to(os.path.relpath(skill, link.parent), target_is_directory=True)
 
             def pixi_remove(cmd, **kwargs):
                 self.assertEqual(cmd, ['pixi', 'remove', '-e', 'default', 'agent-skill-example'])
@@ -218,14 +219,14 @@ class SkillsCLITests(unittest.TestCase):
             target = root / '.agents/skills'
             target.mkdir(parents=True)
             dangling = target / 'stale-skill'
-            dangling.symlink_to('../../.pixi/envs/default/share/agent-skills/stale-skill', target_is_directory=True)
+            dangling.symlink_to(os.path.relpath(source / 'stale-skill', dangling.parent), target_is_directory=True)
 
             # User-created external symlink pointing outside pixi
             external = root / 'my-local-skill'
             external.mkdir()
             (external / 'SKILL.md').write_text('local')
             user_link = target / 'my-local-skill'
-            user_link.symlink_to('../../my-local-skill', target_is_directory=True)
+            user_link.symlink_to(os.path.relpath(external, user_link.parent), target_is_directory=True)
 
             with patch.object(Path, 'cwd', return_value=root), \
                     patch('sys.argv', ['longred-skills', 'sync', '--prune']):
@@ -265,7 +266,7 @@ class SkillsCLITests(unittest.TestCase):
             (skill / 'SKILL.md').write_text('---\nname: Demo Skill\ndescription: A demo skill\n---\nPrompt body\n')
             link = root / '.agents/skills/demo'
             link.parent.mkdir(parents=True)
-            link.symlink_to('../../.pixi/envs/default/share/agent-skills/demo', target_is_directory=True)
+            link.symlink_to(os.path.relpath(skill, link.parent), target_is_directory=True)
 
             with patch.object(Path, 'cwd', return_value=root), \
                     patch('sys.argv', ['longred-skills', 'info', 'demo']), \
@@ -285,7 +286,7 @@ class SkillsCLITests(unittest.TestCase):
             (skill / 'SKILL.md').write_text('skill')
             link = root / '.agents/skills/demo'
             link.parent.mkdir(parents=True)
-            link.symlink_to('../../.pixi/envs/default/share/agent-skills/demo', target_is_directory=True)
+            link.symlink_to(os.path.relpath(skill, link.parent), target_is_directory=True)
 
             with patch.object(Path, 'cwd', return_value=root), \
                     patch('sys.argv', ['longred-skills', 'list', '-v']), \
