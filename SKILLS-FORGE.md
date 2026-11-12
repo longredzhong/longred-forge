@@ -67,39 +67,51 @@ longred-skills info find-skills
 longred-skills list -v
 longred-skills sync --agent all
 
+# Declarative management and hooks
+longred-skills clean
+longred-skills switch dev
+longred-skills manage
+
 # Update skills and re-sync
 longred-skills update
 
 # Remove package and automatically prune agent symlinks
 longred-skills remove find-skills
-
-# The entire Litestar group, including cross-referenced skills
-longred-skills add agent-skill-litestar-org-litestar-skills --agent codex
-
-# Turnpike's pinned frontend design skill and its attributed assets
-longred-skills add agent-skill-leonxlnx-design-taste-frontend --agent codex
 ```
 
 `add` adds the channel and package to the selected Pixi environment, resolves
 the lockfile, and creates relative symlinks under `.agents/skills` by default.
-Pass `--agent all` or comma-separated agents (e.g. `--agent claude,cursor,codex`)
-to link into multiple agent targets simultaneously (`agents`, `claude`, `codex`,
-`cursor`, `cline`, `windsurf`). Commands locate the nearest Pixi workspace when run from a
+Pass `--agent all` or comma-separated agents (e.g. `--agent claude,cursor`)
+to link into multiple canonical agent targets simultaneously (`agents`, `claude`, `cursor`,
+`windsurf`, `copilot`). Standard-conforming agents (`codex`, `cline`, `gemini`, `opencode`)
+alias directly to `.agents/skills` to minimize project root pollution.
+Commands locate the nearest Pixi workspace when run from a
 subdirectory, including workspaces configured in `pyproject.toml`.
-`remove` removes the package from Pixi and automatically unlinks stale agent symlinks.
-`sync` can be rerun anytime (including after `pixi install --locked`) and automatically
-prunes dangling symlinks pointing to deleted Pixi environment targets.
-Existing files or links to another non-Pixi target cause an error and are never overwritten.
-Already installed skills are checked for destination conflicts before `add`
-changes the Pixi project. If a conflict is only discoverable after installing
-a new package, the command reports that the manifest, lockfile and environment
-may already have changed; resolve the conflict and rerun `sync`.
-Use `longred-skills add --global PACKAGE` to install into a persistent workspace
-under `~/.local/share/longred-skills/default` (or `$XDG_DATA_HOME`/`%LOCALAPPDATA%`) and link into `~/.agents/skills`.
-Run `longred-skills sync --global --agent all` to link the same installed
-skills into all supported user agent directories; `list --global` lists installed skills. Named
-`--environment` values select separate global workspaces. Existing destination
-conflicts are never overwritten, including links from another environment.
+
+### Declarative configuration in `pixi.toml`
+
+Configure project defaults under `[tool.longred-skills]`:
+
+```toml
+[tool.longred-skills]
+agents = ["agents", "claude", "cursor"]
+environment = "default"
+prune = true
+```
+
+When configured, running `longred-skills sync`, `add`, or `clean` automatically uses the declared
+agents and environment unless explicitly overridden on the command line.
+
+### Interactive TUI (`manage`)
+
+Run `longred-skills manage` to launch an interactive multi-select checkbox selector (powered by
+`questionary` with terminal fallback) to toggle skills on or off for a chosen agent.
+
+### Multi-Environment Switching & Clean
+
+- `longred-skills clean`: Safely removes managed Pixi skill symlinks while preserving non-Pixi custom skills.
+- `longred-skills switch <env>`: Switches active skills between environments (e.g. `dev`, `prod`), cleaning stale links and projecting the new environment.
+- `longred-skills hook install`: Quiet post-install hook for Pixi tasks or environment activation.
 
 To bootstrap a cloned repository with all skills immediately linked:
 

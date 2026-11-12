@@ -39,11 +39,19 @@ class SkillsCLITests(unittest.TestCase):
             skill = root / '.pixi/envs/default/share/agent-skills/example'
             skill.mkdir(parents=True)
             (skill / 'SKILL.md').write_text('skill')
-            for agent in ('codex', 'claude'):
-                with self.subTest(agent=agent), patch.object(Path, 'cwd', return_value=subdir), \
-                        patch('sys.argv', ['longred-skills', 'sync', '--agent', agent]):
-                    longred_skills.main()
-                self.assertTrue((root / f'.{agent}/skills/example').samefile(skill))
+
+            # Claude has its own distinct directory
+            with patch.object(Path, 'cwd', return_value=subdir), \
+                    patch('sys.argv', ['longred-skills', 'sync', '--agent', 'claude']):
+                longred_skills.main()
+            self.assertTrue((root / '.claude/skills/example').samefile(skill))
+
+            # Codex conforms to .agents/skills specification and aliases to agents
+            with patch.object(Path, 'cwd', return_value=subdir), \
+                    patch('sys.argv', ['longred-skills', 'sync', '--agent', 'codex']):
+                longred_skills.main()
+            self.assertTrue((root / '.agents/skills/example').samefile(skill))
+            self.assertFalse((root / '.codex').exists())
 
     def test_add_from_subdirectory_runs_pixi_at_workspace_root(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -154,7 +162,7 @@ class SkillsCLITests(unittest.TestCase):
             run.assert_not_called()
             self.assertEqual((root / '.agents').read_text(), 'user data')
 
-    def test_multi_agent_all_links_all_registered_agents(self):
+    def test_multi_agent_all_links_all_canonical_agents(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / 'pixi.toml').write_text('[workspace]\nname = "test"\n')
@@ -164,10 +172,13 @@ class SkillsCLITests(unittest.TestCase):
             with patch.object(Path, 'cwd', return_value=root), \
                     patch('sys.argv', ['longred-skills', 'sync', '--agent', 'all']):
                 longred_skills.main()
-            for agent, path in longred_skills.AGENTS.items():
-                link = root / path / 'example'
+            for agent, path in longred_skills.CANONICAL_AGENTS.items():
+                link = root / path.local / 'example'
                 self.assertTrue(link.is_symlink(), f"Expected symlink for {agent}")
                 self.assertTrue(link.samefile(skill))
+            # Verify no redundant alias directories were created
+            self.assertFalse((root / '.codex').exists())
+            self.assertFalse((root / '.cline').exists())
 
     def test_comma_separated_agents(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -182,6 +193,135 @@ class SkillsCLITests(unittest.TestCase):
             self.assertTrue((root / '.claude/skills/example').is_symlink())
             self.assertTrue((root / '.cursor/skills/example').is_symlink())
             self.assertFalse((root / '.agents/skills/example').exists())
+
+    def test_alias_resolution_and_deduplication(self):
+        self.assertEqual(longred_skills.resolve_agents('codex'), ['agents'])
+        self.assertEqual(longred_skills.resolve_agents('cline'), ['agents'])
+        self.assertEqual(longred_skills.resolve_agents('gemini'), ['agents'])
+        self.assertEqual(longred_skills.resolve_agents('opencode'), ['agents'])
+        # Deduplication
+        self.assertEqual(longred_skills.resolve_agents('agents,codex,cline'), ['agents'])
+        # All returns canonical agents only
+        self.assertEqual(
+            longred_skills.resolve_agents('all'),
+            list(longred_skills.CANONICAL_AGENTS.keys())
+        )
+
+    def test_scope_aware_paths(self):
+        root = Path('/mock/workspace')
+        home = Path('/mock/home')
+        # Local paths
+        self.assertEqual(longred_skills.get_agent_dir(root, 'windsurf', is_global=False), root / '.windsurf/skills')
+        self.assertEqual(longred_skills.get_agent_dir(root, 'copilot', is_global=False), root / '.github/skills')
+        self.assertEqual(longred_skills.get_agent_dir(root, 'agents', is_global=False), root / '.agents/skills')
+        # Global paths
+        self.assertEqual(longred_skills.get_agent_dir(home, 'windsurf', is_global=True), home / '.codeium/windsurf/skills')
+        self.assertEqual(longred_skills.get_agent_dir(home, 'copilot', is_global=True), home / '.github/skills')
+        self.assertEqual(longred_skills.get_agent_dir(home, 'claude', is_global=True), home / '.claude/skills')
+
+    def test_pixi_toml_config_reading_and_precedence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text(
+                '[workspace]\nname = "test"\n'
+                '[tool.longred-skills]\n'
+                'agents = ["claude", "cursor"]\n'
+                'environment = "testenv"\n'
+            )
+            cfg = longred_skills.read_config(root)
+            self.assertEqual(cfg.get('agents'), ['claude', 'cursor'])
+            self.assertEqual(cfg.get('environment'), 'testenv')
+
+            skill = root / '.pixi/envs/testenv/share/agent-skills/example'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('skill')
+
+            # When -a and -e are omitted, uses config defaults
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'sync']):
+                longred_skills.main()
+            self.assertTrue((root / '.claude/skills/example').is_symlink())
+            self.assertTrue((root / '.cursor/skills/example').is_symlink())
+            self.assertFalse((root / '.agents/skills/example').exists())
+
+            # CLI argument overrides config
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'sync', '-a', 'copilot']):
+                longred_skills.main()
+            self.assertTrue((root / '.github/skills/example').is_symlink())
+
+    def test_clean_managed_symlinks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "test"\n')
+            source = root / '.pixi/envs/default/share/agent-skills/example'
+            source.mkdir(parents=True)
+            (source / 'SKILL.md').write_text('skill')
+
+            target = root / '.agents/skills'
+            target.mkdir(parents=True)
+            managed_link = target / 'example'
+            managed_link.symlink_to(os.path.relpath(source, managed_link.parent), target_is_directory=True)
+
+            # User external skill
+            external = root / 'custom-skill'
+            external.mkdir()
+            user_link = target / 'custom-skill'
+            user_link.symlink_to(os.path.relpath(external, user_link.parent), target_is_directory=True)
+
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'clean']):
+                longred_skills.main()
+
+            self.assertFalse(managed_link.exists())
+            self.assertTrue(user_link.is_symlink())
+            self.assertTrue(user_link.exists())
+
+    def test_switch_environments(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "test"\n')
+            env1_skill = root / '.pixi/envs/env1/share/agent-skills/skill1'
+            env1_skill.mkdir(parents=True)
+            (env1_skill / 'SKILL.md').write_text('skill1')
+
+            env2_skill = root / '.pixi/envs/env2/share/agent-skills/skill2'
+            env2_skill.mkdir(parents=True)
+            (env2_skill / 'SKILL.md').write_text('skill2')
+
+            # Initial sync from env1
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'sync', '-e', 'env1']):
+                longred_skills.main()
+            self.assertTrue((root / '.agents/skills/skill1').is_symlink())
+
+            # Switch to env2
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'switch', 'env2']):
+                longred_skills.main()
+
+            self.assertFalse((root / '.agents/skills/skill1').exists())
+            self.assertTrue((root / '.agents/skills/skill2').is_symlink())
+
+    def test_hook_install(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "test"\n')
+            # Empty environment - hook install should quietly exit 0
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'hook', 'install']):
+                longred_skills.main()
+            self.assertFalse((root / '.agents').exists())
+
+            # With skills present
+            skill = root / '.pixi/envs/default/share/agent-skills/example'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('skill')
+
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'hook', 'install']):
+                longred_skills.main()
+            self.assertTrue((root / '.agents/skills/example').is_symlink())
 
     def test_remove_uninstalls_and_prunes_symlinks(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -199,7 +339,6 @@ class SkillsCLITests(unittest.TestCase):
 
             def pixi_remove(cmd, **kwargs):
                 self.assertEqual(cmd, ['pixi', 'remove', '-e', 'default', 'agent-skill-example'])
-                # simulate pixi deleting the package folder
                 (skill / 'SKILL.md').unlink()
                 skill.rmdir()
 
@@ -220,23 +359,18 @@ class SkillsCLITests(unittest.TestCase):
             source = root / '.pixi/envs/default/share/agent-skills'
             source.mkdir(parents=True)
 
-            # Dangling link pointing to non-existent skill in .pixi
             target = root / '.agents/skills'
             target.mkdir(parents=True)
             dangling = target / 'stale-skill'
             dangling.symlink_to(os.path.relpath(source / 'stale-skill', dangling.parent), target_is_directory=True)
 
-            # User-created external symlink pointing outside pixi
             external = root / 'my-local-skill'
             external.mkdir()
             (external / 'SKILL.md').write_text('local')
             user_link = target / 'my-local-skill'
             user_link.symlink_to(os.path.relpath(external, user_link.parent), target_is_directory=True)
 
-            with patch.object(Path, 'cwd', return_value=root), \
-                    patch('sys.argv', ['longred-skills', 'sync', '--prune']):
-                # When source is empty, sync with allow_empty won't crash if prune is handled
-                longred_skills.prune_dangling(root, root, 'default', ['agents'])
+            longred_skills.prune_dangling(root, root, 'default', ['agents'])
 
             self.assertFalse(dangling.is_symlink())
             self.assertTrue(user_link.is_symlink())
@@ -249,17 +383,14 @@ class SkillsCLITests(unittest.TestCase):
                 'p2': {'name': 'agent-skill-tiangolo-library-skills', 'version': '0.0.1'},
             }
         }
-        # Direct canonical name
         self.assertEqual(
             longred_skills.resolve_package_name('agent-skill-vercel-labs-find-skills', repodata=fake_repodata),
             'agent-skill-vercel-labs-find-skills'
         )
-        # Suffix matching
         self.assertEqual(
             longred_skills.resolve_package_name('find-skills', repodata=fake_repodata),
             'agent-skill-vercel-labs-find-skills'
         )
-        # Ambiguous matching
         with self.assertRaisesRegex(ValueError, 'Ambiguous skill name'):
             longred_skills.resolve_package_name('skills', repodata=fake_repodata)
 

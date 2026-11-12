@@ -15,9 +15,16 @@ lint = "ruff check scripts tests recipes cli --select E9,F63,F7,F82 && actionlin
 skills-check = "python scripts/skills_update.py"
 skills-update = "python scripts/skills_update.py --apply"
 skills = "python scripts/longred_skills.py"
-setup = "pixi install --locked && python scripts/longred_skills.py sync -a all"
-skills-sync = "python scripts/longred_skills.py sync -a all"
-skills-prune = "python scripts/longred_skills.py sync --prune -a all"
+setup = "pixi install --locked && python scripts/longred_skills.py hook install"
+skills-sync = "python scripts/longred_skills.py sync"
+skills-prune = "python scripts/longred_skills.py sync --prune"
+skills-clean = "python scripts/longred_skills.py clean"
+skills-manage = "python scripts/longred_skills.py manage"
+
+[tool.longred-skills]
+agents = ["agents", "claude", "cursor"]
+environment = "default"
+prune = true
 
 [dependencies]
 ruff = ">=0.14,<0.15"
@@ -29,6 +36,7 @@ nodejs = ">=22,<25"
 [pypi-dependencies]
 httpx = ">=0.28.1, <0.29"
 PyYAML = ">=6.0, <7.0"
+questionary = ">=2.0, <3.0"
 
 [environments.default]
 channels = ["https://prefix.dev/longredzhong/longred-skills-forge"]

@@ -326,16 +326,16 @@ class SkillsForgeTests(unittest.TestCase):
             source = root / '.pixi/envs/default/share/agent-skills/demo'
             source.mkdir(parents=True)
             (source / 'SKILL.md').write_text('skill')
-            longred_skills.sync(root, 'default', 'codex')
-            linked = root / '.codex/skills/demo'
+            longred_skills.sync(root, 'default', 'agents')
+            linked = root / '.agents/skills/demo'
             self.assertTrue(linked.is_symlink())
             self.assertEqual((linked / 'SKILL.md').read_text(), 'skill')
-            longred_skills.sync(root, 'default', 'codex')
+            longred_skills.sync(root, 'default', 'agents')
             linked.unlink()
             linked.mkdir()
             (linked / 'SKILL.md').write_text('user data')
             with self.assertRaises(FileExistsError):
-                longred_skills.sync(root, 'default', 'codex')
+                longred_skills.sync(root, 'default', 'agents')
             self.assertEqual((linked / 'SKILL.md').read_text(), 'user data')
 
     def test_local_recipe_source_changes_invalidate_build_receipt_fingerprint(self):
