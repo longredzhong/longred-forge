@@ -1,0 +1,25 @@
+package:
+  name: agent-skill-googlechrome-chrome-extensions
+  version: 0.0.1
+source:
+  url: https://github.com/GoogleChrome/modern-web-guidance/archive/4dd968349e54ca45a05dd5c818fb035c9054b022.tar.gz
+  sha256: c49b3fd5c9ec186262b4887387fa125b1ee64bc7bdf3d9e4d3291103bc9d6d81
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills/chrome-extensions"
+
+    cp -R "$SRC_DIR/skills/chrome-extensions/." "$PREFIX/share/agent-skills/chrome-extensions/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-googlechrome-chrome-extensions"
+
+    cp "$SRC_DIR/LICENSE" "$PREFIX/share/licenses/agent-skill-googlechrome-chrome-extensions/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/chrome-extensions/SKILL.md
+about:
+  summary: Agent skill chrome-extensions
+  license: Apache-2.0
+  repository: https://github.com/GoogleChrome/modern-web-guidance
+  license_file: LICENSE

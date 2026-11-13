@@ -286,6 +286,18 @@ repositories:
     bundle: true
     additional_license_files:
     - THIRD_PARTY_NOTICES.md
+- repository: GoogleChrome/modern-web-guidance
+  branch: main
+  archive: true
+  license: Apache-2.0
+  license_file: LICENSE
+  skills:
+  - path: skills/modern-web-guidance
+    name: modern-web-guidance
+    package: agent-skill-googlechrome-modern-web-guidance
+  - path: skills/chrome-extensions
+    name: chrome-extensions
+    package: agent-skill-googlechrome-chrome-extensions
 - repository: hatchet-dev/hatchet
   branch: main
   license: MIT

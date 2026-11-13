@@ -711,3 +711,31 @@ skills:
     license_blob: 29a2ac2aa87cd720c21e4f72e19f6777e1cdf6d5
     revision: 1
     version: 0.0.1
+  agent-skill-googlechrome-modern-web-guidance:
+    identity:
+    - GoogleChrome/modern-web-guidance
+    - main
+    - skills/modern-web-guidance
+    - modern-web-guidance
+    - Apache-2.0
+    - LICENSE
+    - archive
+    commit: 4dd968349e54ca45a05dd5c818fb035c9054b022
+    tree: 2bafd62db079eae1a4b6c34d0af4f9c3490266a2
+    license_blob: d645695673349e3947e8e5ae42332d0ac3164cd7
+    revision: 1
+    version: 0.0.1
+  agent-skill-googlechrome-chrome-extensions:
+    identity:
+    - GoogleChrome/modern-web-guidance
+    - main
+    - skills/chrome-extensions
+    - chrome-extensions
+    - Apache-2.0
+    - LICENSE
+    - archive
+    commit: 4dd968349e54ca45a05dd5c818fb035c9054b022
+    tree: 70ae21f9bbccb4d97c2748dffcc227f9ed07c6cf
+    license_blob: d645695673349e3947e8e5ae42332d0ac3164cd7
+    revision: 1
+    version: 0.0.1
