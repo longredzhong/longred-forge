@@ -1,9 +1,9 @@
 package:
   name: agent-skill-vercel-labs-agent-browser
-  version: 0.0.2
+  version: 0.0.3
 source:
-  url: https://github.com/vercel-labs/agent-browser/archive/f88c40b7ed7c2344af54b804b440b11169f98906.tar.gz
-  sha256: c3c7c0969f4a50d9a078aed55e271aefb1265017e65a41a88317ea3b0a652d2b
+  url: https://github.com/vercel-labs/agent-browser/archive/4720bc3dd73f2c8f7c84f415adfa560330b924c4.tar.gz
+  sha256: c1862d5c11164a410dd3e1fbb050517b739fb82d6cace729db8fb03a95e007f6
 build:
   number: 0
   noarch: generic

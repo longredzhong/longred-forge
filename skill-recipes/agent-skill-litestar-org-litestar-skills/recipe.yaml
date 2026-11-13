@@ -1,9 +1,9 @@
 package:
   name: agent-skill-litestar-org-litestar-skills
-  version: 0.0.2
+  version: 0.0.3
 source:
-  url: https://github.com/litestar-org/litestar-skills/archive/669a363d66c9cd3ae68f1266076f74dad3cb7b17.tar.gz
-  sha256: 90f1bafeef2b80a2354771184b09fa07e267366347105153b22b4245bc9712d8
+  url: https://github.com/litestar-org/litestar-skills/archive/5afb0cb792856786f9937391c972d516852eb9f7.tar.gz
+  sha256: a2db0bf28bfa921d7bb4cc5036a299be4ca4a99137459e503044ed7cc94ea820
 build:
   number: 0
   noarch: generic
@@ -40,5 +40,5 @@ tests:
 about:
   summary: Agent skill litestar-skills
   license: MIT
-  license_file: LICENSE
   repository: https://github.com/litestar-org/litestar-skills
+  license_file: LICENSE
