@@ -62,7 +62,7 @@ def project_root(start: Path) -> Path:
                 with manifest.open('rb') as f:
                     data = tomllib.load(f)
                 tools = data.get('tool', {})
-                if 'pixi' in tools or 'longred-skills' in tools or (directory / 'pixi.lock').is_file():
+                if 'pixi' in tools:
                     return directory
             except Exception:
                 pass
@@ -261,18 +261,8 @@ def prune_dangling(target_root, root, environment, agents):
                 continue
 
             norm_dest = Path(os.path.normpath(item.parent / raw_target))
-            is_under_source = False
-            try:
-                norm_dest.relative_to(source)
-                is_under_source = True
-            except ValueError:
-                try:
-                    item.resolve().relative_to(source.resolve())
-                    is_under_source = True
-                except (ValueError, OSError):
-                    pass
-
-            if is_under_source and (not norm_dest.exists() or item.name not in valid_skills):
+            # Only our exact name-to-name links are eligible; preserve user aliases.
+            if norm_dest == source / item.name and (not norm_dest.exists() or item.name not in valid_skills):
                 item.unlink()
                 pruned.append((agent, item.name))
                 print(f'pruned: {item} (target removed)')
@@ -323,8 +313,9 @@ def sync(root, environment, agent_choice, selected=None, target_root=None, prune
     agents = resolve_agents(agent_choice)
     effective_target_root = target_root or root
     is_global = target_root is not None
-    for agent in agents:
-        skills, actions = plan_sync(root, environment, agent, selected, target_root=target_root)
+    plans = [(agent, *plan_sync(root, environment, agent, selected, target_root=target_root))
+             for agent in agents]
+    for agent, skills, actions in plans:
         target = get_agent_dir(effective_target_root, agent, is_global=is_global)
         target.mkdir(parents=True, exist_ok=True)
         for skill, dest in actions:
@@ -342,7 +333,7 @@ def sync(root, environment, agent_choice, selected=None, target_root=None, prune
         print(f'{len(skills)} skill(s) available for {agent}')
 
     if prune and not selected:
-        prune_dangling(effective_target_root, root, environment, agents)
+        prune_dangling(target_root, root, environment, agents)
 
 
 def clean(root: Path, environment: str, agent_choice: str | None, all_envs: bool = False, target_root: Path | None = None):
@@ -692,7 +683,15 @@ def main():
             p.add_argument('-a', '--agent', default=None,
                            help='Target agent(s): agents, claude, cursor, windsurf, copilot, or all (or aliases like codex, cline)')
 
-    hook = sub.add_parser('hook', help='Pixi lifecycle integration hooks')
+    install = sub.add_parser('install', help='Install the configured Pixi environment and sync agent skills')
+    install.add_argument('-e', '--environment', default=None, help='Environment to install and synchronize')
+    install.add_argument('-a', '--agent', default=None, help='Agent(s) to synchronize')
+    lock_options = install.add_mutually_exclusive_group()
+    lock_options.add_argument('--locked', action='store_true', help='Require an up-to-date lockfile')
+    lock_options.add_argument('--frozen', action='store_true', help='Install from the existing lockfile')
+    install.add_argument('--offline', action='store_true', help='Install without network access')
+
+    hook = sub.add_parser('hook', help='Explicit post-install integration commands')
     hook_sub = hook.add_subparsers(dest='hook_action', required=True)
     hook_install = hook_sub.add_parser('install', help='Quietly sync skills after pixi install')
     hook_install.add_argument('-e', '--environment', default=None)
@@ -798,11 +797,27 @@ def main():
     elif args.command == 'manage':
         manage_interactive(root, args.environment, args.agent, target_root=target_root)
 
-    elif args.command == 'hook':
-        if args.hook_action == 'install':
-            source = root / '.pixi' / 'envs' / args.environment / 'share' / 'agent-skills'
-            if source.is_dir() and any(p.is_dir() for p in source.iterdir()):
-                sync(root, args.environment, args.agent, target_root=target_root, prune=args.prune)
+    elif args.command in ('install', 'hook'):
+        if args.command == 'install':
+            if not any((root / name).is_file() for name in ('pixi.toml', 'pyproject.toml')):
+                raise ValueError('No Pixi workspace found')
+            resolve_agents(args.agent)
+            cmd = ['pixi', 'install', '--environment', args.environment]
+            for flag in ('locked', 'frozen', 'offline'):
+                if getattr(args, flag):
+                    cmd.append(f'--{flag}')
+            subprocess.run(cmd, check=True, cwd=root)
+        source = root / '.pixi' / 'envs' / args.environment / 'share' / 'agent-skills'
+        if source.is_dir() and any(p.is_dir() and (p / 'SKILL.md').is_file() for p in source.iterdir()):
+            try:
+                sync(root, args.environment, args.agent, target_root=target_root)
+            except (ValueError, OSError) as exc:
+                context = 'Pixi install completed, but ' if args.command == 'install' else ''
+                raise RuntimeError(f'{context}skill synchronization failed: {exc}. '
+                                   'Resolve the conflict and run longred-skills sync.') from exc
+        elif args.command == 'install':
+            prune_dangling(None, root, args.environment, resolve_agents(args.agent))
+            print('No skills installed in the selected environment')
 
     else:  # list
         source = root / '.pixi' / 'envs' / args.environment / 'share' / 'agent-skills'

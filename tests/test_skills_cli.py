@@ -12,6 +12,98 @@ import longred_skills
 
 
 class SkillsCLITests(unittest.TestCase):
+    def test_install_in_git_worktree_uses_its_own_environment(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / 'repo'
+            worktree = Path(tmp) / 'worktree'
+            root.mkdir()
+            subprocess.run(['git', 'init', '-q', str(root)], check=True)
+            (root / 'pixi.toml').write_text(
+                '[workspace]\nname = "example"\n'
+                '[tool.longred-skills]\nagents = ["agents", "claude"]\nenvironment = "dev"\n'
+            )
+            subprocess.run(['git', '-C', str(root), 'add', 'pixi.toml'], check=True)
+            subprocess.run(['git', '-C', str(root), '-c', 'user.name=Test',
+                            '-c', 'user.email=test@example.invalid', 'commit', '-qm', 'init'], check=True)
+            subprocess.run(['git', '-C', str(root), 'worktree', 'add', '-qb', 'test-worktree', str(worktree)], check=True)
+            nested = worktree / 'src'
+            nested.mkdir()
+            skill = worktree / '.pixi/envs/dev/share/agent-skills/example'
+
+            def pixi(command, **kwargs):
+                self.assertEqual(command, ['pixi', 'install', '--environment', 'dev', '--locked'])
+                self.assertEqual(kwargs['cwd'], worktree)
+                skill.mkdir(parents=True, exist_ok=True)
+                (skill / 'SKILL.md').write_text('skill')
+
+            with patch.object(Path, 'cwd', return_value=nested), \
+                    patch('sys.argv', ['pixi-longred-skills', 'install', '--locked']), \
+                    patch.object(longred_skills.subprocess, 'run', side_effect=pixi):
+                longred_skills.main()
+                longred_skills.main()
+            for agent in ('agents', 'claude'):
+                link = worktree / f'.{agent}/skills/example'
+                self.assertTrue(link.is_symlink())
+                self.assertTrue(link.samefile(skill))
+                self.assertFalse(os.path.isabs(os.readlink(link)))
+            self.assertFalse((root / '.agents').exists())
+
+    def test_install_finds_pixi_workspace_above_unrelated_pyproject(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "example"\n')
+            nested = root / 'nested'
+            nested.mkdir()
+            (nested / 'pyproject.toml').write_text('[tool.longred-skills]\nagents = ["claude"]\n')
+            skill = root / '.pixi/envs/default/share/agent-skills/example'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('skill')
+            with patch.object(Path, 'cwd', return_value=nested), \
+                    patch('sys.argv', ['longred-skills', 'install']), \
+                    patch.object(longred_skills.subprocess, 'run') as run:
+                longred_skills.main()
+            self.assertEqual(run.call_args.kwargs['cwd'], root)
+            self.assertTrue((root / '.agents/skills/example').samefile(skill))
+            self.assertFalse((nested / '.claude').exists())
+
+    def test_prune_preserves_custom_alias_into_skill_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            skill = root / '.pixi/envs/default/share/agent-skills/example'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('skill')
+            alias = root / '.agents/skills/my-alias'
+            alias.parent.mkdir(parents=True)
+            alias.symlink_to(os.path.relpath(skill, alias.parent))
+            longred_skills.sync(root, 'default', 'agents')
+            self.assertTrue(alias.samefile(skill))
+
+    def test_install_failure_does_not_sync_or_prune(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "example"\n')
+            target = root / '.agents/skills/stale'
+            target.parent.mkdir(parents=True)
+            target.symlink_to('../../.pixi/envs/default/share/agent-skills/stale')
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'install']), \
+                    patch.object(longred_skills.subprocess, 'run', side_effect=subprocess.CalledProcessError(1, 'pixi')):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    longred_skills.main()
+            self.assertTrue(target.is_symlink())
+
+    def test_sync_checks_all_agents_before_creating_links(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            skill = root / '.pixi/envs/default/share/agent-skills/example'
+            skill.mkdir(parents=True)
+            (skill / 'SKILL.md').write_text('skill')
+            conflict = root / '.claude/skills/example'
+            conflict.mkdir(parents=True)
+            with self.assertRaises(FileExistsError):
+                longred_skills.sync(root, 'default', 'agents,claude')
+            self.assertFalse((root / '.agents/skills/example').exists())
+
     def test_sync_from_subdirectory_uses_workspace_and_default_target(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

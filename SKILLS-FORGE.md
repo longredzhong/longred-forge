@@ -51,11 +51,16 @@ The `cloudflare` skill package declares its `durable-objects` and
 `nextjs-on-cloudflare` sibling skills as exact runtime dependencies, so relative
 references resolve inside the same Pixi environment.
 
-Once the manager is indexed in the main channel, install it with:
+Once version 0.4.0 or later of the manager is indexed in the main channel, install it with:
 
 ```sh
-pixi global install -c https://prefix.dev/longred-forge -c conda-forge longred-skills
+pixi global install -c https://prefix.dev/longred-forge -c conda-forge \
+  --expose longred-skills --expose pixi-longred-skills 'longred-skills>=0.4.0'
 ```
+
+Pixi discovers the `pixi-longred-skills` executable as an extension, so both
+`longred-skills` and `pixi longred-skills` invoke the same manager. The name is
+intentionally distinct from the separate `pixi skills` extension.
 
 In a project that already has a Pixi workspace:
 
@@ -116,11 +121,26 @@ Run `longred-skills manage` to launch an interactive multi-select checkbox selec
 - `longred-skills switch <env>`: Switches active skills between environments (e.g. `dev`, `prod`), cleaning stale links and projecting the new environment.
 - `longred-skills hook install`: Quiet post-install hook for Pixi tasks or environment activation.
 
-To bootstrap a cloned repository with all skills immediately linked:
+To bootstrap a clone or a new Git worktree, run from anywhere inside it:
 
 ```sh
-pixi run setup
+pixi longred-skills install          # install the configured environment, then link skills
+pixi longred-skills install --locked # require an up-to-date pixi.lock
+# Optional: --environment dev, --agent claude,cursor, --frozen, or --offline
 ```
+
+Commit the Pixi manifest and lockfile after adding skill packages with
+`longred-skills add`; each worktree installs those dependencies into its own
+`.pixi` environment and receives its own relative agent symlinks. Rerunning the
+command is safe; existing user-owned paths are not overwritten. If installation
+fails, synchronization is not attempted. If synchronization fails after installation,
+resolve the reported conflict and run `pixi longred-skills sync`.
+
+Bare `pixi i` / `pixi install` does **not** invoke this extension: Pixi has no
+project post-install task hook. Use the explicit command above (or the existing
+`pixi run setup` task where configured). No shell wrapper or insecure post-link
+scripts are required. This integration currently expects the default workspace-local
+`.pixi/envs` layout; detached Pixi environments are not supported.
 
 ## Maintaining the catalog
 
