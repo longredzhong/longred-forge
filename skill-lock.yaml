@@ -447,11 +447,11 @@ skills:
     - LICENSE
     - archive
     - 'additional_license_files:{"NOTICE.md": "c60a093c2845fd9fb82f9c6f742ece31f379f8190b535309d32d66c45ccffdcb"}'
-    commit: acb4cfe14470b1fdf51e855431af618d936b7db8
-    tree: 2b0a11b8bc8fd914caae7d24e96bdff43f8ba1e7
+    commit: 1995764b4936f2bfbf4eb719cb37b384a45ceacb
+    tree: 24744b6ea63899b6bad2c122b0e291eeefdd3b44
     license_blob: bb3f6d23b1f8025514a62a12b51b47d73e3c9aa9
-    revision: 3
-    version: 0.0.3
+    revision: 4
+    version: 0.0.4
   agent-skill-tt-a1i-simplify-codebase:
     identity:
     - tt-a1i/simplify-codebase
@@ -634,11 +634,11 @@ skills:
     - MIT
     - LICENSE
     - archive
-    commit: 301b02b12bff98e4688e6984af6556802322bbde
-    tree: 984efc18829fe11fad1bb58fa73c28be8aeb2100
+    commit: 39b723ceebf81474d0557c1fecd01eddab585563
+    tree: 2b9a586e5e0e7b99c43e479bdce6f3300be4c145
     license_blob: d67778ada6b9cda6227e9130da182c13e73c8b2e
-    revision: 1
-    version: 0.0.1
+    revision: 2
+    version: 0.0.2
   agent-skill-wshobson-python-development:
     identity:
     - wshobson/agents

@@ -1,9 +1,9 @@
 package:
   name: agent-skill-addyosmani-frontend-ui-engineering
-  version: 0.0.1
+  version: 0.0.2
 source:
-  url: https://github.com/addyosmani/agent-skills/archive/301b02b12bff98e4688e6984af6556802322bbde.tar.gz
-  sha256: 5e6faf152ae7e1a0ce26047b1dc2098a3704fdd1fe35d5a78c72a7f377b1f56b
+  url: https://github.com/addyosmani/agent-skills/archive/39b723ceebf81474d0557c1fecd01eddab585563.tar.gz
+  sha256: 76321ddb441f0a5ee17592fbcb9be2ef18afb0eff116b18d45c01d2143e9a80e
 build:
   number: 0
   noarch: generic
