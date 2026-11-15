@@ -447,11 +447,11 @@ skills:
     - LICENSE
     - archive
     - 'additional_license_files:{"NOTICE.md": "c60a093c2845fd9fb82f9c6f742ece31f379f8190b535309d32d66c45ccffdcb"}'
-    commit: 1995764b4936f2bfbf4eb719cb37b384a45ceacb
-    tree: 24744b6ea63899b6bad2c122b0e291eeefdd3b44
+    commit: 2b86d9c07b97d4bed7de23583e1bd1e58dd2baae
+    tree: fe639b0caf362c40fc069a0675c1bc15e53e4fa4
     license_blob: bb3f6d23b1f8025514a62a12b51b47d73e3c9aa9
-    revision: 4
-    version: 0.0.4
+    revision: 5
+    version: 0.0.5
   agent-skill-tt-a1i-simplify-codebase:
     identity:
     - tt-a1i/simplify-codebase
