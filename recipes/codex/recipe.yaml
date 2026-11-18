@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 0.169.1
+  version: 0.170.0
 package:
   name: codex
   version: ${{ version }}
@@ -8,23 +8,23 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-x86_64-unknown-linux-musl.tar.gz
-    sha256: bd8383e0eaf3e4ca2aa5628f91ed9456bc3392d26134a04e949f47d7ef3660c1
+    sha256: d054916ccd28a53820376b8d2f7c875184ca8f40fcd44bbabeb8ee240ce247f5
 - if: linux and aarch64
   then:
   - url: https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-aarch64-unknown-linux-musl.tar.gz
-    sha256: 0a9cc7c7c6d0b83908069cf0ee6e502dcd987d5dcd23dc72eaa46c9c672c9ebf
+    sha256: 0da6b061f6b5223901a5a73e841bd1466596e2ef620d68823360febed2ff7ebc
 - if: osx and x86_64
   then:
   - url: https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-x86_64-apple-darwin.tar.gz
-    sha256: 74c9b64802e1e3a0cc0a6f8f0644ef7e370af13864ef545b17aff20159ab89c3
+    sha256: c858bb0149b003a8cf8840a1143c4d953f18bea23ba6ea861d5fdf0b5e29a5a3
 - if: osx and arm64
   then:
   - url: https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-aarch64-apple-darwin.tar.gz
-    sha256: 41b251338ec15d8ca5d72d1bfadb0bc6a2b3a5ae840a7385085216febbe6a5fc
+    sha256: 7c9f21d5cbae4860d14b379fdcf709ff399ce874fd714b58783e1b4199c2b9a9
 - if: win and x86_64
   then:
   - url: https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-x86_64-pc-windows-msvc.exe.zip
-    sha256: 4214bf9790525aae9f9393c8e8ffa229be0454f9fa2ce103b4cb2012ad74bc40
+    sha256: b1634415b6ecb87fea80691580dfe49f83fd46f0ad93f128ba029604d7faa158
 build:
   number: 0
   dynamic_linking:
