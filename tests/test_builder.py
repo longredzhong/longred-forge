@@ -185,8 +185,8 @@ class FingerprintTests(unittest.TestCase):
             recipe_dir = Path(tmp) / 'tool'
             recipe_dir.mkdir()
             recipe = recipe_dir / 'recipe.yaml'
-            recipe.write_text('package:\n  name: tool\n  version: 1\n', encoding='utf-8')
-            (recipe_dir / 'install.py').write_text('print("hello")\n', encoding='utf-8')
+            recipe.write_bytes(b'package:\n  name: tool\n  version: 1\n')
+            (recipe_dir / 'install.py').write_bytes(b'print("hello")\n')
             expected = builder.recipe_fingerprint(recipe)
             for path in recipe_dir.iterdir():
                 path.write_bytes(path.read_bytes().replace(b'\n', b'\r\n'))
