@@ -17,6 +17,11 @@ def receipt_path(artifact, output: Path) -> Path:
     return output.parent / 'receipts' / artifact.platform / f'{artifact.filename}.json'
 
 
+def _fingerprint_bytes(resource: Path) -> bytes:
+    """Normalize newlines so a Windows CRLF checkout has the same fingerprint."""
+    return resource.read_bytes().replace(b'\r\n', b'\n')
+
+
 def recipe_fingerprint(recipe: Path) -> str:
     digest = hashlib.sha256()
     for resource in sorted(recipe.parent.rglob('*')):
@@ -25,7 +30,7 @@ def recipe_fingerprint(recipe: Path) -> str:
             continue
         digest.update(relative.as_posix().encode())
         digest.update(b'\0')
-        digest.update(resource.read_bytes())
+        digest.update(_fingerprint_bytes(resource))
         digest.update(b'\0')
     doc = yaml.safe_load(recipe.read_text(encoding='utf-8')) or {}
     sources = doc.get('source', [])
@@ -49,7 +54,7 @@ def recipe_fingerprint(recipe: Path) -> str:
                 continue
             digest.update(str(resource.relative_to(Path.cwd().resolve())).encode())
             digest.update(b'\0')
-            digest.update(resource.read_bytes())
+            digest.update(_fingerprint_bytes(resource))
             digest.update(b'\0')
     return digest.hexdigest()
 

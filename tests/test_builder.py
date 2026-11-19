@@ -179,5 +179,19 @@ class BuilderTests(unittest.TestCase):
             self.assertIn('?verify=', request.call_args.args[0])
 
 
+class FingerprintTests(unittest.TestCase):
+    def test_fingerprint_ignores_checkout_line_endings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            recipe_dir = Path(tmp) / 'tool'
+            recipe_dir.mkdir()
+            recipe = recipe_dir / 'recipe.yaml'
+            recipe.write_text('package:\n  name: tool\n  version: 1\n', encoding='utf-8')
+            (recipe_dir / 'install.py').write_text('print("hello")\n', encoding='utf-8')
+            expected = builder.recipe_fingerprint(recipe)
+            for path in recipe_dir.iterdir():
+                path.write_bytes(path.read_bytes().replace(b'\n', b'\r\n'))
+            self.assertEqual(builder.recipe_fingerprint(recipe), expected)
+
+
 if __name__ == '__main__':
     unittest.main()
