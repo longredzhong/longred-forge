@@ -15,6 +15,7 @@ host-dependent and cannot be used for cross-builds.
 import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
 
@@ -103,8 +104,7 @@ def main():
             with open(dest, "w", encoding="ascii", newline="\n") as handle:
                 handle.write("#!/bin/sh\n")
                 handle.write(f'exec node "$(dirname "$0")/{relative_target}" "$@"\n')
-            os.chmod(dest, os.stat(dest).st_mode
-                     | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            os.chmod(dest, 0o755)
 
 
 if __name__ == "__main__":
