@@ -15,7 +15,6 @@ host-dependent and cannot be used for cross-builds.
 import json
 import os
 import shutil
-import stat
 import subprocess
 import sys
 
@@ -97,7 +96,13 @@ def main():
             bin_dir = os.path.join(prefix, "bin")
             os.makedirs(bin_dir, exist_ok=True)
             dest = os.path.join(bin_dir, name)
-            shutil.copy2(target_file, dest)
+            # cf's npm bin script imports ../dist/delegate.mjs relative to its own
+            # location. Copying it into prefix/bin breaks that import, so install a
+            # relocatable shim that executes the script inside the package tree.
+            relative_target = os.path.relpath(target_file, bin_dir).replace(os.sep, "/")
+            with open(dest, "w", encoding="ascii", newline="\n") as handle:
+                handle.write("#!/bin/sh\n")
+                handle.write(f'exec node "$(dirname "$0")/{relative_target}" "$@"\n')
             os.chmod(dest, os.stat(dest).st_mode
                      | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
