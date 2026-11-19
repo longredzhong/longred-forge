@@ -29,6 +29,8 @@ if sys.platform == "win32":
 
 
 # Re-export provider helpers to preserve the scripts.update API and patch points.
+# Recipes configured with extra.update.npm resolve versions from the npm registry
+# instead of GitHub releases; that routing ignores --owner/--repo entirely.
 if __package__:
     from .forge.upstream import (
         ASSET_DOWNLOAD_TIMEOUT, DEFAULT_HTTP_TIMEOUT, CLAUDE_CODE_GCS_BUCKET,
@@ -37,6 +39,10 @@ if __package__:
         get_latest_release, get_release_for_major, get_release_for_prefix,
         gcs_platform_for_if_cond, sha256_hex_bytes, validate_sha256, validate_tag_prefix,
     )
+    from .forge.npm import (
+        NPM_REGISTRY, conda_version_from_npm, integrity_sha512_hex, npm_latest_version,
+        npm_tarball_hashes, npm_tarball_url, semver_key, validate_npm_package,
+    )
 else:
     from forge.upstream import (
         ASSET_DOWNLOAD_TIMEOUT, DEFAULT_HTTP_TIMEOUT, CLAUDE_CODE_GCS_BUCKET,
@@ -44,6 +50,10 @@ else:
         compute_sha_for_asset, digest_from_checksum_txt, find_asset, get_gcs_checksums,
         get_latest_release, get_release_for_major, get_release_for_prefix,
         gcs_platform_for_if_cond, sha256_hex_bytes, validate_sha256, validate_tag_prefix,
+    )
+    from forge.npm import (
+        NPM_REGISTRY, conda_version_from_npm, integrity_sha512_hex, npm_latest_version,
+        npm_tarball_hashes, npm_tarball_url, semver_key, validate_npm_package,
     )
 
 TARGET_PLATFORMS = ("linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64")
@@ -177,7 +187,12 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
         owner = owner or owner_from_recipe
         repo = repo or repo_from_recipe
 
-    if not owner or not repo:
+    npm_package = None
+    if isinstance(update_config, dict) and "npm" in update_config:
+        npm_package = validate_npm_package(update_config["npm"])
+        print(f"Using npm registry provider for package: {npm_package}")
+
+    if npm_package is None and (not owner or not repo):
         raise RuntimeError("Owner/repo not set and not found in recipe")
 
     major = None
@@ -192,22 +207,35 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
         if major is not None:
             raise ValueError("extra.update.major and tag_prefix cannot be combined")
 
-    if tag_prefix is not None:
-        release = get_release_for_prefix(owner, repo, token, tag_prefix)
-    elif major is not None:
-        release = get_release_for_major(owner, repo, token, major)
+    if npm_package is not None and (major is not None or tag_prefix is not None):
+        raise ValueError("extra.update.npm cannot be combined with major or tag_prefix")
+
+    npm_release: Optional[Dict[str, Any]] = None
+    if npm_package is not None:
+        # Resolve the version from the npm registry; GitHub is never queried.
+        npm_release = npm_latest_version(npm_package)
+        version = npm_release["version"]
+        current_version = str(doc.get("context", {}).get("version"))
+        if semver_key(version) < semver_key(current_version):
+            raise RuntimeError(f"Refusing downgrade from {current_version} to {version}")
+        print(f"Latest npm dist-tag version: {version}")
     else:
-        release = get_latest_release(owner, repo, token)
-    tag = release.get("tag_name")
-    if not tag:
-        raise RuntimeError("No tag_name found in release")
-    if tag_prefix is not None:
-        if not tag.startswith(tag_prefix):
-            raise ValueError("Release tag does not match configured tag_prefix")
-        version = tag[len(tag_prefix):]
-    else:
-        version = tag.lstrip("v")
-    print(f"Latest upstream release: {tag}")
+        if tag_prefix is not None:
+            release = get_release_for_prefix(owner, repo, token, tag_prefix)
+        elif major is not None:
+            release = get_release_for_major(owner, repo, token, major)
+        else:
+            release = get_latest_release(owner, repo, token)
+        tag = release.get("tag_name")
+        if not tag:
+            raise RuntimeError("No tag_name found in release")
+        if tag_prefix is not None:
+            if not tag.startswith(tag_prefix):
+                raise ValueError("Release tag does not match configured tag_prefix")
+            version = tag[len(tag_prefix):]
+        else:
+            version = tag.lstrip("v")
+        print(f"Latest upstream release: {tag}")
 
     if major is not None or tag_prefix is not None:
         current = re.fullmatch(r"v?([0-9]+)\.([0-9]+)\.([0-9]+)", str(doc.get("context", {}).get("version")))
@@ -223,11 +251,21 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
 
     source_items = checked_source_items(doc.get("source"))
 
+    if npm_package is not None:
+        if len(source_items) != 1 or source_items[0][1]:
+            raise RuntimeError("npm recipes require a single unconditional registry source")
+    else:
+        for item, _ in source_items:
+            if NPM_REGISTRY in item["url"]:
+                raise RuntimeError("npm source requires extra.update.npm configuration")
+
     # update version
     doc.setdefault("context", {})
     doc["context"]["version"] = str(version)
+    if npm_package is not None:
+        doc["context"]["conda_version"] = conda_version_from_npm(version)
 
-    assets = release.get("assets", [])
+    assets = release.get("assets", []) if npm_package is None else []
     # attach release assets cache for checksum lookups
     for a in assets:
         a["_release_assets_cache"] = assets
@@ -238,6 +276,20 @@ def update_single_recipe(recipe_path: str, owner: Optional[str], repo: Optional[
 
     for item, if_cond in source_items:
         recipe_url = item["url"]
+
+        # npm registry source: download the tarball once, hash it, and verify
+        # it against the upstream sha512 integrity before writing anything.
+        if npm_package is not None:
+            rendered = re.sub(r"\$\{\{\s*version\s*\}\}", str(version), recipe_url.strip())
+            if rendered != npm_tarball_url(npm_package, version):
+                raise RuntimeError("npm source URL does not match the registry tarball pattern")
+            sha256_hex, sha512_hex = npm_tarball_hashes(npm_release["tarball"], headers)
+            if sha512_hex != integrity_sha512_hex(npm_release["integrity"]):
+                raise RuntimeError("npm tarball failed upstream integrity verification")
+            item["sha256"] = validate_sha256(sha256_hex)
+            print(f"Using integrity-verified sha for {npm_package} {version}")
+            resolved_sources += 1
+            continue
 
         # GCS-based source (claude-code): fetch checksums from manifest
         # The URL may use a ${{ gcs_base }} context variable or the literal GCS URL

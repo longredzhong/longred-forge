@@ -82,6 +82,16 @@ def main():
         default=os.environ.get("SKIP_EXISTING", "0") == "1",
         help="Skip build if package version already exists on prefix.dev",
     )
+    parser.add_argument(
+        "--adopt-existing-receipts",
+        dest="adopt_existing_receipts",
+        action="store_true",
+        help=(
+            "One-time bootstrap: for published packages without a receipt, record the "
+            "channel's digest for the current recipe fingerprint instead of rebuilding. "
+            "Use deliberately (e.g. migrating to tracked receipts), never in routine CI."
+        ),
+    )
     args = parser.parse_args()
 
     # load .env if present
@@ -106,6 +116,7 @@ def main():
                     not args.no_upload,
                     not args.no_build,
                     args.skip_existing,
+                    adopt_existing=args.adopt_existing_receipts,
                 )
                 if isinstance(result, dict):
                     results.append(result)

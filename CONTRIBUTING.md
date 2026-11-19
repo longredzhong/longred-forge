@@ -41,7 +41,7 @@ For direct contributions:
 
 When creating or updating recipes:
 
-1. **Use the latest version**: Always target the latest stable release
+1. **Use the latest version**: Always target the latest stable release. The sole exception is recipes using a non-GitHub provider (`extra.update.npm`): they may deliberately track a dist-tag that includes prereleases, and should say so in the recipe's `extra.update` configuration
 2. **Include checksums**: Use verified SHA256 checksums for source files
 3. **Minimal dependencies**: Only include necessary runtime dependencies; declare Python in build requirements for recipe-local `install.py`
 4. **Cross-platform**: Support Linux (x86_64 and aarch64), macOS (Intel and ARM), and Windows when possible

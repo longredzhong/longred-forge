@@ -12,13 +12,13 @@ import httpx
 
 if __package__:
     from .build import load_dotenv
-    from .forge.builder import existing_receipt_digest, recipe_fingerprint
+    from .forge.builder import existing_receipt_digest, recipe_fingerprint, receipt_path
     from .forge.http import HTTPClient
     from .forge.planner import render
     from .forge.publisher import INDEX_POLL_ATTEMPTS, INDEX_POLL_INTERVAL
 else:
     from build import load_dotenv
-    from forge.builder import existing_receipt_digest, recipe_fingerprint
+    from forge.builder import existing_receipt_digest, recipe_fingerprint, receipt_path
     from forge.http import HTTPClient
     from forge.planner import render
     from forge.publisher import INDEX_POLL_ATTEMPTS, INDEX_POLL_INTERVAL
@@ -78,15 +78,18 @@ def main():
     for recipe in recipes:
         for artifact in render(recipe, 'linux-64'):
             if artifact.filename in records:
-                digest = existing_receipt_digest(recipe, artifact, artifact.path(Path('output')))
-                if digest and records[artifact.filename].get('sha256') != digest:
+                receipt = receipt_path(artifact, Path('output'))
+                digest = existing_receipt_digest(recipe, artifact, artifact.path(Path('output')), receipt)
+                if not digest:
+                    raise RuntimeError(f'Build receipt missing for published package: {artifact.filename}; rebuild or adopt receipts deliberately')
+                if records[artifact.filename].get('sha256') != digest:
                     raise RuntimeError(f'Channel checksum differs for {artifact.filename}; increment build.number')
                 print(f'already indexed: {artifact.filename}', flush=True)
                 continue
             path = artifact.path(Path('output'))
-            receipt = path.with_suffix('.receipt.json')
+            receipt = receipt_path(artifact, Path('output'))
             if not path.is_file() or not receipt.is_file():
-                raise RuntimeError(f'Missing package or receipt: {path}')
+                raise RuntimeError(f'Missing package or receipt: {receipt}')
             with path.open('rb') as handle:
                 digest = hashlib.file_digest(handle, 'sha256').hexdigest()
             expected = {'filename': artifact.filename, 'sha256': digest, 'recipe_sha256': recipe_fingerprint(recipe)}

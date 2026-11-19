@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+context:
+  version: 1.0.0-rc.1
+  conda_version: 1.0.0rc.1
+package:
+  name: cf
+  version: ${{ conda_version }}
+source:
+- url: https://registry.npmjs.org/cf/-/cf-${{ version }}.tgz
+  sha256: fad1c2f2d5e47933ce974f48cfc56bfc6f34dfda0377a4d6985c70e29754c5bc
+build:
+  number: 0
+  dynamic_linking:
+    binary_relocation: false
+    rpath_allowlist:
+    - '**/*'
+  script:
+  - if: linux and aarch64
+    then: python "$RECIPE_DIR/install.py" linux arm64
+  - if: linux and x86_64
+    then: python "$RECIPE_DIR/install.py" linux x64
+  - if: osx and arm64
+    then: python "$RECIPE_DIR/install.py" darwin arm64
+  - if: osx and x86_64
+    then: python "$RECIPE_DIR/install.py" darwin x64
+  - if: win and x86_64
+    then: python "%RECIPE_DIR%/install.py" win32 x64
+requirements:
+  build:
+  - nodejs >=22.23.0,<23.0a0|>=24.22.0,<25.0a0|>=26.12.0,<27.0a0
+  - python
+  run:
+  - nodejs >=22.23.0,<23.0a0|>=24.22.0,<25.0a0|>=26.12.0,<27.0a0
+tests:
+- script:
+  - cf --version
+  - cloudflare --version
+about:
+  homepage: https://github.com/cloudflare/cf
+  license: MIT OR Apache-2.0
+  license_file:
+  - LICENSE-APACHE
+  - LICENSE-MIT
+  summary: The Cloudflare CLI (unified cf command)
+  description: Cloudflare's unified CLI, distributed via npm. Versions track the npm
+    latest dist-tag, which Cloudflare publishes as prereleases (for example 1.0.0-rc.1)
+    with breaking changes between candidates. Runtime dependencies are resolved with
+    npm at build time; only the top-level tarball is checksum-pinned.
+  repository: https://github.com/cloudflare/cf
+  documentation: https://developers.cloudflare.com/cli/
+extra:
+  recipe-maintainers:
+  - longredzhong
+  update:
+    npm: cf

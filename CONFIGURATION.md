@@ -81,7 +81,8 @@ channel index before requiring local files.
 artifact identities and changed-recipe selection (`planner.py`), original-path builds and receipt
 checks (`builder.py`), upload and public-index verification (`publisher.py`), and result manifests and
 Actions summaries (`reporting.py`). Updater support is separated into upstream asset resolution
-(`upstream.py`) and shared HTTP handling (`http.py`), with `scripts/update.py` as its CLI entry point.
+(`upstream.py`), npm registry resolution (`npm.py`), and shared HTTP handling (`http.py`), with
+`scripts/update.py` as its CLI entry point.
 
 ### Manual Build with rattler-build
 
@@ -230,6 +231,20 @@ extra:
 ```
 
 `opencode` tracks major 1; `opencode2` tracks major 2 and installs only the `opencode2` command. Separate command names do not imply isolated application state. GitHub release scans should use `GITHUB_TOKEN` to avoid anonymous API rate limits.
+
+## npm Registry Packages
+
+Tools distributed as npm packages instead of GitHub release assets can track the npm registry with `extra.update.npm`. The updater resolves the package's `latest` dist-tag, downloads the tarball once, verifies it against the registry's sha512 integrity, and records its SHA256. A semver-aware downgrade guard protects the channel even though dist-tags can move backwards.
+
+```yaml
+extra:
+  update:
+    npm: cf
+```
+
+Such recipes require exactly one unconditional `https://registry.npmjs.org/...` source; a registry URL without the configuration fails closed, and the setting cannot be combined with `major` or `tag_prefix`. GitHub is never queried (an `about.repository` is optional metadata), so the recipe's `context.version` keeps the raw npm version while the updater also writes `context.conda_version` with dashes stripped (npm `1.0.0-rc.1` becomes conda `1.0.0rc.1`, which sorts below the future `1.0.0` release).
+
+The `latest` dist-tag may publish prereleases by design: `cf` uses this provider and Cloudflare publishes release candidates to it, so the recipe updates (and rebuilds) on every candidate, including breaking command renames between candidates. Its build resolves the package's runtime dependencies with `npm install` at build time, so only the top-level tarball is checksum-pinned; `--ignore-scripts` keeps transitive install scripts from running during the build.
 
 ## Troubleshooting
 

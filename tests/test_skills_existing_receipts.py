@@ -27,7 +27,9 @@ class ExistingReceiptTests(unittest.TestCase):
         self.digest = hashlib.sha256(b'local').hexdigest()
 
     def write_receipt(self, *, with_artifact=True):
-        self.path.with_suffix('.receipt.json').write_text(json.dumps({
+        receipt = builder.receipt_path(self.artifact, Path('output'))
+        receipt.parent.mkdir(parents=True, exist_ok=True)
+        receipt.write_text(json.dumps({
             'filename': self.artifact.filename,
             'sha256': self.digest,
             'recipe_sha256': builder.recipe_fingerprint(self.recipe),
@@ -56,8 +58,9 @@ class ExistingReceiptTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'Channel checksum differs'):
             self.publish('0' * 64)
 
-    def test_publisher_skips_existing_package_without_receipt(self):
-        self.publish('0' * 64)
+    def test_publisher_rejects_published_package_without_receipt(self):
+        with self.assertRaisesRegex(RuntimeError, 'Build receipt missing for published package'):
+            self.publish('0' * 64)
 
     def test_publisher_rejects_recipe_or_artifact_mismatched_with_receipt(self):
         self.write_receipt()
@@ -93,14 +96,22 @@ class ExistingReceiptTests(unittest.TestCase):
             indexed.assert_called_with(self.artifact, 'example', self.digest)
             run.assert_not_called()
 
-    def test_builder_skips_existing_package_without_receipt(self):
+    def test_builder_rebuilds_existing_package_without_receipt(self):
+        def rebuild(*args, **kwargs):
+            self.path.write_bytes(b'local')
+
         with patch.object(builder, 'render', return_value=[self.artifact]), \
              patch.object(builder, 'indexed', return_value=True) as indexed, \
-             patch.object(builder.subprocess, 'run') as run:
-            result = builder.build_recipe(self.recipe, 'linux-64', 'example', False, True, True)
-            self.assertEqual(result['status'], 'already_exists')
-            indexed.assert_called_once_with(self.artifact, 'example')
-            run.assert_not_called()
+             patch.object(builder.subprocess, 'run', side_effect=rebuild) as run, \
+             patch.object(builder, 'publish', return_value='already_exists') as publish:
+            result = builder.build_recipe(self.recipe, 'linux-64', 'example', True, True, True)
+        self.assertEqual(result['status'], 'already_exists')
+        # A receiptless same-identity package must be rebuilt, not silently skipped.
+        run.assert_called_once()
+        publish.assert_called_once()
+        # Identity check plus post-build digest verification.
+        self.assertEqual(indexed.call_count, 2)
+        indexed.assert_called_with(self.artifact, 'example', self.digest)
 
 
 if __name__ == '__main__':

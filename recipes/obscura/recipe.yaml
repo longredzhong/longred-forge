@@ -26,7 +26,7 @@ source:
   - url: https://github.com/h4ckf0r0day/obscura/releases/download/v${{ version }}/obscura-x86_64-windows.zip
     sha256: be983b663552e11faf8c1e07696578bad622dbeb48afb9f59036032ca8e97fb3
 build:
-  number: 0
+  number: 1
   dynamic_linking:
     binary_relocation: false
     rpath_allowlist:

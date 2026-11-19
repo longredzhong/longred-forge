@@ -23,9 +23,9 @@ for binary in binaries:
         if os.path.isfile(p)
     )
     destination = os.path.join(bin_dir, binary)
-    copied = shutil.copy2(source, destination)
-    # Preserve the original short-circuit: chmod only runs for a falsy copy result.
-    if not copied and is_unix:
+    shutil.copy2(source, destination)
+    if is_unix:
+        # copy2 preserves the source mode; upstream archives may lack the exec bit.
         os.chmod(
             destination,
             os.stat(destination).st_mode

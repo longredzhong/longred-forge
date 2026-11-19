@@ -269,7 +269,7 @@ def prune_dangling(target_root, root, environment, agents):
     return pruned
 
 
-def plan_sync(root, environment, agent, selected=None, allow_empty=False, target_root=None):
+def plan_sync(root, environment, agent, selected=None, allow_empty=False, target_root=None, replaceable=None):
     """Check all destinations before any filesystem or Pixi changes."""
     if not NAME.fullmatch(environment):
         raise ValueError('Invalid environment name')
@@ -299,6 +299,13 @@ def plan_sync(root, environment, agent, selected=None, allow_empty=False, target
             raise ValueError(f'Invalid skill name: {skill.name}')
         dest = target / skill.name
         if dest.is_symlink():
+            if replaceable is not None:
+                try:
+                    Path(os.path.normpath(dest.parent / os.readlink(dest))).relative_to(replaceable)
+                    # A managed link the caller will replace (e.g. switch's clean step).
+                    continue
+                except (ValueError, OSError):
+                    pass
             if dest.resolve() != skill.resolve():
                 raise FileExistsError(f'Existing symlink conflicts: {dest}')
         elif dest.exists():
@@ -393,6 +400,13 @@ def switch_environment(root: Path, target_env: str, agent_choice: str | None, ta
     if not NAME.fullmatch(target_env):
         raise ValueError('Invalid environment name')
     print(f'Switching skills to environment: {target_env}')
+    # Preflight every agent's plan for the target environment before removing any
+    # links, so a missing environment or a conflicting path cannot leave the old
+    # projection already deleted. Links pointing into this workspace's Pixi
+    # environments are replaceable: the clean step removes them before syncing.
+    envs_dir = root / '.pixi' / 'envs'
+    for agent in resolve_agents(agent_choice):
+        plan_sync(root, target_env, agent, target_root=target_root, replaceable=envs_dir)
     clean(root, target_env, agent_choice, all_envs=True, target_root=target_root)
     sync(root, target_env, agent_choice, target_root=target_root, prune=True)
 
@@ -553,6 +567,19 @@ def resolve_package_name(input_name: str, repodata=None) -> str:
     raise ValueError(f"Expected an agent-skill-* package name or known skill name, got '{input_name}'")
 
 
+def version_sort_key(version: str):
+    """Order dot-separated versions numerically (0.0.10 above 0.0.9), with
+    suffixed pre-release segments below their bare release (1.0rc1 < 1.0)."""
+    key = []
+    for segment in str(version or '0').split('.'):
+        match = re.match(r'(\d+)(.*)', segment)
+        if match:
+            key.append((int(match.group(1)), 0 if match.group(2) else 1, match.group(2)))
+        else:
+            key.append((-1, 0, segment))
+    return key
+
+
 def find_skills(query: str):
     """Search published skills by package name and description/summary."""
     data = fetch_repodata()
@@ -566,7 +593,8 @@ def find_skills(query: str):
         summary = p.get('summary', '') or p.get('about', {}).get('summary', '')
         if not q or q in name.lower() or q in summary.lower():
             version = p.get('version', '')
-            matches[name] = (version, summary)
+            if name not in matches or version_sort_key(version) > version_sort_key(matches[name][0]):
+                matches[name] = (version, summary)
 
     if not matches:
         print('No matching skills')
@@ -635,7 +663,7 @@ def show_info(name: str, root: Path, environment: str, target_root: Path | None)
     packages = data.get('packages.conda', {}) | data.get('packages', {})
     found = [p for p in packages.values() if p.get('name') == resolved_package]
     if found:
-        latest = sorted(found, key=lambda x: str(x.get('version', '0')))[-1]
+        latest = max(found, key=lambda x: version_sort_key(x.get('version', '0')))
         print(f'Package:      {latest.get("name")}')
         print(f'Version:      {latest.get("version")}')
         print(f'Summary:      {latest.get("summary", "No summary provided")}')

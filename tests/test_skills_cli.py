@@ -1,9 +1,11 @@
 """Verify add does not hide conflicts or partial Pixi changes."""
+import io
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -394,6 +396,104 @@ class SkillsCLITests(unittest.TestCase):
 
             self.assertFalse((root / '.agents/skills/skill1').exists())
             self.assertTrue((root / '.agents/skills/skill2').is_symlink())
+
+    def test_find_and_info_pick_the_highest_version(self):
+        repodata = {'packages.conda': {
+            'agent-skill-example-demo-0.0.9-h0.conda': {'name': 'agent-skill-example-demo', 'version': '0.0.9', 'summary': 'demo skill'},
+            'agent-skill-example-demo-0.0.10-h0.conda': {'name': 'agent-skill-example-demo', 'version': '0.0.10', 'summary': 'demo skill'},
+        }}
+        with patch.object(longred_skills, 'fetch_repodata', return_value=repodata), \
+                redirect_stdout(io.StringIO()) as out:
+            longred_skills.find_skills('demo')
+        self.assertIn('v0.0.10', out.getvalue())
+        self.assertNotIn('v0.0.9', out.getvalue())
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(longred_skills, 'fetch_repodata', return_value=repodata), \
+                    redirect_stdout(io.StringIO()) as out:
+                longred_skills.show_info('agent-skill-example-demo', Path(tmp), 'default', None)
+        self.assertIn('0.0.10', out.getvalue())
+        self.assertNotIn('0.0.9', out.getvalue())
+
+    def test_version_sort_key_orders_prereleases_below_releases(self):
+        key = longred_skills.version_sort_key
+        self.assertGreater(key('0.0.10'), key('0.0.9'))
+        self.assertLess(key('1.0rc1'), key('1.0'))
+        self.assertLess(key('1.0'), key('1.0.1'))
+        self.assertLess(key('0.0.2'), key('0.0.10'))
+
+    def test_switch_between_environments_with_overlapping_skill_names(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "test"\n')
+            for env in ('env1', 'env2'):
+                skill = root / f'.pixi/envs/{env}/share/agent-skills/shared'
+                skill.mkdir(parents=True)
+                (skill / 'SKILL.md').write_text(f'skill-{env}')
+
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'sync', '-e', 'env1']):
+                longred_skills.main()
+            first = root / '.agents/skills/shared'
+            self.assertTrue(first.is_symlink())
+            self.assertIn('env1', os.readlink(first))
+
+            # Both environments carry a skill named 'shared'; the existing link points
+            # into env1 and must be treated as replaceable, not as a conflict.
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'switch', 'env2']), \
+                    redirect_stdout(io.StringIO()):
+                longred_skills.main()
+            self.assertTrue(first.is_symlink())
+            self.assertIn('env2', os.readlink(first))
+
+    def test_switch_to_missing_environment_keeps_existing_links(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "test"\n')
+            env1_skill = root / '.pixi/envs/env1/share/agent-skills/skill1'
+            env1_skill.mkdir(parents=True)
+            (env1_skill / 'SKILL.md').write_text('skill1')
+
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'sync', '-e', 'env1']):
+                longred_skills.main()
+            self.assertTrue((root / '.agents/skills/skill1').is_symlink())
+
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'switch', 'missing']), \
+                    redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(ValueError, 'No installed skills'):
+                    longred_skills.main()
+            # The old projection survives a failed switch.
+            self.assertTrue((root / '.agents/skills/skill1').is_symlink())
+
+    def test_switch_conflict_keeps_existing_links(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'pixi.toml').write_text('[workspace]\nname = "test"\n')
+            env1_skill = root / '.pixi/envs/env1/share/agent-skills/skill1'
+            env1_skill.mkdir(parents=True)
+            (env1_skill / 'SKILL.md').write_text('skill1')
+            env2_skill = root / '.pixi/envs/env2/share/agent-skills/skill2'
+            env2_skill.mkdir(parents=True)
+            (env2_skill / 'SKILL.md').write_text('skill2')
+
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'sync', '-e', 'env1']):
+                longred_skills.main()
+
+            # An unmanaged directory occupies the target name in the agent dir.
+            conflicting = root / '.agents/skills/skill2'
+            conflicting.mkdir()
+
+            with patch.object(Path, 'cwd', return_value=root), \
+                    patch('sys.argv', ['longred-skills', 'switch', 'env2']), \
+                    redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(FileExistsError, 'Existing path conflicts'):
+                    longred_skills.main()
+            # Preflight failed before the clean step, so the old links survive.
+            self.assertTrue((root / '.agents/skills/skill1').is_symlink())
 
     def test_hook_install(self):
         with tempfile.TemporaryDirectory() as tmp:

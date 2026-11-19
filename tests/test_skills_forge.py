@@ -367,7 +367,9 @@ class SkillsForgeTests(unittest.TestCase):
                     path.write_bytes(artifact.name.encode())
                     receipt = {'filename': artifact.filename, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
                                'recipe_sha256': 'valid'}
-                    path.with_suffix('.receipt.json').write_text(json.dumps(receipt))
+                    receipt_file = skills_publish.receipt_path(artifact, Path('output'))
+                    receipt_file.parent.mkdir(parents=True, exist_ok=True)
+                    receipt_file.write_text(json.dumps(receipt))
                 with patch.dict(os.environ, {'PREFIX_API_KEY': 'test'}), \
                         patch.object(skills_publish, 'load_dotenv', return_value={}), \
                         patch.object(skills_publish, 'render', side_effect=[[artifacts[0]], [artifacts[1]]]), \

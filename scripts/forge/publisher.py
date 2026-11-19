@@ -2,6 +2,7 @@
 
 import hashlib
 import os
+import re
 import subprocess
 import time
 from pathlib import Path
@@ -13,6 +14,20 @@ from .planner import Artifact
 
 INDEX_POLL_INTERVAL = 15
 INDEX_POLL_ATTEMPTS = 140  # 35 minutes, including the channel's documented cache window.
+
+
+def remote_digest(artifact: Artifact, channel: str) -> str | None:
+    """Return the sha256 recorded for this artifact in the channel index, if any."""
+    try:
+        url = f'https://repo.prefix.dev/{channel}/{artifact.platform}/repodata.json'
+        repodata = HTTPClient().json(url)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            return None
+        raise
+    metadata = repodata.get('packages.conda', {}).get(artifact.filename)
+    sha256 = metadata.get('sha256') if isinstance(metadata, dict) else None
+    return sha256 if isinstance(sha256, str) and re.fullmatch(r'[a-f0-9]{64}', sha256) else None
 
 
 def indexed(artifact: Artifact, channel: str, sha256: str | None = None) -> bool:

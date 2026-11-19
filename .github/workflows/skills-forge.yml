@@ -83,6 +83,18 @@ jobs:
           set -euo pipefail
           test -n "$PREFIX_TOKEN" || { echo 'SKILLS_PREFIX_TOKEN is required for publishing' >&2; exit 1; }
           pixi run python scripts/skills_publish.py
+      - name: Commit build receipts
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add receipts/
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: update build receipts'
+            git push origin HEAD:main
+          fi
       - name: Retain build artifacts
         if: always()
         uses: actions/upload-artifact@v4

@@ -14,6 +14,7 @@ import yaml  # type: ignore
 
 from scripts import update
 from scripts.forge.http import HTTPClient
+from scripts.forge import npm
 from scripts.forge import upstream
 
 
@@ -279,6 +280,144 @@ class UpdaterTests(unittest.TestCase):
         self.assertEqual(data["failed"], 1)
         self.assertEqual(data["recipes"][1]["status"], "dry-run")
         self.assertNotIn("secret", report.read_text())
+
+
+class NpmUpdaterTests(unittest.TestCase):
+    INTEGRITY = "sha512-" + "A" * 86 + "=="
+    SHA512_HEX = npm.integrity_sha512_hex(INTEGRITY)
+
+    def setUp(self):
+        self.workspace = tempfile.TemporaryDirectory(dir=Path.cwd(), prefix=".updater-test-")
+        self.addCleanup(self.workspace.cleanup)
+        self.root = Path(self.workspace.name)
+        self.recipe = self.root / "recipe.yaml"
+        self.write_recipe(version="1.0.0-rc.1", conda_version="1.0.0rc.1",
+                          source_url="https://registry.npmjs.org/cf/-/cf-${{ version }}.tgz",
+                          npm="cf", repository="https://github.com/cloudflare/cf")
+        self.original = self.recipe.read_bytes()
+        self.release = {"version": "1.0.0-rc.1",
+                        "tarball": "https://registry.npmjs.org/cf/-/cf-1.0.0-rc.1.tgz",
+                        "integrity": self.INTEGRITY}
+        self.network = patch.object(update, "npm_latest_version", return_value=self.release).start()
+        self.hashes = patch.object(update, "npm_tarball_hashes",
+                                   return_value=("b" * 64, self.SHA512_HEX)).start()
+        self.addCleanup(patch.stopall)
+        self.output = redirect_stdout(io.StringIO())
+        self.output.__enter__()
+        self.addCleanup(self.output.__exit__, None, None, None)
+
+    def write_recipe(self, version, conda_version, source_url, npm=None, repository="https://github.com/cloudflare/cf", extra_sources=()):
+        lines = [f"context: {{version: '{version}', conda_version: '{conda_version}'}}"]
+        if repository:
+            lines.append(f"about: {{repository: '{repository}'}}")
+        lines.append("source:")
+        if source_url:
+            lines.append(f"- url: '{source_url}'\n  sha256: " + "a" * 64)
+        for source in extra_sources:
+            lines.append(f"- {source}")
+        if npm:
+            lines.append("extra:\n  update:\n    npm: " + npm)
+        self.recipe.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    def run_update(self, apply=True, dry=False, refresh=False):
+        return update.update_single_recipe(str(self.recipe), None, None, {}, None, apply, dry, refresh)
+
+    def test_unchanged_skips_download_and_render(self):
+        with patch.object(update.subprocess, "run") as render:
+            self.assertEqual(self.run_update(), "unchanged")
+        render.assert_not_called()
+        self.hashes.assert_not_called()
+        self.assertEqual(self.recipe.read_bytes(), self.original)
+
+    def test_refresh_unchanged_re_downloads_and_verifies(self):
+        with patch.object(update.subprocess, "run") as render:
+            self.assertEqual(self.run_update(refresh=True), "updated")
+        self.hashes.assert_called_once()
+        self.assertEqual(render.call_count, 5)
+
+    def test_new_version_rewrites_version_conda_version_and_sha(self):
+        self.release.update({"version": "1.0.0-rc.2",
+                              "tarball": "https://registry.npmjs.org/cf/-/cf-1.0.0-rc.2.tgz"})
+        with patch.object(update.subprocess, "run") as render:
+            self.assertEqual(self.run_update(), "updated")
+        self.assertEqual(render.call_count, 5)
+        self.hashes.assert_called_once()
+        self.assertIn(self.release["tarball"], self.hashes.call_args.args)
+        updated = yaml.safe_load(self.recipe.read_text())
+        self.assertEqual(updated["context"], {"version": "1.0.0-rc.2", "conda_version": "1.0.0rc.2"})
+        self.assertEqual(updated["source"][0]["sha256"], "b" * 64)
+        self.assertEqual(list(self.root.glob(".update-*")), [])
+
+    def test_npm_recipe_needs_no_github_repository(self):
+        self.write_recipe(version="1.0.0-rc.1", conda_version="1.0.0rc.1",
+                          source_url="https://registry.npmjs.org/cf/-/cf-${{ version }}.tgz",
+                          npm="cf", repository=None)
+        with patch.object(update.subprocess, "run") as render:
+            self.assertEqual(self.run_update(refresh=True), "updated")
+        self.assertEqual(render.call_count, 5)
+
+    def test_downgrade_refused_without_download_or_render(self):
+        self.release.update({"version": "1.0.0-beta.1",
+                             "tarball": "https://registry.npmjs.org/cf/-/cf-1.0.0-beta.1.tgz"})
+        with patch.object(update.subprocess, "run") as render:
+            with self.assertRaisesRegex(RuntimeError, "Refusing downgrade"):
+                self.run_update()
+        render.assert_not_called()
+        self.hashes.assert_not_called()
+        self.assertEqual(self.recipe.read_bytes(), self.original)
+
+    def test_integrity_mismatch_refuses_to_write(self):
+        with patch.object(update, "npm_tarball_hashes", return_value=("b" * 64, "d" * 128)) as hashes:
+            with patch.object(update.subprocess, "run") as render:
+                with self.assertRaisesRegex(RuntimeError, "integrity"):
+                    self.run_update(refresh=True)
+        hashes.assert_called_once()
+        render.assert_not_called()
+        self.assertEqual(self.recipe.read_bytes(), self.original)
+
+    def test_fail_closed_shapes_never_touch_the_recipe(self):
+        # A version distinct from the mocked latest (1.0.0-rc.1) is required so
+        # each flow proceeds past the unchanged short-circuit.
+        github_url = "https://github.com/example/tool/releases/download/v${{ version }}/tool-${{ version }}.zip"
+        shapes = (
+            ("npm source without provider config", dict(version="1.0.0", conda_version="1.0.0",
+             source_url="https://registry.npmjs.org/cf/-/cf-${{ version }}.tgz", npm=None)),
+            ("provider config with github source", dict(version="0.0.0", conda_version="0.0.0",
+             source_url=github_url, npm="cf")),
+            ("conditional npm source", dict(version="0.0.0", conda_version="0.0.0",
+             source_url=None, npm="cf", extra_sources=("{if: linux, then: [{url: 'https://registry.npmjs.org/cf/-/cf-${{ version }}.tgz', sha256: " + "a" * 64 + "}]}",))),
+            ("multiple npm sources", dict(version="0.0.0", conda_version="0.0.0",
+             source_url="https://registry.npmjs.org/cf/-/cf-${{ version }}.tgz", npm="cf",
+             extra_sources=("{url: 'https://registry.npmjs.org/cf/-/cf-extra-${{ version }}.tgz', sha256: " + "a" * 64 + "}",))),
+        )
+        for label, fields in shapes:
+            with self.subTest(label):
+                self.write_recipe(**fields)
+                original = self.recipe.read_bytes()
+                with patch.object(update, "get_latest_release", return_value={"tag_name": "v9.0", "assets": []}) as github, \
+                        patch.object(update.subprocess, "run") as render:
+                    with self.assertRaises(RuntimeError):
+                        self.run_update()
+                render.assert_not_called()
+                self.assertEqual(self.recipe.read_bytes(), original)
+                if fields.get("npm") is None:
+                    github.assert_called_once()
+                else:
+                    github.assert_not_called()
+        for extra in ("major: 2", "tag_prefix: cf@"):
+            with self.subTest(f"npm cannot combine with {extra}"):
+                document = yaml.safe_load(self.recipe.read_text())
+                document.setdefault("extra", {}).setdefault("update", {})["npm"] = "cf"
+                document["extra"]["update"].update(yaml.safe_load("{" + extra + "}"))
+                self.recipe.write_text(yaml.safe_dump(document))
+                original = self.recipe.read_bytes()
+                with patch.object(update, "npm_latest_version") as npm_lookup, \
+                        patch.object(update.subprocess, "run") as render:
+                    with self.assertRaises(ValueError):
+                        self.run_update()
+                npm_lookup.assert_not_called()
+                render.assert_not_called()
+                self.assertEqual(self.recipe.read_bytes(), original)
 
 
 if __name__ == "__main__":
