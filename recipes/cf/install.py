@@ -21,8 +21,10 @@ import sys
 
 VALID_OS = {"linux", "darwin", "win32"}
 VALID_CPU = {"x64", "arm64"}
+# --legacy-peer-deps: npm still resolves dev-peer constraints with --omit=dev;
+# cf's root msw 3.0.5 conflicts with @cloudflare/workers-auth's msw 2.14.6 peer.
 NPM_INSTALL_ARGS = ("install", "--omit=dev", "--ignore-scripts", "--no-audit",
-                    "--no-fund", "--loglevel=error")
+                    "--no-fund", "--legacy-peer-deps", "--loglevel=error")
 # rattler-build scaffolding shares the build directory with the unpacked package.
 RATTLER_SCAFFOLD = {"conda_build.sh", "conda_build.log", "build_env.sh"}
 

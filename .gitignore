@@ -3,14 +3,9 @@ output/
 *.conda
 *.tar.bz2
 
-# Build receipts: noarch (skills) receipts are committed as published-state
-# records; binary platform receipts stay local (binary CI selects recipes
-# via --changed-since and re-verifies within the same job).
-receipts/linux-64/
-receipts/linux-aarch64/
-receipts/osx-64/
-receipts/osx-arm64/
-receipts/win-64/
+# Build receipts are tracked for every platform: they are the published-state
+# record that lets --skip-existing trust an already-indexed artifact without a
+# non-reproducible rebuild. No receipt means rebuild and verify the channel digest.
 
 # Temporary files
 .DS_Store

@@ -69,11 +69,14 @@ failures; remaining recipes continue after a failure, and the batch exits nonzer
 
 `--no-build` renders the original recipe to determine exact package filenames and looks only for those
 artifacts under `output/<platform>/`; it does not upload arbitrary matching files. Each package requires
-a companion builder-generated receipt: `name-version-build.conda` must have
-`name-version-build.receipt.json` containing its filename and matching SHA256. Missing or mismatched
-receipts fail the operation; rebuild rather than manufacturing receipts. Retain receipts alongside
-packages when transferring build outputs. `--skip-existing` can skip artifacts already in the public
-channel index before requiring local files.
+a builder-generated receipt at `receipts/<platform>/name-version-build.conda.json` containing its
+filename, SHA256, and the recipe fingerprint. All receipts are tracked in git, including platform
+receipts, so a fresh CI checkout can trust an already-published artifact instead of rebuilding it.
+A missing or mismatched receipt fails the operation; rebuild rather than manufacturing receipts.
+`--skip-existing` only skips an artifact in the public channel index when its tracked receipt matches
+the current recipe; without a receipt it rebuilds and verifies the channel digest, failing loudly if
+a recipe changed without a version or build-number bump. `--adopt-existing-receipts` is a one-time
+bootstrap for migrating already-published packages into tracked receipts; never use it in routine CI.
 
 ### Module Architecture
 
