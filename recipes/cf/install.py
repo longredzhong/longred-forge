@@ -15,7 +15,6 @@ host-dependent and cannot be used for cross-builds.
 import json
 import os
 import shutil
-import stat
 import subprocess
 import sys
 
