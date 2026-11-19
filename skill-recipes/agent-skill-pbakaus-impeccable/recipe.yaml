@@ -1,9 +1,9 @@
 package:
   name: agent-skill-pbakaus-impeccable
-  version: 0.0.6
+  version: 0.0.7
 source:
-  url: https://github.com/pbakaus/impeccable/archive/d41d9860b0094dcb68030657da63461212835aaa.tar.gz
-  sha256: b0a88263ffe9d0e919bba6e8dec0f481cd6a0530d3d08563466a38db3f8ad3df
+  url: https://github.com/pbakaus/impeccable/archive/b49177d32788f2dc585c42831d845dacf1ebed2c.tar.gz
+  sha256: 518c9f7e69ca32d80221b3cd7e1a5f5755762e5e6d748137da101454caac0f44
 build:
   number: 0
   noarch: generic
