@@ -1,6 +1,6 @@
 package:
   name: longred-skills
-  version: 0.4.2
+  version: 0.4.3
 source:
   path: ../../cli
 build:
@@ -15,6 +15,7 @@ requirements:
   run:
     - python >=3.11
     - httpx >=0.28,<0.29
+    - pyyaml >=6,<7
 tests:
   - script:
       - longred-skills --help
