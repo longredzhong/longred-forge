@@ -9,6 +9,7 @@ import tomllib
 from pathlib import Path
 
 import httpx
+import yaml
 
 CHANNEL = 'https://prefix.dev/longredzhong/longred-skills-forge'
 
@@ -215,6 +216,134 @@ def global_workspace_root(environment: str) -> tuple[Path, Path]:
     return target_root, workspace_root
 
 
+def parse_skill_frontmatter(skill_dir: Path) -> dict:
+    """Parse and validate a skill's SKILL.md YAML frontmatter.
+
+    Raises ValueError with a concise reason when the skill cannot be presented
+    to users; callers warn and skip such skills instead of failing the command.
+    """
+    if not NAME.fullmatch(skill_dir.name):
+        raise ValueError(f'invalid skill directory name: {skill_dir.name!r}')
+    skill_file = skill_dir / 'SKILL.md'
+    try:
+        content = skill_file.read_text(encoding='utf-8', errors='replace')
+    except OSError as exc:
+        raise ValueError(f'cannot read {skill_file}: {exc}') from exc
+    if not content.startswith('---'):
+        raise ValueError(f'{skill_file} has no YAML frontmatter')
+    parts = content.split('---', 2)
+    if len(parts) < 3:
+        raise ValueError(f'{skill_file} has no closing frontmatter delimiter')
+    try:
+        metadata = yaml.safe_load(parts[1]) or {}
+    except yaml.YAMLError as exc:
+        raise ValueError(f'{skill_file} has malformed YAML frontmatter: {exc}') from exc
+    if not isinstance(metadata, dict):
+        raise ValueError(f'{skill_file} frontmatter is not a mapping')
+    description = metadata.get('description')
+    if not isinstance(description, str) or not description.strip():
+        raise ValueError(f'{skill_file} has no non-empty description')
+    if 'name' in metadata and not isinstance(metadata['name'], str):
+        raise ValueError(f'{skill_file} has a non-string name')
+    return metadata
+
+
+def _discover_from(source: Path, label: str) -> list[dict]:
+    """Collect valid skills under one share/agent-skills directory."""
+    records = []
+    if not source.is_dir():
+        return records
+    for skill in sorted(source.iterdir()):
+        if not skill.is_dir() or not (skill / 'SKILL.md').is_file():
+            continue
+        try:
+            metadata = parse_skill_frontmatter(skill)
+        except ValueError as exc:
+            print(f'warning: skipping invalid skill {skill}: {exc}', file=sys.stderr)
+            continue
+        records.append({'key': f'{label}:{skill.name}', 'name': skill.name,
+                        'path': skill, 'label': label, 'metadata': metadata})
+    return records
+
+
+def _env_skill_source(env_root: Path, environment: str) -> Path:
+    return env_root / '.pixi' / 'envs' / environment / 'share' / 'agent-skills'
+
+
+def discover_local_skills(root: Path, environment: str) -> list[dict]:
+    """Discover skills installed in the current Pixi workspace environment."""
+    return _discover_from(_env_skill_source(root, environment), f'env:{environment}')
+
+
+def pixi_global_envs_root() -> Path:
+    """Root of Pixi's global environments (PIXI_HOME or ~/.pixi)."""
+    pixi_home = os.environ.get('PIXI_HOME')
+    return Path(pixi_home) / 'envs' if pixi_home else Path.home() / '.pixi' / 'envs'
+
+
+def global_skill_sources() -> list[tuple[str, Path]]:
+    """All globally discoverable skill trees, labelled by source environment."""
+    sources = []
+    workspaces = global_workspace_root('default')[1].parent
+    if workspaces.is_dir():
+        for env_dir in sorted(workspaces.iterdir()):
+            if env_dir.is_dir() and NAME.fullmatch(env_dir.name):
+                source = _env_skill_source(env_dir, env_dir.name)
+                if source.is_dir():
+                    sources.append((f'workspace:{env_dir.name}', source))
+    envs_root = pixi_global_envs_root()
+    if envs_root.is_dir():
+        for env_dir in sorted(envs_root.iterdir()):
+            if env_dir.is_dir() and NAME.fullmatch(env_dir.name):
+                source = env_dir / 'share' / 'agent-skills'
+                if source.is_dir():
+                    sources.append((f'pixi:{env_dir.name}', source))
+    return sources
+
+
+def discover_global_skills() -> list[dict]:
+    """Discover skills from the persistent workspace and all Pixi global envs."""
+    records = []
+    for label, source in global_skill_sources():
+        records.extend(_discover_from(source, label))
+    return records
+
+
+def dedupe_skill_records(records: list[dict]) -> list[dict]:
+    """Keep at most one source per skill name, preserving the first choice."""
+    selected = []
+    kept = {}
+    for record in records:
+        name = record['name']
+        if name in kept:
+            print(f'warning: multiple sources for {name}, keeping {kept[name]["label"]}',
+                  file=sys.stderr)
+            continue
+        kept[name] = record
+        selected.append(record)
+    return selected
+
+
+def is_skill_linked(record: dict, target: Path) -> bool:
+    dest = target / record['name']
+    if not dest.is_symlink():
+        return False
+    try:
+        return dest.samefile(record['path']) or dest.resolve() == record['path'].resolve()
+    except OSError:
+        return False
+
+
+def default_skill_records(records: list[dict], target: Path) -> list[dict]:
+    """Preselect linked skills, or unambiguous skills when nothing is linked."""
+    if any(is_skill_linked(record, target) for record in records):
+        return [record for record in records if is_skill_linked(record, target)]
+    counts = {}
+    for record in records:
+        counts[record['name']] = counts.get(record['name'], 0) + 1
+    return [record for record in records if counts[record['name']] == 1]
+
+
 def resolve_agents(agent_arg: str | list[str] | None, default_agents: list[str] | None = None) -> list[str]:
     """Resolve agent argument into a deduplicated list of canonical agent names."""
     if not agent_arg:
@@ -417,40 +546,17 @@ def manage_interactive(root: Path, environment: str, agent_choice: str | None, t
     agent = agents[0]
     effective_target_root = target_root or root
     is_global = target_root is not None
-    source = root / '.pixi' / 'envs' / environment / 'share' / 'agent-skills'
-    if not source.is_dir():
-        print(f'No installed skills found in {source}')
-        return
-
-    available_skills = sorted(p for p in source.iterdir() if p.is_dir() and (p / 'SKILL.md').is_file())
-    if not available_skills:
-        print('No installed skills found')
+    records = discover_global_skills() if is_global else discover_local_skills(root, environment)
+    if not records:
+        scope = 'all Pixi environments' if is_global else f'environment {environment}'
+        print(f'No installed skills found in {scope}')
         return
 
     target = get_agent_dir(effective_target_root, agent, is_global=is_global)
     target.mkdir(parents=True, exist_ok=True)
+    preselected = {record['key'] for record in default_skill_records(records, target)}
 
-    skills_meta = []
-    for skill in available_skills:
-        dest = target / skill.name
-        is_linked = False
-        try:
-            if dest.is_symlink() and (dest.samefile(skill) or dest.resolve() == skill.resolve()):
-                is_linked = True
-        except OSError:
-            pass
-        desc = ''
-        content = (skill / 'SKILL.md').read_text(encoding='utf-8', errors='replace')
-        if content.startswith('---'):
-            parts = content.split('---', 2)
-            if len(parts) >= 3:
-                for line in parts[1].splitlines():
-                    if line.startswith('description:'):
-                        desc = line.split(':', 1)[1].strip().strip('\'"')
-                        break
-        skills_meta.append((skill, is_linked, desc))
-
-    selected_names = set()
+    selected_keys = set()
     use_questionary = False
     try:
         import questionary
@@ -459,11 +565,15 @@ def manage_interactive(root: Path, environment: str, agent_choice: str | None, t
     except ImportError:
         pass
 
+    def title_for(record):
+        desc = record['metadata'].get('description', '')
+        suffix = f" ({desc[:60]}...)" if len(desc) > 60 else f" ({desc})" if desc else ''
+        return f"{record['name']} [{record['label']}]{suffix}"
+
     if use_questionary:
-        choices = []
-        for skill, is_linked, desc in skills_meta:
-            title = f"{skill.name}" + (f" ({desc[:60]}...)" if len(desc) > 60 else f" ({desc})" if desc else "")
-            choices.append(questionary.Choice(title=title, value=skill.name, checked=is_linked))
+        choices = [questionary.Choice(title=title_for(record), value=record['key'],
+                                      checked=record['key'] in preselected)
+                   for record in records]
         answer = questionary.checkbox(
             f"Select skills to enable for '{agent}' ({target}):",
             choices=choices,
@@ -472,16 +582,14 @@ def manage_interactive(root: Path, environment: str, agent_choice: str | None, t
         if answer is None:
             print("Cancelled.")
             return
-        selected_names = set(answer)
+        selected_keys = set(answer)
     else:
         print(f"\nManaging skills for '{agent}' in {target}:")
-        current_state = {skill.name: is_linked for skill, is_linked, _ in skills_meta}
         if not sys.stdin.isatty():
             return
-        for idx, (skill, is_linked, desc) in enumerate(skills_meta, 1):
-            mark = '[x]' if is_linked else '[ ]'
-            d_str = f" - {desc[:50]}..." if desc else ""
-            print(f"  [{idx}] {mark} {skill.name}{d_str}")
+        current_state = {record['key']: record['key'] in preselected for record in records}
+        print('\n'.join(f"  [{idx}] {'[x]' if record['key'] in preselected else '[ ]'} "
+                        f"{title_for(record)}" for idx, record in enumerate(records, 1)))
         print("\nEnter skill numbers to toggle (e.g. '1, 2'), 'all', 'none', or 'c' to save/continue:")
         while True:
             try:
@@ -492,39 +600,43 @@ def manage_interactive(root: Path, environment: str, agent_choice: str | None, t
             if line in ('c', 'save', 'exit', 'q', ''):
                 break
             if line == 'all':
-                for k in current_state:
-                    current_state[k] = True
+                current_state = {key: True for key in current_state}
             elif line == 'none':
-                for k in current_state:
-                    current_state[k] = False
+                current_state = {key: False for key in current_state}
             else:
                 for part in line.split(','):
                     part = part.strip()
                     if part.isdigit():
                         idx = int(part)
-                        if 1 <= idx <= len(skills_meta):
-                            name = skills_meta[idx - 1][0].name
-                            current_state[name] = not current_state[name]
-            for idx, (skill, _, desc) in enumerate(skills_meta, 1):
-                mark = '[x]' if current_state[skill.name] else '[ ]'
-                print(f"  [{idx}] {mark} {skill.name}")
+                        if 1 <= idx <= len(records):
+                            key = records[idx - 1]['key']
+                            current_state[key] = not current_state[key]
+            print('\n'.join(f"  [{idx}] {'[x]' if current_state[record['key']] else '[ ]'} "
+                            f"{title_for(record)}" for idx, record in enumerate(records, 1)))
             print("Toggle more or enter 'c' to save:")
-        selected_names = {k for k, v in current_state.items() if v}
+        selected_keys = {key for key, enabled in current_state.items() if enabled}
 
-    to_link = [skill for skill, is_linked, _ in skills_meta if skill.name in selected_names and not is_linked]
-    to_unlink = [skill for skill, is_linked, _ in skills_meta if skill.name not in selected_names and is_linked]
-    for skill in to_link:
-        dest = target / skill.name
+    selected = dedupe_skill_records([record for record in records if record['key'] in selected_keys])
+    selected_keys = {record['key'] for record in selected}
+    to_link = [record for record in selected if not is_skill_linked(record, target)]
+    to_unlink = [record for record in records
+                 if record['key'] not in selected_keys and is_skill_linked(record, target)]
+    for record in to_link:
+        skill = record['path']
+        dest = target / record['name']
+        if dest.exists() and not dest.is_symlink():
+            print(f'warning: skipping {dest}: existing non-managed path', file=sys.stderr)
+            continue
         if dest.is_symlink():
             dest.unlink()
         dest.symlink_to(os.path.relpath(skill, dest.parent), target_is_directory=True)
         print(f'linked: {dest} -> {skill}')
-    for skill in to_unlink:
-        dest = target / skill.name
+    for record in to_unlink:
+        dest = target / record['name']
         if dest.is_symlink():
             dest.unlink()
             print(f'unlinked: {dest}')
-    print(f"Updated skills for '{agent}': {len(selected_names)} enabled")
+    print(f"Updated skills for '{agent}': {len(selected)} enabled")
 
 
 def fetch_repodata():
@@ -614,31 +726,12 @@ def show_info(name: str, root: Path, environment: str, target_root: Path | None)
     """Show detailed metadata and agent link status for an installed skill or channel package."""
     effective_target_root = target_root or root
     is_global = target_root is not None
-    source = root / '.pixi' / 'envs' / environment / 'share' / 'agent-skills'
-    skill_dir = None
-    if source.is_dir():
-        cand = source / name
-        if cand.is_dir() and (cand / 'SKILL.md').is_file():
-            skill_dir = cand
-        else:
-            for p in source.iterdir():
-                if p.is_dir() and (p / 'SKILL.md').is_file():
-                    if p.name == name or name.endswith(f'-{p.name}'):
-                        skill_dir = p
-                        break
-
-    if skill_dir:
-        skill_file = skill_dir / 'SKILL.md'
-        frontmatter = {}
-        content = skill_file.read_text(encoding='utf-8', errors='replace')
-        if content.startswith('---'):
-            parts = content.split('---', 2)
-            if len(parts) >= 3:
-                for line in parts[1].splitlines():
-                    if ':' in line:
-                        k, v = line.split(':', 1)
-                        frontmatter[k.strip()] = v.strip().strip('"\'')
-
+    records = discover_global_skills() if is_global else discover_local_skills(root, environment)
+    match = next((record for record in records
+                  if record['name'] == name or name.endswith(f"-{record['name']}")), None)
+    if match:
+        skill_dir = match['path']
+        frontmatter = match['metadata']
         linked_agents = []
         for agent_key in CANONICAL_AGENTS.keys():
             agent_dir = get_agent_dir(effective_target_root, agent_key, is_global=is_global)
@@ -654,6 +747,7 @@ def show_info(name: str, root: Path, environment: str, target_root: Path | None)
             print(f'Display Name: {frontmatter.get("name")}')
         if frontmatter.get('description'):
             print(f'Description:  {frontmatter.get("description")}')
+        print(f'Source:       {match["label"]}')
         print(f'Path:         {skill_dir}')
         print(f'Agents:       {", ".join(linked_agents) if linked_agents else "none"}')
         return
@@ -848,26 +942,26 @@ def main():
             print('No skills installed in the selected environment')
 
     else:  # list
-        source = root / '.pixi' / 'envs' / args.environment / 'share' / 'agent-skills'
-        if source.is_dir():
-            effective_target_root = target_root or root
-            is_global = target_root is not None
-            for skill in sorted(source.iterdir()):
-                if skill.is_dir() and (skill / 'SKILL.md').is_file():
-                    if getattr(args, 'verbose', False):
-                        linked = []
-                        for agent_key in CANONICAL_AGENTS.keys():
-                            agent_dir = get_agent_dir(effective_target_root, agent_key, is_global=is_global)
-                            link = agent_dir / skill.name
-                            try:
-                                if link.is_symlink() and (link.samefile(skill) or link.resolve() == skill.resolve()):
-                                    linked.append(agent_key)
-                            except OSError:
-                                pass
-                        links_str = f" (linked: {', '.join(linked)})" if linked else " (not linked)"
-                        print(f'{skill.name}{links_str}')
-                    else:
-                        print(skill.name)
+        records = (discover_global_skills() if target_root is not None
+                   else discover_local_skills(root, args.environment))
+        effective_target_root = target_root or root
+        is_global = target_root is not None
+        for record in records:
+            label = f' [{record["label"]}]' if is_global else ''
+            if getattr(args, 'verbose', False):
+                linked = []
+                for agent_key in CANONICAL_AGENTS.keys():
+                    agent_dir = get_agent_dir(effective_target_root, agent_key, is_global=is_global)
+                    link = agent_dir / record['name']
+                    try:
+                        if link.is_symlink() and (link.samefile(record['path']) or link.resolve() == record['path'].resolve()):
+                            linked.append(agent_key)
+                    except OSError:
+                        pass
+                links_str = f" (linked: {', '.join(linked)})" if linked else " (not linked)"
+                print(f'{record["name"]}{label}{links_str}')
+            else:
+                print(f'{record["name"]}{label}')
 
 
 def run():

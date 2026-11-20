@@ -5,7 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -611,7 +611,7 @@ class SkillsCLITests(unittest.TestCase):
             root = Path(tmp)
             skill = root / '.pixi/envs/default/share/agent-skills/demo'
             skill.mkdir(parents=True)
-            (skill / 'SKILL.md').write_text('skill')
+            (skill / 'SKILL.md').write_text('---\ndescription: demo skill\n---\n\n# Demo\n')
             link = root / '.agents/skills/demo'
             link.parent.mkdir(parents=True)
             link.symlink_to(os.path.relpath(skill, link.parent), target_is_directory=True)
@@ -716,6 +716,122 @@ class SkillsCLITests(unittest.TestCase):
             self.assertIn('--manifest-path', add_cmd)
             self.assertEqual(add_cmd[add_cmd.index('--manifest-path') + 1], str(manifest))
             self.assertTrue((root / '.agents/skills/example').is_symlink())
+
+
+def write_skill(path: Path, description: str = 'demo skill', name: str | None = None):
+    path.mkdir(parents=True, exist_ok=True)
+    lines = ['---', f'description: {description}']
+    if name:
+        lines.append(f'name: {name}')
+    lines.extend(['---', '', '# Skill'])
+    (path / 'SKILL.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+
+
+class FeatureTests(unittest.TestCase):
+    def test_parse_skill_frontmatter_valid_and_invalid(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            skill = Path(tmp) / 'demo'
+            write_skill(skill, description='demo skill', name='Demo')
+            parsed = longred_skills.parse_skill_frontmatter(skill)
+            self.assertEqual(parsed['description'], 'demo skill')
+            self.assertEqual(parsed['name'], 'Demo')
+
+            for content in ('no frontmatter', '---\nname: demo\n---\n',
+                            '---\ndescription: [unclosed\n---\n',
+                            '---\n- item\n---\n'):
+                (skill / 'SKILL.md').write_text(content, encoding='utf-8')
+                with self.subTest(content=content), self.assertRaises(ValueError):
+                    longred_skills.parse_skill_frontmatter(skill)
+
+    def test_discovery_warns_and_skips_invalid_skills(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / 'agent-skills'
+            write_skill(source / 'good', description='good skill')
+            bad = source / 'bad'
+            bad.mkdir()
+            (bad / 'SKILL.md').write_text('not yaml', encoding='utf-8')
+            with redirect_stderr(io.StringIO()) as err:
+                records = longred_skills._discover_from(source, 'env:test')
+            self.assertEqual([record['name'] for record in records], ['good'])
+            self.assertIn('skipping invalid skill', err.getvalue())
+            self.assertIn('bad', err.getvalue())
+
+    def test_global_discovery_covers_workspace_and_pixi_envs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            pixi_home = home / 'pixi-home'
+            env = {'HOME': str(home), 'PIXI_HOME': str(pixi_home), 'XDG_DATA_HOME': ''}
+            with patch.dict(os.environ, env), patch.object(Path, 'home', return_value=home):
+                ws = home / '.local/share/longred-skills/dev/.pixi/envs/dev/share/agent-skills'
+                px = pixi_home / 'envs/prod/share/agent-skills'
+                write_skill(ws / 'ws-skill')
+                write_skill(px / 'px-skill')
+                write_skill(ws / 'shared')
+                write_skill(px / 'shared')
+                records = longred_skills.discover_global_skills()
+                self.assertEqual({record['label'] for record in records},
+                                 {'workspace:dev', 'pixi:prod'})
+                self.assertEqual({record['name'] for record in records},
+                                 {'ws-skill', 'px-skill', 'shared'})
+                with redirect_stderr(io.StringIO()):
+                    unique = longred_skills.dedupe_skill_records(records)
+                self.assertEqual(len([r for r in unique if r['name'] == 'shared']), 1)
+
+                with patch('sys.argv', ['longred-skills', 'list', '--global']), \
+                        redirect_stdout(io.StringIO()) as out:
+                    longred_skills.main()
+                self.assertIn('ws-skill [workspace:dev]', out.getvalue())
+                self.assertIn('px-skill [pixi:prod]', out.getvalue())
+
+    def test_smart_defaults_preselect_linked_or_unambiguous(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            target = base / 'target'
+            target.mkdir()
+            paths = {name: base / name for name in ('a', 'b', 'c1', 'c2')}
+            for path in paths.values():
+                path.mkdir()
+            records = [
+                {'name': 'a', 'key': 'x:a', 'path': paths['a'], 'label': 'x:a', 'metadata': {}},
+                {'name': 'b', 'key': 'y:b', 'path': paths['b'], 'label': 'y:b', 'metadata': {}},
+                {'name': 'c', 'key': 'x:c', 'path': paths['c1'], 'label': 'x:c', 'metadata': {}},
+                {'name': 'c', 'key': 'y:c', 'path': paths['c2'], 'label': 'y:c', 'metadata': {}},
+            ]
+            defaults = longred_skills.default_skill_records(records, target)
+            self.assertEqual({record['key'] for record in defaults}, {'x:a', 'y:b'})
+            (target / 'a').symlink_to(paths['a'], target_is_directory=True)
+            defaults = longred_skills.default_skill_records(records, target)
+            self.assertEqual([record['key'] for record in defaults], ['x:a'])
+
+    def test_manage_uses_smart_defaults_and_skips_invalid(self):
+        class FakeQuestionary:
+            class Choice:
+                def __init__(self, title, value, checked):
+                    self.title, self.value, self.checked = title, value, checked
+
+            @staticmethod
+            def checkbox(prompt, choices, instruction):
+                class Result:
+                    def ask(self):
+                        return [choice.value for choice in choices if choice.checked]
+                return Result()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / '.pixi/envs/default/share/agent-skills'
+            write_skill(source / 'alpha', description='alpha skill')
+            write_skill(source / 'beta', description='beta skill')
+            bad = source / 'broken'
+            bad.mkdir()
+            (bad / 'SKILL.md').write_text('no frontmatter', encoding='utf-8')
+            with patch.dict(sys.modules, {'questionary': FakeQuestionary}), \
+                    patch.object(sys.stdin, 'isatty', return_value=True), \
+                    redirect_stderr(io.StringIO()):
+                longred_skills.manage_interactive(root, 'default', 'agents')
+            target = root / '.agents/skills'
+            self.assertTrue((target / 'alpha').is_symlink())
+            self.assertTrue((target / 'beta').is_symlink())
+            self.assertFalse((target / 'broken').exists())
 
 
 if __name__ == '__main__':

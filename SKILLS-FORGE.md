@@ -114,6 +114,12 @@ agents and environment unless explicitly overridden on the command line.
 
 Run `longred-skills manage` to launch an interactive multi-select checkbox selector (powered by
 `questionary` with terminal fallback) to toggle skills on or off for a chosen agent.
+Skills are discovered from `SKILL.md` YAML frontmatter; entries with malformed frontmatter or
+without a non-empty `description` are warned about and skipped. The selector preselects skills
+that are already linked for the target agent, or all unambiguous skills when nothing is linked.
+With `--global`, discovery covers both the persistent longred-skills workspaces and every Pixi
+global environment (`$PIXI_HOME/envs`, defaulting to `~/.pixi/envs`); each source is labelled by
+environment in `list`/`manage`/`info`, and at most one source per skill name can be selected.
 
 ### Multi-Environment Switching & Clean
 
