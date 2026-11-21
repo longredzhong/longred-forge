@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 19.0.1
+  version: 19.1.0
 package:
   name: oh-my-pi
   version: ${{ version }}
@@ -8,23 +8,23 @@ source:
 - if: linux and x86_64
   then:
   - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-linux-x64
-    sha256: 6ceef04430851bb1050c6fda3af467412eb44a11df0a6ff8121fe601013c5415
+    sha256: be2b45c437b623e15c29b1f8c98aacb842f92118196454b5e9eed884359e9a01
 - if: linux and aarch64
   then:
   - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-linux-arm64
-    sha256: 237ede0f4994d61f523802c4cf562d4e48bae74c188add792d06d051b907cecf
+    sha256: 785e8e519acb55852a85e5495271d768a221ca92c095c043cd3eb0d7f8d3eafc
 - if: osx and x86_64
   then:
   - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-darwin-x64
-    sha256: 8d62502eede8c7a43311798434d0a31a1c024a3abc56bedc4da200cccf94fea1
+    sha256: edf51e3754f3f145298ae6dbfd9e6d5f5ec178e3386f043959ec71f7981c52af
 - if: osx and arm64
   then:
   - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-darwin-arm64
-    sha256: 2fe420bbd00f81899816e51cbeeb9593afa59d9368d62c9d3e78535d540e32f6
+    sha256: dca5643669ed5e553f707bd065499babd0fe3030696bbb24c9da09c798af5abb
 - if: win and x86_64
   then:
   - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-windows-x64.exe
-    sha256: ebc8cc11f1539034a013a59e7bcb9cdca46eb14c86a6fe0cf5939a184fc31c52
+    sha256: b9ed82d7b06d6d5fa9e8149a845a37ffb1c0ab03bef9f1737ee5f9f2460bcb19
 build:
   number: 0
   dynamic_linking:
