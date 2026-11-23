@@ -1,9 +1,9 @@
 package:
   name: agent-skill-litestar-org-litestar-skills
-  version: 0.0.3
+  version: 0.0.4
 source:
-  url: https://github.com/litestar-org/litestar-skills/archive/5afb0cb792856786f9937391c972d516852eb9f7.tar.gz
-  sha256: a2db0bf28bfa921d7bb4cc5036a299be4ca4a99137459e503044ed7cc94ea820
+  url: https://github.com/litestar-org/litestar-skills/archive/002e39a722836484ecb0487f8e1ed3bc122f7fe4.tar.gz
+  sha256: 3759ec4b6cd8928318fece737abe718f94dd695889845826f64119233bccf36a
 build:
   number: 0
   noarch: generic

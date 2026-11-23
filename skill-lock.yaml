@@ -93,11 +93,11 @@ skills:
     - LICENSE
     - archive
     - bundle
-    commit: 5afb0cb792856786f9937391c972d516852eb9f7
-    tree: 5d29ad9da8e7e157315709c64ca6d94cefb12178
+    commit: 002e39a722836484ecb0487f8e1ed3bc122f7fe4
+    tree: 5fe0f670731279ffc4e8e6f066335fdfce73aa84
     license_blob: 6a9a2600b4821baac07080094d86c26691734368
-    revision: 3
-    version: 0.0.3
+    revision: 4
+    version: 0.0.4
   agent-skill-tiangolo-library-skills:
     identity:
     - tiangolo/library-skills
