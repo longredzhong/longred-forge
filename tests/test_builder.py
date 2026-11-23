@@ -140,6 +140,39 @@ class BuilderTests(unittest.TestCase):
             run.assert_called_once()
             publish.assert_not_called()
 
+    def test_upload_only_with_pending_uploads_defers_index_wait(self):
+        import hashlib
+        import json
+        artifact = planner.Artifact('tool', '1', 'h_2', 'linux-64')
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / 'output'
+            path = artifact.path(output)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b'verified-package')
+            digest = hashlib.sha256(b'verified-package').hexdigest()
+            receipt = builder.receipt_path(artifact, output)
+            receipt.parent.mkdir(parents=True, exist_ok=True)
+            receipt.write_text(json.dumps({
+                'filename': artifact.filename,
+                'sha256': digest,
+                'recipe_sha256': 'recipe-hash',
+            }))
+            pending = []
+            with patch.object(builder, 'render', return_value=[artifact]), \
+                    patch.object(builder, 'indexed', return_value=False), \
+                    patch.object(builder, 'upload_artifact', return_value=('uploaded', digest)) as upload, \
+                    patch.object(builder, 'publish') as publish:
+                result = builder.build_recipe(
+                    Path('recipe.yaml'), 'linux-64', 'example', True, False, True, output,
+                    pending_uploads=pending,
+                )
+            upload.assert_called_once_with(artifact, path, 'example')
+            publish.assert_not_called()
+            self.assertEqual(result['status'], 'uploaded')
+            self.assertEqual(len(pending), 1)
+            self.assertEqual(pending[0][0], artifact)
+            self.assertEqual(pending[0][1], digest)
+
     def test_upload_only_rejects_unreceipted_artifact(self):
         artifact = planner.Artifact('tool', '1', 'h_2', 'linux-64')
         with tempfile.TemporaryDirectory() as tmp:

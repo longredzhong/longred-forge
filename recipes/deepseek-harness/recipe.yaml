@@ -9,7 +9,7 @@ source:
 - url: https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-${{ version }}.tgz
   sha256: 67da5a3c458f46cd278e0eec6ad0e3a44e99fd13087c6f11a1b362268900a52c
 build:
-  number: 0
+  number: 1
   dynamic_linking:
     binary_relocation: false
     rpath_allowlist:

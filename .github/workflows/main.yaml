@@ -93,23 +93,7 @@ jobs:
           if [[ "$FORCE_REBUILD" != "true" ]]; then
             args+=(--skip-existing)
           fi
-          pixi run python -u scripts/build.py --no-upload --report output/build-results.json --target-platforms ${{ join(matrix.targets, ' ') }} "${args[@]}"
-
-      - name: Publish and verify channel index
-        if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.publish) && github.ref == 'refs/heads/main'
-        shell: bash
-        env:
-          PREFIX_TOKEN: ${{ secrets.PREFIX_TOKEN }}
-          RECIPE: ${{ inputs.recipe }}
-          BASE_SHA: ${{ github.event.before }}
-        run: |
-          args=()
-          if [[ -n "$RECIPE" ]]; then
-            args+=(--recipe-path "recipes/$RECIPE/recipe.yaml")
-          elif [[ -n "$BASE_SHA" && ! "$BASE_SHA" =~ ^0+$ ]]; then
-            args+=(--changed-since "$BASE_SHA")
-          fi
-          pixi run python -u scripts/build.py --no-build --skip-existing --report output/publish-results.json --target-platforms ${{ join(matrix.targets, ' ') }} "${args[@]}"
+          pixi run python -u scripts/build.py --no-upload --report "output/build-results-${{ join(matrix.targets, '-') }}.json" --target-platforms ${{ join(matrix.targets, ' ') }} "${args[@]}"
 
       - name: Retain packages and result manifests
         if: always()
@@ -119,8 +103,9 @@ jobs:
           path: |
             output/**/*.conda
             output/**/*.receipt.json
-            output/*results.json
+            output/*results*.json
             output/rattler-build-log.txt
+            receipts/${{ join(matrix.targets, '-') }}/*.conda.json
           retention-days: 7
           if-no-files-found: ignore
 
@@ -131,3 +116,61 @@ jobs:
           if (Test-Path $env:GITHUB_STEP_SUMMARY) {
             Get-Content $env:GITHUB_STEP_SUMMARY
           }
+
+  publish:
+    name: Publish and verify channel index
+    needs: build
+    if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.publish) && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Git Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ⚙️ Install pixi env
+        uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          pixi-version: v0.81.0
+          activate-environment: true
+
+      - name: ⬇️ Download built packages and receipts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: packages-*
+          merge-multiple: true
+
+      - name: Publish and verify channel index
+        shell: bash
+        env:
+          PREFIX_TOKEN: ${{ secrets.PREFIX_TOKEN }}
+          RECIPE: ${{ inputs.recipe }}
+          BASE_SHA: ${{ github.event.before }}
+        run: |
+          args=()
+          if [[ -n "$RECIPE" ]]; then
+            [[ "$RECIPE" =~ ^[a-zA-Z0-9_-]+$ ]] || exit 1
+            args+=(--recipe-path "recipes/$RECIPE/recipe.yaml")
+          elif [[ -n "$BASE_SHA" && ! "$BASE_SHA" =~ ^0+$ ]]; then
+            args+=(--changed-since "$BASE_SHA")
+          fi
+          pixi run python -u scripts/build.py --no-build --skip-existing --report output/publish-results.json --target-platforms linux-64 linux-aarch64 osx-64 osx-arm64 win-64 "${args[@]}"
+
+      - name: Retain publish results and receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-results
+          path: |
+            output/publish-results.json
+            receipts/**/*.conda.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: 📝 Add to Summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "$GITHUB_STEP_SUMMARY" ]]; then
+            cat "$GITHUB_STEP_SUMMARY"
+          fi

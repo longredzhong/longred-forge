@@ -20,10 +20,12 @@ from typing import List, Optional
 if __package__:
     from .forge.builder import build_recipe
     from .forge.planner import PLATFORMS, changed_recipes
+    from .forge.publisher import wait_for_index
     from .forge.reporting import write_report
 else:
     from forge.builder import build_recipe
     from forge.planner import PLATFORMS, changed_recipes
+    from forge.publisher import wait_for_index
     from forge.reporting import write_report
 
 # Fix Windows encoding issue - ensure UTF-8 output
@@ -106,9 +108,13 @@ def main():
         recipes = changed_recipes(args.changed_since)
     failures = []
     results = []
+    use_batch_publish = args.no_build and not args.no_upload
+    pending_verifications = []
     for recipe in recipes:
         for target in platforms:
+            call_pending = [] if use_batch_publish else None
             try:
+                kwargs = {'pending_uploads': call_pending} if call_pending is not None else {}
                 result = build_recipe(
                     recipe,
                     target,
@@ -117,13 +123,38 @@ def main():
                     not args.no_build,
                     args.skip_existing,
                     adopt_existing=args.adopt_existing_receipts,
+                    **kwargs,
                 )
                 if isinstance(result, dict):
                     results.append(result)
+                    if call_pending:
+                        for artifact, digest, outcome in call_pending:
+                            pending_verifications.append((result, artifact, digest, outcome))
             except Exception as exc:
                 print(f"::error title={recipe}::{exc}")
                 failures.append((recipe, target, str(exc)))
                 results.append({'recipe': str(recipe), 'platform': target, 'status': 'failed', 'error': str(exc)})
+
+    if pending_verifications:
+        try:
+            wait_for_index(
+                [(artifact, digest) for _, artifact, digest, _ in pending_verifications],
+                args.channel,
+            )
+            for result, _, _, outcome in pending_verifications:
+                outcome['status'] = 'published'
+                print(f"published: {outcome['path']}", flush=True)
+            for result, _, _, _ in pending_verifications:
+                artifacts = result.get('artifacts', [])
+                if any(item['status'] == 'published' for item in artifacts):
+                    result['status'] = 'published'
+        except Exception as exc:
+            print(f"::error title=channel-index::{exc}")
+            for result, artifact, _, outcome in pending_verifications:
+                if outcome['status'] == 'uploaded':
+                    outcome['status'] = 'failed'
+                    result['status'] = 'failed'
+                    failures.append((Path(result['recipe']), artifact.platform, str(exc)))
 
     write_report(args.report, results)
     if failures:

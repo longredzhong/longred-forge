@@ -9,7 +9,7 @@ from pathlib import Path
 import yaml
 
 from .planner import render
-from .publisher import indexed, publish, remote_digest
+from .publisher import indexed, publish, remote_digest, upload_artifact
 
 
 def receipt_path(artifact, output: Path) -> Path:
@@ -81,7 +81,8 @@ def existing_receipt_digest(recipe: Path, artifact, path: Path, receipt: Path) -
 
 def build_recipe(recipe_yaml_path: Path, target_platform: str, channel: str,
                  upload_flag: bool, build_flag: bool, skip_existing: bool,
-                 output: Path = Path('output'), adopt_existing: bool = False) -> dict:
+                 output: Path = Path('output'), adopt_existing: bool = False,
+                 pending_uploads: list | None = None) -> dict:
     label = str(recipe_yaml_path)
     print(f'::group::{recipe_yaml_path.parent.name}-{target_platform}', flush=True)
     try:
@@ -144,11 +145,26 @@ def build_recipe(recipe_yaml_path: Path, target_platform: str, channel: str,
                 receipt.write_text(json.dumps(expected_receipt) + '\n', encoding='utf-8')
             elif not receipt.is_file() or json.loads(receipt.read_text(encoding='utf-8')) != expected_receipt:
                 raise RuntimeError(f'Build receipt missing or mismatched: {receipt}; rebuild before publishing')
-            status = publish(artifact, path, channel) if upload_flag else 'built'
+            if upload_flag:
+                if pending_uploads is not None:
+                    status, digest = upload_artifact(artifact, path, channel)
+                    outcome = {'path': str(path), 'status': status}
+                    if status == 'uploaded':
+                        pending_uploads.append((artifact, digest, outcome))
+                else:
+                    status = publish(artifact, path, channel)
+                    outcome = {'path': str(path), 'status': status}
+            else:
+                status = 'built'
+                outcome = {'path': str(path), 'status': status}
             print(f'{status}: {path}', flush=True)
-            outcomes.append({'path': str(path), 'status': status})
-        status = ('already_exists' if all(x['status'] in ('already_exists', 'adopted') for x in outcomes)
-                  else ('published' if upload_flag else 'built'))
+            outcomes.append(outcome)
+        if any(x['status'] == 'uploaded' for x in outcomes):
+            status = 'uploaded'
+        elif all(x['status'] in ('already_exists', 'adopted') for x in outcomes):
+            status = 'already_exists'
+        else:
+            status = 'published' if upload_flag else 'built'
         return {'recipe': label, 'platform': target_platform, 'status': status, 'artifacts': outcomes}
     finally:
         print('::endgroup::', flush=True)

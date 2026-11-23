@@ -36,7 +36,11 @@ RATTLER_SCAFFOLD = {
     "conda_build.log",
     "build_env.sh",
     "build_env.bat",
+    ".source_info.json",
 }
+# Static TypeScript declarations and sourcemaps are unused by Node at runtime
+# and account for ~35k files in the dependency tree.
+PRUNABLE_SUFFIXES = (".map", ".d.ts", ".d.cts", ".d.mts")
 
 
 def fail(message):
@@ -90,17 +94,48 @@ def install_dependencies(source_dir, os_name, cpu):
     )
 
 
+def prune_non_runtime_files(root_dir):
+    """Remove static sourcemap and declaration files and directories they empty."""
+    pruned_dirs = set()
+    for dirpath, dirnames, filenames in os.walk(root_dir, topdown=False, followlinks=False):
+        removed = any(os.path.join(dirpath, name) in pruned_dirs for name in dirnames)
+        for filename in filenames:
+            if filename.endswith(PRUNABLE_SUFFIXES):
+                path = os.path.join(dirpath, filename)
+                if not os.path.islink(path):
+                    os.unlink(path)
+                    removed = True
+        if removed and dirpath != root_dir and not os.listdir(dirpath):
+            os.rmdir(dirpath)
+            pruned_dirs.add(dirpath)
+
+
 def copy_package_tree(source_dir, target_dir):
-    """Copy unpacked package and node_modules into the prefix, excluding scaffold files."""
+    """Install unpacked package and node_modules into the prefix, pruning non-runtime files."""
+    src_node_modules = os.path.join(source_dir, "node_modules")
+    if not os.path.isdir(src_node_modules):
+        fail("npm install did not produce node_modules inside the package")
+
+    source_root = os.path.abspath(source_dir)
     os.makedirs(os.path.dirname(target_dir), exist_ok=True)
+    # Keep LICENSE and top-level metadata in source_dir for rattler-build's license_file check.
     shutil.copytree(
         source_dir,
         target_dir,
         dirs_exist_ok=True,
-        ignore=lambda _, names: {name for name in names if name in RATTLER_SCAFFOLD},
+        ignore=lambda current, names: {
+            name
+            for name in names
+            if name in RATTLER_SCAFFOLD
+            or (os.path.abspath(current) == source_root and name == "node_modules")
+        },
     )
-    if not os.path.isdir(os.path.join(target_dir, "node_modules")):
-        fail("npm install did not produce node_modules inside the package")
+    dst_node_modules = os.path.join(target_dir, "node_modules")
+    if os.path.exists(dst_node_modules):
+        shutil.rmtree(dst_node_modules)
+    # Move node_modules as a single directory instead of copying ~60k small files.
+    shutil.move(src_node_modules, dst_node_modules)
+    prune_non_runtime_files(target_dir)
 
 
 def write_bin_shim(os_name, prefix, package_parts, name, relative, target_dir):
