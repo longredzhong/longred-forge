@@ -21,7 +21,6 @@ source_patterns = [
     binary_name,
     f"packager-linux-x64",
     f"packager-linux-arm64",
-    f"packager-osx-x64",
     f"packager-osx-arm64",
     f"packager-win-x64.exe",
     f"./{binary_name}",

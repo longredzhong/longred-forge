@@ -53,7 +53,6 @@ jobs:
         include:
           - { targets: [linux-64], os: ubuntu-latest }
           - { targets: [linux-aarch64], os: ubuntu-24.04-arm }
-          - { targets: [osx-64], os: macos-15-intel }
           - { targets: [osx-arm64], os: macos-latest }
           - { targets: [win-64], os: windows-latest }
     steps:
@@ -118,7 +117,7 @@ jobs:
           }
 
   publish:
-    name: Publish and verify channel index
+    name: Publish packages
     needs: build
     if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.publish) && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -140,7 +139,7 @@ jobs:
           pattern: packages-*
           merge-multiple: true
 
-      - name: Publish and verify channel index
+      - name: Publish packages
         shell: bash
         env:
           PREFIX_TOKEN: ${{ secrets.PREFIX_TOKEN }}
@@ -154,7 +153,7 @@ jobs:
           elif [[ -n "$BASE_SHA" && ! "$BASE_SHA" =~ ^0+$ ]]; then
             args+=(--changed-since "$BASE_SHA")
           fi
-          pixi run python -u scripts/build.py --no-build --skip-existing --report output/publish-results.json --target-platforms linux-64 linux-aarch64 osx-64 osx-arm64 win-64 "${args[@]}"
+          pixi run python -u scripts/build.py --no-build --skip-existing --report output/publish-results.json --target-platforms linux-64 linux-aarch64 osx-arm64 win-64 "${args[@]}"
 
       - name: Retain publish results and receipts
         if: always()

@@ -374,31 +374,14 @@ class SkillsForgeTests(unittest.TestCase):
                         patch.object(skills_publish, 'load_dotenv', return_value={}), \
                         patch.object(skills_publish, 'render', side_effect=[[artifacts[0]], [artifacts[1]]]), \
                         patch.object(skills_publish, 'recipe_fingerprint', return_value='valid'), \
-                        patch.object(skills_publish, 'channel_records', side_effect=[{}, {
-                            a.filename: {'sha256': hashlib.sha256(a.name.encode()).hexdigest()} for a in artifacts}]) as index, \
+                        patch.object(skills_publish, 'channel_records', return_value={}) as index, \
                         patch.object(skills_publish.subprocess, 'run', return_value=Mock(returncode=0)) as upload:
                     skills_publish.main()
                 self.assertEqual(upload.call_count, 1)
                 self.assertEqual(upload.call_args.args[0][-2:], [str(a.path(Path('output'))) for a in artifacts])
-                self.assertEqual(index.call_count, 2)
+                self.assertEqual(index.call_count, 1)
             finally:
                 os.chdir(old_cwd)
-
-    def test_pixi_index_confirmation_requires_channel_filename_and_sha(self):
-        artifact = Artifact('example', '1', 'h_0', 'noarch')
-        digest = 'a' * 64
-        url = 'https://prefix.dev/longredzhong/longred-skills-forge/noarch/' + artifact.filename
-        entry = {'fn': artifact.filename, 'url': url, 'sha256': digest}
-        pending = [(artifact, Path('package.conda'), digest)]
-        with patch.object(skills_publish.subprocess, 'run', return_value=Mock(returncode=0, stdout=json.dumps({'noarch': [entry]}))):
-            self.assertEqual(skills_publish.pixi_indexed(pending), {artifact.filename})
-        entry['url'] = 'https://example.org/other.conda'
-        with patch.object(skills_publish.subprocess, 'run', return_value=Mock(returncode=0, stdout=json.dumps({'noarch': [entry]}))):
-            self.assertEqual(skills_publish.pixi_indexed(pending), set())
-        entry['url'], entry['sha256'] = url, 'b' * 64
-        with patch.object(skills_publish.subprocess, 'run', return_value=Mock(returncode=0, stdout=json.dumps({'noarch': [entry]}))):
-            with self.assertRaisesRegex(RuntimeError, 'checksum differs'):
-                skills_publish.pixi_indexed(pending)
 
     def test_validate_sources_rejects_malformed_config(self):
         # Invalid version

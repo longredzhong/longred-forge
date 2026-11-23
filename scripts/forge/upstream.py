@@ -160,7 +160,7 @@ def get_gcs_checksums(version: str) -> Dict[str, str]:
 
 def gcs_platform_for_if_cond(if_cond: str) -> Optional[str]:
     for os_name, arch, platform in (("linux", "x86_64", "linux-x64"), ("linux", "aarch64", "linux-arm64"),
-                                    ("osx", "x86_64", "darwin-x64"), ("osx", "arm64", "darwin-arm64")):
+                                    ("osx", "arm64", "darwin-arm64")):
         if os_name in if_cond and arch in if_cond:
             return platform
     return None

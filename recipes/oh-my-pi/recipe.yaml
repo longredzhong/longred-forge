@@ -13,10 +13,6 @@ source:
   then:
   - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-linux-arm64
     sha256: 785e8e519acb55852a85e5495271d768a221ca92c095c043cd3eb0d7f8d3eafc
-- if: osx and x86_64
-  then:
-  - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-darwin-x64
-    sha256: edf51e3754f3f145298ae6dbfd9e6d5f5ec178e3386f043959ec71f7981c52af
 - if: osx and arm64
   then:
   - url: https://github.com/can1357/oh-my-pi/releases/download/v${{ version }}/omp-darwin-arm64

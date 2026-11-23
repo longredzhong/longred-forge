@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Upload a batch of locally receipted skills and verify their channel indexes."""
+"""Upload a batch of locally receipted skills after pre-upload checksum checks."""
 import hashlib
 import json
 import os
 import subprocess
-import tempfile
 import time
 from pathlib import Path
 
@@ -15,13 +14,11 @@ if __package__:
     from .forge.builder import existing_receipt_digest, recipe_fingerprint, receipt_path
     from .forge.http import HTTPClient
     from .forge.planner import render
-    from .forge.publisher import INDEX_POLL_ATTEMPTS, INDEX_POLL_INTERVAL
 else:
     from build import load_dotenv
     from forge.builder import existing_receipt_digest, recipe_fingerprint, receipt_path
     from forge.http import HTTPClient
     from forge.planner import render
-    from forge.publisher import INDEX_POLL_ATTEMPTS, INDEX_POLL_INTERVAL
 
 CHANNEL = 'longredzhong/longred-skills-forge'
 
@@ -36,34 +33,6 @@ def channel_records(fresh=False):
         if exc.response.status_code == 404:
             return {}
         raise
-
-
-def pixi_indexed(pending):
-    """Confirm exact identities with a fresh Pixi index when HTTP metadata is stale."""
-    with tempfile.TemporaryDirectory(prefix='skills-index-') as cache:
-        env = dict(os.environ, PIXI_CACHE_DIR=cache, RATTLER_CACHE_DIR=cache)
-        try:
-            result = subprocess.run(
-                ['pixi', 'search', '--json', '--channel', f'https://prefix.dev/{CHANNEL}',
-                 '--platform', 'linux-64', '*'], env=env, capture_output=True, text=True, timeout=60,
-            )
-            if result.returncode:
-                return set()
-            groups = json.loads(result.stdout)
-            entries = groups.get('noarch', [])
-            by_filename = {entry.get('fn'): entry for entry in entries}
-        except (OSError, subprocess.TimeoutExpired, ValueError, AttributeError, TypeError):
-            return set()
-    confirmed = set()
-    base = f'https://prefix.dev/{CHANNEL}/noarch/'
-    for artifact, _, digest in pending:
-        entry = by_filename.get(artifact.filename)
-        if not entry or entry.get('url') != base + artifact.filename:
-            continue
-        if entry.get('sha256') != digest:
-            raise RuntimeError(f'Channel checksum differs for {artifact.filename}; increment build.number')
-        confirmed.add(artifact.filename)
-    return confirmed
 
 
 def main():
@@ -103,34 +72,11 @@ def main():
     cmd = ['rattler-build', 'upload', 'prefix', '--channel', CHANNEL, '--skip-existing'] + [str(path) for _, path, _ in pending]
     for attempt in range(3):
         if subprocess.run(cmd, env=env).returncode == 0:
-            break
+            print(f'Uploaded {len(pending)} package(s)')
+            return
         if attempt == 2:
             raise RuntimeError('Batch upload failed')
         time.sleep(2 ** attempt)
-    for attempt in range(INDEX_POLL_ATTEMPTS + 1):
-        records = channel_records(fresh=True)
-        remaining = []
-        for artifact, path, digest in pending:
-            entry = records.get(artifact.filename)
-            if entry is None:
-                remaining.append((artifact, path, digest))
-            elif entry.get('sha256') != digest:
-                raise RuntimeError(f'Channel checksum differs for {artifact.filename}; increment build.number')
-        pending = remaining
-        if not pending:
-            print('All uploaded packages indexed with matching SHA-256')
-            return
-        if attempt % 4 == 0:
-            confirmed = pixi_indexed(pending)
-            pending = [(a, p, digest) for a, p, digest in pending if a.filename not in confirmed]
-            if not pending:
-                print('All uploaded packages resolved by Pixi with matching SHA-256')
-                return
-        if attempt < INDEX_POLL_ATTEMPTS:
-            if attempt % 20 == 0:
-                print(f'Waiting for index: {len(pending)} package(s)', flush=True)
-            time.sleep(INDEX_POLL_INTERVAL)
-    raise RuntimeError('Not indexed: ' + ', '.join(a.filename for a, _, _ in pending))
 
 
 if __name__ == '__main__':

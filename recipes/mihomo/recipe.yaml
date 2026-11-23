@@ -17,12 +17,6 @@ source:
       version }}.gz
     sha256: daaf78a6240a282cdfd75bcbf98fe321f6bd52765cc29e79f344191198f0b50f
     file_name: mihomo.gz
-- if: osx and x86_64
-  then:
-  - url: https://github.com/MetaCubeX/mihomo/releases/download/v${{ version }}/mihomo-darwin-amd64-compatible-v${{
-      version }}.gz
-    sha256: 703bceaa494732fa456f47e6ac2f06bf0bc5593d4c927d5f61e10f1a31039c37
-    file_name: mihomo.gz
 - if: osx and arm64
   then:
   - url: https://github.com/MetaCubeX/mihomo/releases/download/v${{ version }}/mihomo-darwin-arm64-v${{

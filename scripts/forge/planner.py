@@ -5,7 +5,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-PLATFORMS = ('linux-64', 'linux-aarch64', 'osx-64', 'osx-arm64', 'win-64')
+PLATFORMS = ('linux-64', 'linux-aarch64', 'osx-arm64', 'win-64')
 
 
 @dataclass(frozen=True)

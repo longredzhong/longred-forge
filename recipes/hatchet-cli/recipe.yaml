@@ -15,11 +15,6 @@ source:
   - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
       version }}_Linux_arm64.tar.gz
     sha256: 85b9be4231cea3d4109c4e494631a329650dcd4490f8bf34ea949f8fa717accb
-- if: osx and x86_64
-  then:
-  - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{
-      version }}_Darwin_x86_64.tar.gz
-    sha256: cd93cf01f52c9f3211d31d821d8c738e03947fd1faff9050e21c2111e300abe9
 - if: osx and arm64
   then:
   - url: https://github.com/hatchet-dev/hatchet/releases/download/v${{ version }}/hatchet_${{

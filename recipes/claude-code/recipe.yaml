@@ -14,10 +14,6 @@ source:
   then:
   - url: ${{ gcs_base }}/${{ version }}/linux-arm64/claude
     sha256: 6016f90cac783e367fb1aa97c768a2efb94a0128a5b46b70fb3d8fcbbd9dd444
-- if: osx and x86_64
-  then:
-  - url: ${{ gcs_base }}/${{ version }}/darwin-x64/claude
-    sha256: bbed99bb8a39bb3f94389c5c99d3d02cb75f3f983b5d1bc40b1b0d1efca84713
 - if: osx and arm64
   then:
   - url: ${{ gcs_base }}/${{ version }}/darwin-arm64/claude

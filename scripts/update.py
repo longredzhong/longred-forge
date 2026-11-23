@@ -56,7 +56,7 @@ else:
         npm_tarball_hashes, npm_tarball_url, semver_key, validate_npm_package,
     )
 
-TARGET_PLATFORMS = ("linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64")
+TARGET_PLATFORMS = ("linux-64", "linux-aarch64", "osx-arm64", "win-64")
 
 
 def validate_and_write(recipe_path: str, out: str, write: bool) -> None:

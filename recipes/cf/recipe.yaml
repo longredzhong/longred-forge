@@ -21,8 +21,6 @@ build:
     then: python "$RECIPE_DIR/install.py" linux x64
   - if: osx and arm64
     then: python "$RECIPE_DIR/install.py" darwin arm64
-  - if: osx and x86_64
-    then: python "$RECIPE_DIR/install.py" darwin x64
   - if: win and x86_64
     then: python "%RECIPE_DIR%/install.py" win32 x64
 requirements:

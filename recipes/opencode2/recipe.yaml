@@ -13,10 +13,6 @@ source:
   then:
   - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-linux-arm64.tar.gz
     sha256: 9d10185acdb72336e086e699ca363a6065f410fd3c1caed0dc8046e95ac06ccb
-- if: osx and x86_64
-  then:
-  - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-darwin-x64.zip
-    sha256: 1875a6d1106702f04c9468831563c061bd00337f891a1b4a6cd151155e6aaf5c
 - if: osx and arm64
   then:
   - url: https://github.com/anomalyco/opencode/releases/download/v${{ version }}/opencode-darwin-arm64.zip

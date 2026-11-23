@@ -15,11 +15,6 @@ source:
   - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
       version }}_linux_arm64.tar.gz
     sha256: d695a8a20ecafd560cf5bb96612a0c4b6643896fca76c97c8c189f6862a41ba2
-- if: osx and x86_64
-  then:
-  - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{
-      version }}_darwin_amd64.tar.gz
-    sha256: 78b9c0af3488dee9dad2a2027e88a7247c211807daf920c8ea5c4e77b369ef97
 - if: osx and arm64
   then:
   - url: https://github.com/skyhook-io/radar/releases/download/v${{ version }}/radar_v${{

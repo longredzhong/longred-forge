@@ -162,7 +162,7 @@ class UpdaterTests(unittest.TestCase):
                         self.assertEqual((candidate.parent / name).read_bytes(), content)
                 with patch.object(update.subprocess, "run", side_effect=render) as renderer:
                     self.assertEqual(self.run_update(), "updated")
-                self.assertEqual(renderer.call_count, 5)
+                self.assertEqual(renderer.call_count, len(update.TARGET_PLATFORMS))
                 updated = yaml.safe_load(self.recipe.read_text())
                 expected = yaml.safe_load(yaml.safe_dump(doc))
                 expected["context"]["version"] = "2.0"
@@ -210,7 +210,7 @@ class UpdaterTests(unittest.TestCase):
         with patch.object(update.subprocess, "run") as render:
             self.assertEqual(self.run_update(dry=True), "dry-run")
             self.assertEqual(self.run_update(apply=False), "dry-run")
-        self.assertEqual(render.call_count, 10)
+        self.assertEqual(render.call_count, 2 * len(update.TARGET_PLATFORMS))
         self.assertEqual(self.recipe.read_bytes(), self.original)
 
     def test_same_version_refresh_is_opt_in(self):
@@ -220,7 +220,7 @@ class UpdaterTests(unittest.TestCase):
             self.assertEqual(self.run_update(), "unchanged")
             render.assert_not_called()
             self.assertEqual(self.run_update(refresh=True), "updated")
-            self.assertEqual(render.call_count, 5)
+            self.assertEqual(render.call_count, len(update.TARGET_PLATFORMS))
 
     def test_hash_failure_does_not_render_or_write(self):
         with patch.object(update, "compute_sha_for_asset", return_value="bad"), patch.object(update.subprocess, "run") as render:
@@ -333,14 +333,14 @@ class NpmUpdaterTests(unittest.TestCase):
         with patch.object(update.subprocess, "run") as render:
             self.assertEqual(self.run_update(refresh=True), "updated")
         self.hashes.assert_called_once()
-        self.assertEqual(render.call_count, 5)
+        self.assertEqual(render.call_count, len(update.TARGET_PLATFORMS))
 
     def test_new_version_rewrites_version_conda_version_and_sha(self):
         self.release.update({"version": "1.0.0-rc.2",
                               "tarball": "https://registry.npmjs.org/cf/-/cf-1.0.0-rc.2.tgz"})
         with patch.object(update.subprocess, "run") as render:
             self.assertEqual(self.run_update(), "updated")
-        self.assertEqual(render.call_count, 5)
+        self.assertEqual(render.call_count, len(update.TARGET_PLATFORMS))
         self.hashes.assert_called_once()
         self.assertIn(self.release["tarball"], self.hashes.call_args.args)
         updated = yaml.safe_load(self.recipe.read_text())
@@ -354,7 +354,7 @@ class NpmUpdaterTests(unittest.TestCase):
                           npm="cf", repository=None)
         with patch.object(update.subprocess, "run") as render:
             self.assertEqual(self.run_update(refresh=True), "updated")
-        self.assertEqual(render.call_count, 5)
+        self.assertEqual(render.call_count, len(update.TARGET_PLATFORMS))
 
     def test_downgrade_refused_without_download_or_render(self):
         self.release.update({"version": "1.0.0-beta.1",

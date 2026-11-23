@@ -1,4 +1,4 @@
-"""Publish exact planned artifacts and verify channel indexing."""
+"""Publish exact planned artifacts and verify pre-upload checksum invariants."""
 
 import hashlib
 import os
@@ -11,9 +11,6 @@ import httpx
 
 from .http import HTTPClient
 from .planner import Artifact
-
-INDEX_POLL_INTERVAL = 15
-INDEX_POLL_ATTEMPTS = 140  # 35 minutes, including the channel's documented cache window.
 
 
 def remote_digest(artifact: Artifact, channel: str) -> str | None:
@@ -49,49 +46,23 @@ def indexed(artifact: Artifact, channel: str, sha256: str | None = None) -> bool
     return True
 
 
-def upload_artifact(artifact: Artifact, path: Path, channel: str) -> tuple[str, str]:
-    """Upload an artifact if its exact SHA-256 is not yet indexed; return (status, sha256)."""
+def publish(artifact: Artifact, path: Path, channel: str) -> str:
+    """Upload an artifact unless its exact SHA-256 is already indexed."""
     token = os.environ.get('PREFIX_API_KEY') or os.environ.get('PREFIX_TOKEN')
     if not token:
         raise RuntimeError('PREFIX_API_KEY/PREFIX_TOKEN is required for publishing; use --no-upload for local builds')
     with path.open('rb') as handle:
         digest = hashlib.file_digest(handle, 'sha256').hexdigest()
     if indexed(artifact, channel, digest):
-        return 'already_exists', digest
+        return 'already_exists'
     env = dict(os.environ, PREFIX_API_KEY=token)
     for attempt in range(3):
         result = subprocess.run(
             ['rattler-build', 'upload', 'prefix', '-c', channel, '--skip-existing', str(path)], env=env,
         )
         if result.returncode == 0:
-            return 'uploaded', digest
+            return 'published'
         if attempt == 2:
             raise RuntimeError(f'Upload failed: {artifact.filename}')
         time.sleep(2 ** attempt)
     raise RuntimeError(f'Upload failed: {artifact.filename}')
-
-
-def wait_for_index(pending: list[tuple[Artifact, str]], channel: str) -> None:
-    """Poll the channel index until all pending artifacts appear with matching SHA-256."""
-    remaining = list(pending)
-    if not remaining:
-        return
-    for attempt in range(INDEX_POLL_ATTEMPTS + 1):
-        remaining = [(artifact, digest) for artifact, digest in remaining if not indexed(artifact, channel, digest)]
-        if not remaining:
-            return
-        if attempt < INDEX_POLL_ATTEMPTS:
-            if attempt and attempt % 20 == 0:
-                names = ', '.join(artifact.filename for artifact, _ in remaining)
-                print(f'Waiting for channel index: {names} ({attempt * INDEX_POLL_INTERVAL}s)', flush=True)
-            time.sleep(INDEX_POLL_INTERVAL)
-    names = ', '.join(artifact.filename for artifact, _ in remaining)
-    raise RuntimeError(f'Uploaded artifact not indexed yet: {names}')
-
-
-def publish(artifact: Artifact, path: Path, channel: str) -> str:
-    status, digest = upload_artifact(artifact, path, channel)
-    if status == 'already_exists':
-        return status
-    wait_for_index([(artifact, digest)], channel)
-    return 'published'

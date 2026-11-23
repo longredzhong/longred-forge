@@ -13,10 +13,6 @@ source:
   then:
   - url: https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-aarch64-unknown-linux-musl.tar.gz
     sha256: bcf50b836385e51bd2976ab2bbe92b1b08a1cbe37712eb8dbe378aa78d24871c
-- if: osx and x86_64
-  then:
-  - url: https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-x86_64-apple-darwin.tar.gz
-    sha256: 6f9b1144ffaa64aa12bf30f312405b266b84c433bae9f070be10245762c7aa44
 - if: osx and arm64
   then:
   - url: https://github.com/openai/codex/releases/download/rust-v${{ version }}/codex-aarch64-apple-darwin.tar.gz

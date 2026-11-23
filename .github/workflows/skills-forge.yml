@@ -74,7 +74,7 @@ jobs:
             git commit -m 'chore: update skill sources'
             git push origin HEAD:main
           fi
-      - name: Publish and verify channel index
+      - name: Publish packages
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           PREFIX_TOKEN: ${{ secrets.SKILLS_PREFIX_TOKEN }}

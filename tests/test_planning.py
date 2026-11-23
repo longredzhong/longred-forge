@@ -25,24 +25,30 @@ class PlanningTests(unittest.TestCase):
         with patch.object(planner.subprocess, 'run', return_value=Mock(stdout='README.md\n')):
             self.assertEqual(planner.changed_recipes('base'), [])
 
-    def test_upload_retries_then_verifies_digest(self):
+    def test_supported_platforms_exclude_osx64(self):
+        self.assertEqual(planner.PLATFORMS, ('linux-64', 'linux-aarch64', 'osx-arm64', 'win-64'))
+        self.assertNotIn('osx-64', planner.PLATFORMS)
+
+    def test_upload_retries_without_post_upload_polling(self):
         artifact = planner.Artifact('tool', '1', 'h_0', 'linux-64')
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / artifact.filename
             path.write_bytes(b'package')
-            with patch.dict('os.environ', {'PREFIX_TOKEN': 'test-token'}), patch.object(publisher, 'indexed', side_effect=[False, False, True]) as indexed, patch.object(publisher.subprocess, 'run', side_effect=[Mock(returncode=1), Mock(returncode=0)]) as run, patch.object(publisher.time, 'sleep'):
+            with patch.dict('os.environ', {'PREFIX_TOKEN': 'test-token'}), patch.object(publisher, 'indexed', return_value=False) as indexed, patch.object(publisher.subprocess, 'run', side_effect=[Mock(returncode=1), Mock(returncode=0)]) as run, patch.object(publisher.time, 'sleep'):
                 self.assertEqual(publisher.publish(artifact, path, 'example'), 'published')
                 self.assertEqual(run.call_count, 2)
+                self.assertEqual(indexed.call_count, 1)
                 self.assertEqual(len(indexed.call_args.args[2]), 64)
 
-    def test_upload_never_succeeds_without_index_confirmation(self):
+    def test_upload_fails_after_retry_exhaustion(self):
         artifact = planner.Artifact('tool', '1', 'h_0', 'linux-64')
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / artifact.filename
             path.write_bytes(b'package')
-            with patch.dict('os.environ', {'PREFIX_TOKEN': 'test-token'}), patch.object(publisher, 'indexed', return_value=False), patch.object(publisher.subprocess, 'run', return_value=Mock(returncode=0)), patch.object(publisher.time, 'sleep'):
-                with self.assertRaisesRegex(RuntimeError, 'not indexed'):
+            with patch.dict('os.environ', {'PREFIX_TOKEN': 'test-token'}), patch.object(publisher, 'indexed', return_value=False), patch.object(publisher.subprocess, 'run', return_value=Mock(returncode=1)) as run, patch.object(publisher.time, 'sleep'):
+                with self.assertRaisesRegex(RuntimeError, 'Upload failed'):
                     publisher.publish(artifact, path, 'example')
+                self.assertEqual(run.call_count, 3)
 
 
 if __name__ == '__main__':

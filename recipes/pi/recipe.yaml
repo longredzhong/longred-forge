@@ -13,10 +13,6 @@ source:
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-linux-arm64.tar.gz
     sha256: 5404547b9739be596d50ae7142c52535899e8e7dd37a7bace9be593e0355b468
-- if: osx and x86_64
-  then:
-  - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-darwin-x64.tar.gz
-    sha256: 5b69cd87c3b00e74cce2d1499df3b7a1ec73632f11abf64696d110f0f4dc4192
 - if: osx and arm64
   then:
   - url: https://github.com/earendil-works/pi/releases/download/v${{ version }}/pi-darwin-arm64.tar.gz

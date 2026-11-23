@@ -14,28 +14,32 @@ from scripts.forge.planner import Artifact
 
 
 class PublishingTests(unittest.TestCase):
-    def test_index_delay_and_timeout_remain_failure_without_matching_digest(self):
+    def test_publish_uploads_without_post_upload_polling(self):
         with tempfile.TemporaryDirectory() as tmp:
             artifact = Artifact('example', '1.0', 'h0_0', 'linux-64')
             path = Path(tmp) / artifact.filename
             path.write_bytes(b'package')
             with patch.dict(os.environ, {'PREFIX_TOKEN': 'test'}), \
-                 patch.object(publisher, 'INDEX_POLL_ATTEMPTS', 2), \
                  patch.object(publisher.time, 'sleep') as sleep, \
                  patch.object(publisher.subprocess, 'run') as upload, \
-                 patch.object(publisher, 'indexed', side_effect=[False, False, False, True]) as indexed:
+                 patch.object(publisher, 'indexed', return_value=False) as indexed:
                 upload.return_value.returncode = 0
                 self.assertEqual(publisher.publish(artifact, path, 'example'), 'published')
-                self.assertEqual(sleep.call_count, 2)
-                self.assertTrue(all(call.args[2] for call in indexed.call_args_list))
+                sleep.assert_not_called()
+                upload.assert_called_once()
+                indexed.assert_called_once()
+                self.assertTrue(indexed.call_args.args[2])
+
+    def test_publish_skips_upload_when_already_indexed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            artifact = Artifact('example', '1.0', 'h0_0', 'linux-64')
+            path = Path(tmp) / artifact.filename
+            path.write_bytes(b'package')
             with patch.dict(os.environ, {'PREFIX_TOKEN': 'test'}), \
-                 patch.object(publisher, 'INDEX_POLL_ATTEMPTS', 2), \
-                 patch.object(publisher.time, 'sleep'), \
                  patch.object(publisher.subprocess, 'run') as upload, \
-                 patch.object(publisher, 'indexed', return_value=False):
-                upload.return_value.returncode = 0
-                with self.assertRaisesRegex(RuntimeError, 'not indexed'):
-                    publisher.publish(artifact, path, 'example')
+                 patch.object(publisher, 'indexed', return_value=True):
+                self.assertEqual(publisher.publish(artifact, path, 'example'), 'already_exists')
+                upload.assert_not_called()
 
     def test_failed_recipe_does_not_stop_remaining_targets(self):
         recipes = [Path('recipes/broken/recipe.yaml'), Path('recipes/healthy/recipe.yaml')]
@@ -59,59 +63,6 @@ class PublishingTests(unittest.TestCase):
              patch.object(build, 'load_dotenv', return_value={}), \
              patch.object(build, 'build_recipe'):
             build.main()
-
-    def test_batch_wait_for_index_polls_all_pending_together(self):
-        first = Artifact('first', '1.0', 'h0_0', 'linux-64')
-        second = Artifact('second', '1.0', 'h1_0', 'win-64')
-        calls = []
-
-        def fake_indexed(artifact, channel, sha256):
-            calls.append((artifact.filename, sha256))
-            # First becomes visible on attempt 0; second becomes visible on attempt 1.
-            if artifact.filename == first.filename:
-                return True
-            return sum(1 for name, _ in calls if name == second.filename) >= 2
-
-        with patch.object(publisher, 'INDEX_POLL_ATTEMPTS', 2), \
-             patch.object(publisher.time, 'sleep') as sleep, \
-             patch.object(publisher, 'indexed', side_effect=fake_indexed):
-            publisher.wait_for_index([(first, 'a' * 64), (second, 'b' * 64)], 'example')
-        self.assertEqual(sleep.call_count, 1)
-        self.assertEqual([name for name, _ in calls], [first.filename, second.filename, second.filename])
-
-    def test_no_build_publish_batches_uploads_before_verifying_index(self):
-        recipes = [Path('recipes/a/recipe.yaml'), Path('recipes/b/recipe.yaml')]
-        events = []
-
-        def fake_build_recipe(recipe, target, channel, upload, build_flag, skip, adopt_existing=False, pending_uploads=None):
-            self.assertTrue(upload)
-            self.assertFalse(build_flag)
-            self.assertIsNotNone(pending_uploads)
-            artifact = Artifact(recipe.parent.name, '1.0', 'h0_0', target)
-            events.append(('upload', target, artifact.filename))
-            outcome = {'path': f'output/{target}/{artifact.filename}', 'status': 'uploaded'}
-            pending_uploads.append((artifact, 'c' * 64, outcome))
-            return {'recipe': str(recipe), 'platform': target, 'status': 'uploaded', 'artifacts': [outcome]}
-
-        def fake_wait(pending, channel):
-            events.append(('verify', [a.filename for a, _ in pending], channel))
-
-        with tempfile.TemporaryDirectory() as tmp:
-            report = Path(tmp) / 'publish-results.json'
-            with patch('sys.argv', ['build.py', '--no-build', '--skip-existing', '--report', str(report), '--target-platforms', 'linux-64', 'win-64']), \
-                 patch.object(build, 'find_recipes', return_value=recipes), \
-                 patch.object(build, 'load_dotenv', return_value={}), \
-                 patch.object(build, 'build_recipe', side_effect=fake_build_recipe), \
-                 patch.object(build, 'wait_for_index', side_effect=fake_wait), \
-                 redirect_stdout(io.StringIO()):
-                build.main()
-            import json
-            saved = json.loads(report.read_text(encoding='utf-8'))
-        self.assertEqual(len(events), 5)
-        self.assertEqual(events[-1][0], 'verify')
-        self.assertEqual(len(events[-1][1]), 4)
-        self.assertTrue(all(item['status'] == 'published' for item in saved))
-        self.assertTrue(all(art['status'] == 'published' for item in saved for art in item['artifacts']))
 
     def test_missing_publish_credentials_is_an_error(self):
         with tempfile.TemporaryDirectory() as tmp:

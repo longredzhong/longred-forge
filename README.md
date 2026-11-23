@@ -147,7 +147,7 @@ conda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar sha
 
 1. **Automated Release Tracking**: GitHub Actions runs every three hours (at minute 10) to check for new releases from upstream projects
 2. **Recipe Updates**: When a new version is detected, the recipe is automatically updated
-3. **Multi-Platform Builds**: The build matrix covers Linux (x86_64 and aarch64), macOS (Intel and Apple Silicon), and Windows (x86_64); individual recipes skip unsupported targets.
+3. **Multi-Platform Builds**: The build matrix covers Linux (x86_64 and aarch64), macOS (Apple Silicon), and Windows (x86_64); individual recipes skip unsupported targets.
 4. **Publishing**: Built packages are automatically uploaded to the `longred-forge` channel on prefix.dev
 
 ## 🛠️ Technical Details

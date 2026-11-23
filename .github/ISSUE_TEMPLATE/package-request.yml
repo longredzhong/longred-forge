@@ -52,7 +52,6 @@ body:
       multiple: true
       options:
         - Linux (x86_64)
-        - macOS (Intel)
         - macOS (Apple Silicon)
         - Windows
     validations:
