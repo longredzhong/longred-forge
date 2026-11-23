@@ -50,6 +50,10 @@ dependencies continue to require the specified revision.
 The `cloudflare` skill package declares its `durable-objects` and
 `nextjs-on-cloudflare` sibling skills as exact runtime dependencies, so relative
 references resolve inside the same Pixi environment.
+`agent-skill-openserv-labs-openserv-skills` bundles the five interdependent
+OpenServ skills from `openserv-labs/skills` and uses upstream `README.md` as its
+`license_file`, matching the repository's MIT declaration where no standalone
+`LICENSE` file exists.
 
 Once version 0.4.0 or later of the manager is indexed in the main channel, install it with:
 

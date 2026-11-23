@@ -739,3 +739,18 @@ skills:
     license_blob: d645695673349e3947e8e5ae42332d0ac3164cd7
     revision: 1
     version: 0.0.1
+  agent-skill-openserv-labs-openserv-skills:
+    identity:
+    - openserv-labs/skills
+    - main
+    - skills
+    - openserv-skills
+    - MIT
+    - README.md
+    - archive
+    - bundle
+    commit: 263bfa94dae8be3a5ca1135a5a0ec3b9abe9eeaa
+    tree: 9d63d16001c0c3d911c720a563a74685dc756a3b
+    license_blob: 8dfa96880b79f8a0662b1bc91179b877fbfdbc07
+    revision: 1
+    version: 0.0.1

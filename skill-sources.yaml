@@ -306,3 +306,13 @@ repositories:
   - path: cmd/hatchet-cli/cli/skill-assets/hatchet-cli
     name: hatchet-cli
     package: agent-skill-hatchet-dev-hatchet-cli
+- repository: openserv-labs/skills
+  branch: main
+  archive: true
+  license: MIT
+  license_file: README.md
+  skills:
+  - path: skills
+    name: openserv-skills
+    package: agent-skill-openserv-labs-openserv-skills
+    bundle: true

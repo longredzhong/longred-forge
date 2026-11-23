@@ -1,0 +1,29 @@
+package:
+  name: agent-skill-openserv-labs-openserv-skills
+  version: 0.0.1
+source:
+  url: https://github.com/openserv-labs/skills/archive/263bfa94dae8be3a5ca1135a5a0ec3b9abe9eeaa.tar.gz
+  sha256: 76e425e62742157ba3378b45b10fd9fe66675645798e1810a451e69ac169795c
+build:
+  number: 0
+  noarch: generic
+  script: 'mkdir -p "$PREFIX/share/agent-skills"
+
+    cp -R "$SRC_DIR/skills/." "$PREFIX/share/agent-skills/"
+
+    mkdir -p "$PREFIX/share/licenses/agent-skill-openserv-labs-openserv-skills"
+
+    cp "$SRC_DIR/README.md" "$PREFIX/share/licenses/agent-skill-openserv-labs-openserv-skills/LICENSE"'
+tests:
+- package_contents:
+    files:
+    - share/agent-skills/openserv-agent-sdk/SKILL.md
+    - share/agent-skills/openserv-client/SKILL.md
+    - share/agent-skills/openserv-ideaboard-api/SKILL.md
+    - share/agent-skills/openserv-launch/SKILL.md
+    - share/agent-skills/openserv-multi-agent-workflows/SKILL.md
+about:
+  summary: Agent skill openserv-skills
+  license: MIT
+  repository: https://github.com/openserv-labs/skills
+  license_file: README.md
