@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+context:
+  version: 0.2.2-rc.5
+  conda_version: 0.2.2rc.5
+package:
+  name: deepseek-harness
+  version: ${{ conda_version }}
+source:
+- url: https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-${{ version }}.tgz
+  sha256: 67da5a3c458f46cd278e0eec6ad0e3a44e99fd13087c6f11a1b362268900a52c
+build:
+  number: 0
+  dynamic_linking:
+    binary_relocation: false
+    rpath_allowlist:
+    - '**/*'
+  script:
+  - if: linux and aarch64
+    then: python "$RECIPE_DIR/install.py" linux arm64
+  - if: linux and x86_64
+    then: python "$RECIPE_DIR/install.py" linux x64
+  - if: osx and arm64
+    then: python "$RECIPE_DIR/install.py" darwin arm64
+  - if: osx and x86_64
+    then: python "$RECIPE_DIR/install.py" darwin x64
+  - if: win and x86_64
+    then: python "%RECIPE_DIR%/install.py" win32 x64
+requirements:
+  build:
+  - nodejs >=24.22.3,<25.0a0|>=26.13.1,<27.0a0
+  - python
+  run:
+  - nodejs >=24.22.3,<25.0a0|>=26.13.1,<27.0a0
+  - pnpm
+tests:
+- script:
+  - dsh --version
+  - dsh --help
+  - pnpm --version
+about:
+  homepage: https://github.com/deepseek-ai/deepseek-harness
+  license: MIT
+  license_file: LICENSE
+  summary: DeepSeek Harness (dsh) - open-source agent harness
+  description: DeepSeek Harness (`dsh`) is an open-source agent harness developed
+    by DeepSeek AI, built on an everything-is-a-plugin architecture powered by Cordis.
+    Distributed via npm (`@deepseek-ai/dsh`) and tracking the npm `latest` dist-tag,
+    which publishes prerelease candidates. Runtime dependencies are resolved with npm
+    at build time; only the top-level tarball is checksum-pinned.
+  repository: https://github.com/deepseek-ai/deepseek-harness
+  documentation: https://deepseek-harness.github.io/deepseek-harness/
+extra:
+  recipe-maintainers:
+  - longredzhong
+  update:
+    npm: '@deepseek-ai/dsh'

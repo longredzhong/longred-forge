@@ -123,18 +123,24 @@ proxy, TUN mode and DNS-based traffic splitting.
 > The amd64 builds are upstream's `compatible` variants (GOAMD64=v1), so they run on every x86-64 CPU
 > instead of requiring AVX2.
 
+### deepseek-harness
+
+DeepSeek Harness (`dsh`) is an open-source agent harness developed by DeepSeek AI, built on an everything-is-a-plugin architecture powered by Cordis. Packaged from the npm `@deepseek-ai/dsh` `latest` dist-tag and includes `pnpm` for `dsh plugin` management.
+
+**Upstream:** [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)
+
 **Installation:**
 
 ```bash
 # Use the pixi CLI to install globally
-pixi global install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager codex oh-my-pi claude-code garage-webui mimocode obscura pi sofka mihomo
+pixi global install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager codex oh-my-pi claude-code garage-webui mimocode obscura pi sofka mihomo deepseek-harness
 
 # Or add to a pixi project
-pixi add -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager codex oh-my-pi claude-code garage-webui mimocode obscura pi sofka mihomo
+pixi add -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager codex oh-my-pi claude-code garage-webui mimocode obscura pi sofka mihomo deepseek-harness
 
 # Using mamba/conda
-mamba install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager codex oh-my-pi claude-code garage-webui mimocode obscura pi sofka mihomo
-conda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager codex oh-my-pi claude-code garage-webui mimocode obscura pi sofka mihomo
+mamba install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager codex oh-my-pi claude-code garage-webui mimocode obscura pi sofka mihomo deepseek-harness
+conda install -c https://prefix.dev/longred-forge hatchet-cli opencode radar shaka-packager codex oh-my-pi claude-code garage-webui mimocode obscura pi sofka mihomo deepseek-harness
 ```
 
 ## 🚀 How It Works
@@ -160,6 +166,9 @@ longred-forge/
 │   ├── claude-code/
 │   │   └── recipe.yaml        # Package recipe
 │   ├── codex/
+│   │   └── recipe.yaml        # Package recipe
+│   ├── deepseek-harness/
+│   │   ├── install.py
 │   │   └── recipe.yaml        # Package recipe
 │   ├── garage-webui/
 │   │   └── recipe.yaml        # Package recipe
