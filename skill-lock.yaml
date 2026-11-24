@@ -634,11 +634,11 @@ skills:
     - MIT
     - LICENSE
     - archive
-    commit: 39b723ceebf81474d0557c1fecd01eddab585563
-    tree: 2b9a586e5e0e7b99c43e479bdce6f3300be4c145
+    commit: e997ac5b9a74eab332d5e9793bb38a38c8cfdd74
+    tree: 93a0db2536c0547c564573ae169c461bebdc3b0f
     license_blob: d67778ada6b9cda6227e9130da182c13e73c8b2e
-    revision: 2
-    version: 0.0.2
+    revision: 3
+    version: 0.0.3
   agent-skill-wshobson-python-development:
     identity:
     - wshobson/agents
