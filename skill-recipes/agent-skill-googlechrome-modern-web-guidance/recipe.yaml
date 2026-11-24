@@ -1,9 +1,9 @@
 package:
   name: agent-skill-googlechrome-modern-web-guidance
-  version: 0.0.2
+  version: 0.0.3
 source:
-  url: https://github.com/GoogleChrome/modern-web-guidance/archive/64a6d708f5a43f2cd3fde5d4d7db3905ba1bdf65.tar.gz
-  sha256: defa0ff7694cf49ff9fd4c0f2bf430dfee04ed673c1426138e38ae8217e1bab8
+  url: https://github.com/GoogleChrome/modern-web-guidance/archive/2b4aa13a72dd47cd135b06ce5abfccd92e19b24f.tar.gz
+  sha256: bdc91e0e176314e50998c2a2c17ef7fcea9ce79dd8a3ee692c4776f901c774d1
 build:
   number: 0
   noarch: generic
