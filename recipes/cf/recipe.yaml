@@ -1,13 +1,13 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
 context:
-  version: 1.0.0-rc.2
-  conda_version: 1.0.0rc.2
+  version: 1.0.0-rc.4
+  conda_version: 1.0.0rc.4
 package:
   name: cf
   version: ${{ conda_version }}
 source:
 - url: https://registry.npmjs.org/cf/-/cf-${{ version }}.tgz
-  sha256: 73838241d0f633ce055627c72571b93fa10d8e5fc3046b72c70f16de7927cdf9
+  sha256: 3f83f8c78f2d572cb6711931cbb4a92393db0b6fa6c752f6744d6f57dff76ba8
 build:
   number: 0
   dynamic_linking:
