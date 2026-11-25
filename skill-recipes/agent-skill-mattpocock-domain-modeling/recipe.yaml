@@ -1,9 +1,9 @@
 package:
   name: agent-skill-mattpocock-domain-modeling
-  version: 0.0.1
+  version: 0.0.2
 source:
-  url: https://github.com/mattpocock/skills/archive/4ae2317ddb22b046e26455e4f9c9b3aaaf62212d.tar.gz
-  sha256: 75b8a2ddccef7fc11059373dff29900934fc46bcb7bfdcfb034a699ce2cb0176
+  url: https://github.com/mattpocock/skills/archive/6f7f7831a625f040a8e06a0e7954826b87ce775a.tar.gz
+  sha256: 1bd933eb15dec5b5886462916ff4a35ffe2acab62f77230ca68ac65fb7e1e813
 build:
   number: 0
   noarch: generic

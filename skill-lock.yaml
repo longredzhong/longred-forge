@@ -504,11 +504,11 @@ skills:
     - MIT
     - LICENSE
     - archive
-    commit: 4ae2317ddb22b046e26455e4f9c9b3aaaf62212d
-    tree: ea30ee454ba264543dbe40737973b1a5afb9f0e6
+    commit: 6f7f7831a625f040a8e06a0e7954826b87ce775a
+    tree: db8ef024fb9a7b2022d57289359ae96cff0d8483
     license_blob: f1dd2c09108dde1a5f56097cee8461b3ea834499
-    revision: 1
-    version: 0.0.1
+    revision: 2
+    version: 0.0.2
   agent-skill-mattpocock-grill-with-docs:
     identity:
     - mattpocock/skills
